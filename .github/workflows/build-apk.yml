@@ -34,6 +34,7 @@ jobs:
         run: flutter pub get
 
       - name: Jana kod pangkalan data (drift)
+        timeout-minutes: 10
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Semak kod

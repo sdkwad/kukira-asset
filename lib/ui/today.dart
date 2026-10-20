@@ -177,7 +177,7 @@ class _Summary extends StatelessWidget {
       tile(value: '$soon', label: s.dueSoonShort, colors: soon > 0 ? statusColors(context, RStatus.dueSoon) : calm),
       const SizedBox(width: 8),
       tile(
-        value: backupDays == null ? '–' : s.daysShort(backupDays),
+        value: backupDays == null ? 'â€“' : s.daysShort(backupDays),
         label: s.lastBackupLabel,
         colors: backupDays == null || backupDays > 30 ? statusColors(context, RStatus.dueSoon) : statusColors(context, RStatus.done),
         onTap: onBackup,
