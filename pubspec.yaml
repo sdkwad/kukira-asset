@@ -1,0 +1,37 @@
+name: kukira_asset
+description: Kukira Asset. Rekod rumah, kereta dan motosikal anda, disimpan di telefon sahaja.
+publish_to: 'none'
+version: 0.1.0+1
+
+environment:
+  sdk: ">=3.6.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  # Encrypted database: drift on SQLCipher. Do NOT add sqlite3_flutter_libs or
+  # drift_flutter; they ship the same native symbols as SQLCipher and conflict.
+  drift: ^2.22.1
+  sqlite3: ^2.4.7
+  sqlcipher_flutter_libs: ^0.6.4
+  path_provider: ^2.1.5
+  path: ^1.9.0
+  flutter_secure_storage: 9.2.4
+  # Pinned: version 19 changed the zonedSchedule signature.
+  flutter_local_notifications: 18.0.1
+  timezone: ^0.10.0
+  cryptography: ^2.7.0
+  share_plus: ^10.1.4
+  file_picker: ^8.1.7
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  drift_dev: ^2.22.1
+  build_runner: ^2.4.13
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true

@@ -1,0 +1,1049 @@
+<title>Kukira Asset Prototype</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+<style>
+/* Layout: a working phone on the right, a short guide to the flows on the left; stacks to one column on phones. */
+:root{
+  --bg:#E7ECE8; --panel:#F4F7F4; --surface:#F6F8F6; --card:#FFFFFF;
+  --ink:#16201B; --muted:#56665D; --faint:#86948C; --line:#D9E2DB;
+  --accent:#1E6A4E; --accent-ink:#FFFFFF; --accent-soft:#DAEDE3;
+  --over:#B42318; --over-soft:#FCE5E1; --soon:#8A5000; --soon-soft:#FAEDD3;
+  --info-soft:#E3EAF4; --info:#2B4E7E;
+  --frame:#18211D; --scrim:rgba(12,20,16,.45);
+  --shadow:0 1px 2px rgba(20,40,30,.06),0 6px 20px rgba(20,40,30,.08);
+  --f-display:"Bricolage Grotesque","Segoe UI",system-ui,sans-serif;
+  --f-body:"Figtree","Segoe UI",system-ui,sans-serif;
+  --f-mono:"JetBrains Mono",ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C110F; --panel:#121915; --surface:#111714; --card:#19221D;
+  --ink:#E4EDE8; --muted:#9FB0A6; --faint:#6F8077; --line:#2A3630;
+  --accent:#5CC494; --accent-ink:#06180F; --accent-soft:#1B3A2C;
+  --over:#FF8B7E; --over-soft:#3B1E1A; --soon:#F0B550; --soon-soft:#382B14;
+  --info-soft:#1C2737; --info:#9CBCE8;
+  --frame:#000000; --scrim:rgba(0,0,0,.6);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0C110F; --panel:#121915; --surface:#111714; --card:#19221D;
+  --ink:#E4EDE8; --muted:#9FB0A6; --faint:#6F8077; --line:#2A3630;
+  --accent:#5CC494; --accent-ink:#06180F; --accent-soft:#1B3A2C;
+  --over:#FF8B7E; --over-soft:#3B1E1A; --soon:#F0B550; --soon-soft:#382B14;
+  --info-soft:#1C2737; --info:#9CBCE8;
+  --frame:#000000; --scrim:rgba(0,0,0,.6);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.i{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+.wrap{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:40px;padding-block:32px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.guide{flex:1 1 300px;max-width:380px;min-width:0;display:flex;flex-direction:column;gap:20px;padding-top:8px}
+.brand{display:flex;align-items:center;gap:10px}
+.mark{width:36px;height:36px;border-radius:10px;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center}
+.mark .i{width:22px;height:22px}
+.guide h1{font-family:var(--f-display);font-size:30px;line-height:1.1;margin:0;text-wrap:balance;letter-spacing:-.01em}
+.guide p{margin:0;color:var(--muted);max-width:60ch}
+.glabel{font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);margin:0 0 8px}
+.flows{display:flex;flex-direction:column;gap:8px}
+.flow{display:grid;grid-template-columns:28px 1fr;gap:10px;align-items:start;text-align:left;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px}
+.flow:hover{border-color:var(--accent)}
+.flow .n{width:24px;height:24px;border-radius:50%;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:13px;display:grid;place-items:center}
+.flow b{display:block;font-weight:600}
+.flow span.d{display:block;color:var(--muted);font-size:13px}
+.demo{display:flex;flex-wrap:wrap;gap:8px}
+.dbtn{background:transparent;border:1px solid var(--line);border-radius:999px;padding:6px 12px;font-size:13px;color:var(--muted)}
+.dbtn:hover{color:var(--ink);border-color:var(--muted)}
+.fine{font-size:13px;color:var(--faint)}
+
+/* phone */
+.phone{position:relative;width:390px;max-width:100%;height:812px;border:10px solid var(--frame);border-radius:46px;background:var(--surface);overflow:hidden;display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.sbar{height:34px;flex:none;display:flex;justify-content:space-between;align-items:center;padding:0 24px;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums}
+.sbar .r{display:flex;gap:6px;align-items:center;color:var(--muted);font-weight:500}
+.screen{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 18px 28px;scrollbar-width:thin}
+.tabbar{flex:none;display:grid;grid-template-columns:repeat(5,1fr);align-items:end;border-top:1px solid var(--line);background:var(--card);padding:6px 4px 14px}
+.tab{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:500;color:var(--faint);padding:4px 0}
+.tab[aria-current="page"]{color:var(--accent)}
+.tab.plus{position:relative}
+.tab.plus .ring{width:50px;height:50px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-top:-22px;box-shadow:var(--shadow)}
+.tab.plus .ring .i{width:24px;height:24px;stroke-width:2.2}
+.tab.plus{color:var(--ink)}
+
+/* screen pieces */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding:10px 0 14px}
+.top h1{font-family:var(--f-display);font-size:30px;line-height:1.05;margin:0;letter-spacing:-.015em}
+.eyebrow{font-size:12px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);margin:0 0 4px}
+.navtop{display:flex;align-items:center;gap:6px;padding:8px 0 10px;margin-left:-8px}
+.iconbtn{background:none;border:0;width:36px;height:36px;border-radius:50%;display:grid;place-items:center;color:var(--ink)}
+.iconbtn:hover{background:var(--accent-soft)}
+.navtop h1{font-family:var(--f-display);font-size:22px;margin:0;line-height:1.15;min-width:0}
+.sub{color:var(--muted);font-size:13px;margin:0}
+section.blk{display:flex;flex-direction:column;gap:8px;margin-top:18px}
+.h2{display:flex;justify-content:space-between;align-items:baseline;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:0}
+.h2 .c{font-variant-numeric:tabular-nums}
+.none{color:var(--faint);font-size:14px;padding:4px 0}
+.list{display:flex;flex-direction:column;background:var(--card);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.list > * + *{border-top:1px solid var(--line)}
+.row{display:flex;align-items:center;gap:12px;padding:12px 14px;background:none;border:0;width:100%;text-align:left;min-width:0}
+button.row:hover{background:var(--accent-soft)}
+.row .body{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .m{font-size:13px;color:var(--muted);overflow-wrap:anywhere}
+.row .chev{color:var(--faint)}
+.ric{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.rem{position:relative}
+.rem::before{content:"";position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:transparent}
+.rem.over::before{background:var(--over)}
+.rem.soon::before{background:var(--soon)}
+.pill{font-size:11px;font-weight:700;letter-spacing:.03em;padding:3px 8px;border-radius:999px;white-space:nowrap;flex:none}
+.pill.over{background:var(--over-soft);color:var(--over)}
+.pill.soon{background:var(--soon-soft);color:var(--soon)}
+.pill.up{background:var(--info-soft);color:var(--info)}
+.pill.done{background:var(--accent-soft);color:var(--accent)}
+.est{display:inline-block;font-size:11px;font-weight:600;color:var(--soon);border:1px dashed var(--soon);border-radius:6px;padding:0 5px;margin-left:4px;vertical-align:1px}
+.banner{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;font-size:14px}
+.banner .i{margin-top:1px}
+.banner.warn{background:var(--soon-soft);color:var(--ink)}
+.banner.warn .i{color:var(--soon)}
+.banner.info{background:var(--info-soft)}
+.banner.info .i{color:var(--info)}
+.banner .bt{flex:1;min-width:0}
+.banner button{background:none;border:0;padding:0;font-weight:700;color:var(--accent);margin-top:2px}
+.banners{display:flex;flex-direction:column;gap:8px}
+.link{background:none;border:0;padding:6px 0;color:var(--accent);font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-weight:600;background:var(--accent);color:var(--accent-ink);display:inline-flex;justify-content:center;align-items:center;gap:8px}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--line)}
+.btn.danger{background:var(--over);color:var(--card)}
+.btn.block{width:100%}
+.btn[disabled]{opacity:.45;cursor:not-allowed}
+.dash{border:1.5px dashed var(--line);background:none;border-radius:14px;padding:14px;color:var(--muted);font-weight:600;display:flex;gap:8px;justify-content:center;align-items:center;width:100%}
+.dash:hover{border-color:var(--accent);color:var(--accent)}
+.search{display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:0 12px;color:var(--faint)}
+.search input{border:0;background:none;outline:none;padding:10px 0;flex:1;min-width:0;color:var(--ink)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{border:1px solid var(--line);background:var(--card);border-radius:999px;padding:6px 12px;font-size:13px;font-weight:500}
+.chip[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.scroller{display:flex;gap:6px;overflow-x:auto;padding-bottom:2px;scrollbar-width:none}
+.scroller .chip{flex:none}
+
+/* empty state */
+.empty{margin-top:40px;display:flex;flex-direction:column;gap:14px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
+.empty h2{font-family:var(--f-display);font-size:22px;margin:0;line-height:1.2;text-wrap:balance}
+.empty p{margin:0;color:var(--muted)}
+.trio{display:flex;gap:8px;color:var(--accent)}
+.trio span{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);display:grid;place-items:center}
+
+/* asset cards */
+.acard{display:flex;flex-direction:column;gap:10px;text-align:left;width:100%;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:14px}
+.acard:hover{border-color:var(--accent)}
+.ahead{display:flex;gap:12px;align-items:center;min-width:0}
+.aic{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.aic .i{width:22px;height:22px}
+.aname{font-family:var(--f-display);font-weight:700;font-size:18px;line-height:1.15}
+.anext{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:10px;min-width:0}
+.anext .tx{flex:1;min-width:0}
+.anext b{color:var(--ink);font-weight:600}
+.plate{font-family:var(--f-mono);font-weight:700;letter-spacing:.06em;background:#111;color:#F4F4F4;border-radius:5px;padding:1px 7px;font-size:12px;display:inline-block}
+.plate.big{font-size:20px;padding:4px 12px;border-radius:7px}
+.cards{display:flex;flex-direction:column;gap:10px}
+.num{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+
+/* asset detail */
+.seg{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;border-bottom:1px solid var(--line);margin:0 -18px;padding:0 18px}
+.seg button{background:none;border:0;border-bottom:2px solid transparent;padding:10px 8px;font-weight:600;font-size:14px;color:var(--muted);white-space:nowrap}
+.seg button[aria-current="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+.facts{display:grid;grid-template-columns:auto 1fr;gap:8px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;font-size:14px}
+.facts dt{color:var(--muted)}
+.facts dd{margin:0;font-weight:500;min-width:0;overflow-wrap:anywhere}
+.dlp{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.dlp .big{font-family:var(--f-display);font-size:34px;font-weight:700;line-height:1}
+.dlp .big small{font-family:var(--f-body);font-size:14px;font-weight:500;color:var(--muted);margin-left:6px}
+.bar{height:8px;border-radius:99px;background:var(--line);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}
+.bar.late i{background:var(--soon)}
+.ends{display:flex;justify-content:space-between;font-size:12px;color:var(--muted)}
+details.more{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+details.more summary{font-weight:600;cursor:pointer;color:var(--accent)}
+details.more .facts{border:0;padding:12px 0 0;background:none}
+.odo{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px}
+.odo .v{font-family:var(--f-mono);font-size:24px;font-weight:700}
+.odo .body{flex:1;min-width:0}
+.stat{display:flex;justify-content:space-between;align-items:baseline;font-size:13px;color:var(--muted)}
+.stat b{font-family:var(--f-mono);color:var(--ink);font-size:15px}
+
+/* sheets */
+.sheetwrap{position:absolute;inset:0;background:var(--scrim);display:flex;align-items:flex-end;z-index:20;animation:fade .18s ease}
+.sheet{width:100%;max-height:90%;overflow-y:auto;background:var(--surface);border-radius:24px 24px 0 0;padding:10px 18px 24px;display:flex;flex-direction:column;gap:14px;animation:up .22s ease}
+.grab{width:40px;height:4px;border-radius:4px;background:var(--line);margin:0 auto}
+.shead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.shead h2{font-family:var(--f-display);font-size:21px;margin:0;line-height:1.2;min-width:0}
+.steps{font-size:12px;color:var(--faint);font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.field{display:flex;flex-direction:column;gap:6px}
+.field > label,.flabel{font-size:13px;font-weight:600;color:var(--muted)}
+.inp{width:100%;background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 12px;color:var(--ink);min-width:0}
+.inp:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:transparent}
+.inp.err{border-color:var(--over)}
+.errtx{color:var(--over);font-size:13px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.two > *{min-width:0}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 6px;border:1px solid var(--line);border-radius:14px;background:var(--card);font-weight:600}
+.tile .i{width:28px;height:28px;color:var(--accent)}
+.tile:hover,.tile[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.opt{display:flex;flex-direction:column;gap:6px}
+.optrow{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);background:var(--card);border-radius:12px;padding:12px;text-align:left;width:100%}
+.optrow[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft)}
+.optrow .body{flex:1;min-width:0}
+.optrow .t{font-weight:600;display:block}
+.optrow .m{font-size:13px;color:var(--muted);display:block}
+.box{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--faint);display:grid;place-items:center;flex:none;margin-top:1px;color:var(--accent-ink)}
+[aria-pressed="true"] > .box{background:var(--accent);border-color:var(--accent)}
+.box .i{width:14px;height:14px;stroke-width:3}
+.note{font-size:13px;color:var(--muted);background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;display:flex;gap:8px}
+.note.warn{background:var(--soon-soft);border-color:transparent;color:var(--ink)}
+.note.warn .i{color:var(--soon)}
+.note .i{width:18px;height:18px;margin-top:1px}
+.actions{display:flex;flex-direction:column;gap:8px}
+.actions.h{flex-direction:row}
+.actions.h > *{flex:1}
+.check{display:flex;gap:10px;align-items:flex-start;font-size:14px}
+.check input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent);flex:none}
+.big-ok{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:8px 0}
+.big-ok .ring{width:56px;height:56px;border-radius:50%;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center}
+.big-ok .ring .i{width:28px;height:28px;stroke-width:2.4}
+.big-ok h2{font-family:var(--f-display);font-size:22px;margin:0}
+.big-ok p{margin:0;color:var(--muted);max-width:32ch}
+.share{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;text-align:center;font-size:12px}
+.share button{background:none;border:0;display:flex;flex-direction:column;align-items:center;gap:6px;color:var(--ink)}
+.share span.ic{width:48px;height:48px;border-radius:14px;background:var(--card);border:1px solid var(--line);display:grid;place-items:center}
+.preview{height:180px;border-radius:12px;background:repeating-linear-gradient(0deg,var(--card) 0 18px,var(--line) 18px 19px);border:1px solid var(--line);display:grid;place-items:center;color:var(--faint)}
+.pin{display:flex;justify-content:center;gap:14px;padding:8px 0}
+.pin i{width:14px;height:14px;border-radius:50%;border:2px solid var(--faint)}
+.pin i.on{background:var(--accent);border-color:var(--accent)}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px 0;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.lines{display:flex;flex-direction:column;gap:6px}
+.lines .two{grid-template-columns:1fr 110px}
+.toggle{position:relative;width:44px;height:26px;border-radius:99px;background:var(--line);border:0;flex:none;transition:background .15s}
+.toggle::after{content:"";position:absolute;left:3px;top:3px;width:20px;height:20px;border-radius:50%;background:var(--card);box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .15s}
+.toggle[aria-checked="true"]{background:var(--accent)}
+.toggle[aria-checked="true"]::after{transform:translateX(18px)}
+
+/* overlays */
+.toast{position:absolute;left:16px;right:16px;bottom:96px;z-index:40;background:var(--ink);color:var(--surface);border-radius:12px;padding:12px 14px;font-size:14px;box-shadow:var(--shadow);animation:up .2s ease}
+.notif{position:absolute;left:10px;right:10px;top:38px;z-index:45;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:12px 14px;display:flex;gap:10px;box-shadow:var(--shadow);animation:drop .25s ease}
+.notif .mark{width:30px;height:30px;border-radius:8px}
+.notif .mark .i{width:18px;height:18px}
+.notif .body{flex:1;min-width:0;font-size:13px}
+.notif b{display:block;font-size:14px}
+.full{position:absolute;inset:0;z-index:30;background:var(--surface);display:flex;flex-direction:column;justify-content:center;gap:16px;padding:28px}
+.full h2{font-family:var(--f-display);font-size:26px;margin:0;line-height:1.15;text-wrap:balance}
+.full p{margin:0;color:var(--muted)}
+.full .mark{width:52px;height:52px;border-radius:14px}
+.full .mark .i{width:28px;height:28px}
+.sysdlg{position:absolute;inset:0;z-index:50;background:var(--scrim);display:grid;place-items:center;padding:24px}
+.sysdlg > div{background:var(--card);border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:14px;text-align:center;width:100%}
+.sysdlg b{font-size:17px}
+.sysdlg .r{display:flex;flex-direction:column;gap:6px}
+.sysdlg button{background:var(--accent-soft);color:var(--accent);border:0;border-radius:99px;padding:11px;font-weight:600}
+@keyframes up{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+@keyframes drop{from{transform:translateY(-20px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:520px){
+  .wrap{padding-block:12px;gap:24px}
+  .phone{width:100%;height:760px;border-width:6px;border-radius:30px;order:-1}
+  .guide{max-width:none}
+}
+</style>
+
+<div class="wrap">
+  <aside class="guide">
+    <div class="brand"><span class="mark" id="brandmark"></span><div><p class="eyebrow" style="margin:0">Prototype 0.1 · fake data</p></div></div>
+    <h1>Kukira Asset</h1>
+    <p>Your house, car and motorcycle in one place: what's overdue, what's due soon, and the paperwork and repair history behind it. Everything stays on the phone.</p>
+    <div>
+      <p class="glabel">Try the three core flows</p>
+      <div class="flows">
+        <button class="flow" data-act="demo" data-d="first"><span class="n">1</span><span><b>Add your first asset</b><span class="d">Starts as a new user. Aim: house and two reminders in under a minute.</span></span></button>
+        <button class="flow" data-act="demo" data-d="done"><span class="n">2</span><span><b>Mark a repeating reminder done</b><span class="d">Aircond service. The next one is counted from today.</span></span></button>
+        <button class="flow" data-act="demo" data-d="record"><span class="n">3</span><span><b>Record maintenance</b><span class="d">Log a repair with cost, vendor and warranty, and close the matching reminder.</span></span></button>
+      </div>
+    </div>
+    <div>
+      <p class="glabel">Also in the prototype</p>
+      <div class="demo">
+        <button class="dbtn" data-act="demo" data-d="doc">Attach a document</button>
+        <button class="dbtn" data-act="demo" data-d="backup">Backup and restore</button>
+        <button class="dbtn" data-act="demo" data-d="defects">DLP defect list</button>
+        <button class="dbtn" data-act="demo" data-d="odo">Update odometer</button>
+        <button class="dbtn" data-act="demo" data-d="notif" id="demo-notif">Deny notifications</button>
+        <button class="dbtn" data-act="demo" data-d="health">Reminder health check</button>
+        <button class="dbtn" data-act="demo" data-d="broken">New phone, no key</button>
+        <button class="dbtn" data-act="demo" data-d="reset">Reset sample data</button>
+      </div>
+    </div>
+    <p class="fine">Today is fixed at 20 Oct 2026. Tax and DLP dates are editable estimates, marked as such. Nothing you type leaves this page, and it resets when you reload.</p>
+  </aside>
+
+  <div class="phone" id="phone">
+    <div class="sbar"><span class="num">9:41</span><span class="r" id="sbar-r"></span></div>
+    <main class="screen" id="screen"></main>
+    <nav class="tabbar" id="tabbar"></nav>
+    <div id="sheet"></div>
+    <div id="full"></div>
+    <div id="dlg"></div>
+    <div id="notif"></div>
+    <div id="toast"></div>
+  </div>
+</div>
+
+<script>
+/* ---------- icons ---------- */
+const P={
+  house:'<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+  car:'<path d="M3 16v-3l2.2-5A2 2 0 0 1 7 7h10a2 2 0 0 1 1.8 1l2.2 5v3h-2M5 16H3M9 16h6"/><circle cx="7" cy="16.5" r="2"/><circle cx="17" cy="16.5" r="2"/><path d="M4 12h16"/>',
+  motorcycle:'<circle cx="5.5" cy="16.5" r="3.5"/><circle cx="18.5" cy="16.5" r="3.5"/><path d="M5.5 16.5l4-6h4.5l4.5 6M8 7h3l1.5 3.5M15 8h3"/>',
+  today:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4M9 15l2 2 4-4"/>',
+  assets:'<path d="M4 4h7v7H4zM13 4h7v7h-7zM4 13h7v7H4zM13 13h7v7h-7z"/>',
+  doc:'<path d="M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6"/>',
+  more:'<path d="M4 6h16M4 12h16M4 18h16"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/>',
+  back:'<path d="M15 5l-7 7 7 7"/>',
+  chev:'<path d="M9 6l6 6-6 6"/>',
+  check:'<path d="M5 12l5 5 9-10"/>',
+  shield:'<path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/>',
+  bell:'<path d="M6 16v-5a6 6 0 0 1 12 0v5l2 2H4zM10 21h4"/>',
+  belloff:'<path d="M6 16v-5a6 6 0 0 1 9.5-4.9M18 11v5l2 2H8M10 21h4M3 3l18 18"/>',
+  backup:'<path d="M12 3v12M7 10l5 5 5-5M4 17v3h16v-3"/>',
+  restore:'<path d="M12 15V3M7 8l5-5 5 5M4 17v3h16v-3"/>',
+  wrench:'<path d="M14.5 6.5a4 4 0 0 0 5 5L11 20a2.1 2.1 0 0 1-3-3l8.5-8.5"/><path d="M14.5 6.5L17 4l3 3-2.5 2.5"/>',
+  alert:'<path d="M12 3l10 18H2zM12 10v5M12 18v.5"/>',
+  camera:'<rect x="3" y="7" width="18" height="13" rx="2"/><circle cx="12" cy="13.5" r="3.5"/><path d="M8 7l2-3h4l2 3"/>',
+  image:'<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 16l5-5 4 4 3-3 6 6"/><circle cx="9" cy="9" r="1.5"/>',
+  folder:'<path d="M3 6h6l2 2h10v11H3z"/>',
+  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1-4 4-6 8-6s7 2 8 6"/>',
+  pulse:'<path d="M3 12h4l2-5 4 10 2-5h6"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/>',
+  gauge:'<path d="M4 18a8 8 0 1 1 16 0M12 18l4-6"/>',
+  list:'<path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/>',
+  defect:'<path d="M4 20L20 4M14 4h6v6M10 20H4v-6"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+  finger:'<path d="M12 11v4a6 6 0 0 1-1.5 4M8 10a4 4 0 0 1 8 0v3M5 13v-3a7 7 0 0 1 12-5M19 11v2a10 10 0 0 1-1 4M16 16a8 8 0 0 1-1 3"/>',
+  battery:'<rect x="3" y="7" width="16" height="10" rx="2"/><path d="M21 11v2M7 10v4"/>',
+  noweb:'<path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 9.5-2.6M8.5 16a5 5 0 0 1 4-1M12 19.5v.01M3 3l18 18"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>',
+  phone:'<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>',
+  send:'<path d="M4 12l16-8-6 16-2-7z"/>',
+};
+const ic=(n,c='')=>`<svg class="i ${c}" viewBox="0 0 24 24" aria-hidden="true">${P[n]||''}</svg>`;
+
+/* ---------- dates & formatting ---------- */
+const T0=new Date(2026,9,20);
+const D=(y,m,d)=>new Date(y,m-1,d);
+const addDays=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const addMonths=(d,n)=>{const x=new Date(d);const day=x.getDate();x.setDate(1);x.setMonth(x.getMonth()+n);const last=new Date(x.getFullYear(),x.getMonth()+1,0).getDate();x.setDate(Math.min(day,last));return x};
+const days=(a,b)=>Math.round((b-a)/864e5);
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const fmt=d=>`${d.getDate()} ${MON[d.getMonth()]} ${d.getFullYear()}`;
+const fmtS=d=>d.getFullYear()===T0.getFullYear()?`${d.getDate()} ${MON[d.getMonth()]}`:fmt(d);
+const iso=d=>d?`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`:'';
+const parse=s=>{if(!s)return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const km=n=>Math.round(n).toLocaleString('en-MY')+' km';
+const rm=n=>'RM '+Number(n).toLocaleString('en-MY',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ago=d=>{const n=days(d,T0);return n===0?'today':n===1?'yesterday':`${n} days ago`};
+const $=s=>document.querySelector(s);
+let uid=100;const nid=p=>p+(++uid);
+
+/* ---------- reference lists ---------- */
+const CATS={
+  house:{maintenance:['Plumbing','Toilet/bathroom','Roof','Leakage/waterproofing','Electrical','Aircond','Painting','Pest control','Appliance','Other'],
+         renovation:['Minor','Major'],incident:['Leak','Fire','Flood','Break-in','Structural','Other'],
+         defect:['Wall/crack','Floor/tiles','Door/window','Plumbing','Electrical','Roof','Other'],
+         payment:['Cukai tanah','Cukai petak','Cukai taksiran','Maintenance charge','Sinking fund','Insurance premium']},
+  car:{maintenance:['Oil','Filter','Brake','Tyre','Battery','Belt','Aircond','Other'],incident:['Accident','Flood','Theft','Other'],payment:['Road tax','Insurance premium']},
+  motorcycle:{maintenance:['Oil','Filter','Brake','Tyre','Battery','Chain/sprocket','Other'],incident:['Accident','Flood','Theft','Other'],payment:['Road tax','Insurance premium']},
+};
+const KIND={maintenance:'Maintenance',renovation:'Renovation',incident:'Incident',defect:'Defect',payment:'Payment'};
+const DOCTYPES=['SPA','Geran','VP letter','DLP','Tax bill','Insurance','Receipt','Other'];
+const PTYPE={landed:'Landed',strata:'Strata',strata_landed:'Strata landed'};
+const LEADS=[[0,'On the day'],[3,'3 days'],[7,'1 week'],[14,'2 weeks'],[30,'1 month']];
+
+/* ---------- state ---------- */
+const S={};
+function seed(){
+  Object.assign(S,{
+    assets:[
+      {id:'a1',cat:'house',name:'Setia Alam house',house:{ptype:'landed',source:'New from developer',spa:D(2022,6,10),vp:D(2025,3,15),council:'MBSA (Shah Alam)',state:'Selangor',occupancy:'Owner-occupied',title:'Individual title',contact:'Developer customer care, 03-0000 1234'},notes:'Double-storey terrace, intermediate lot.'},
+      {id:'a2',cat:'car',name:'Myvi',veh:{plate:'WXY 4821',make:'Perodua',model:'Myvi 1.5 AV',year:2021,cc:1496,cond:'New',odo:48210,odoDate:addDays(T0,-12),insurer:'Example Takaful',policy:'P-2026-118842',insExp:D(2027,2,9),roadTax:D(2026,11,3),warranty:'5 years or 150,000 km (to Mar 2026)',chassis:'PM2M…7781',engine:'1NR…2210'}},
+      {id:'a3',cat:'motorcycle',name:'Y15',veh:{plate:'BKR 732',make:'Yamaha',model:'Y15ZR',year:2019,cc:150,cond:'Second-hand',odo:31420,odoDate:addDays(T0,-41),insurer:'Example General',policy:'M-883310',insExp:D(2026,11,15),roadTax:D(2027,4,2),warranty:'Expired',chassis:'PMY…0912',engine:'G3D…4471'}},
+    ],
+    rem:[
+      {id:'r1',assetId:'a2',title:'Service: engine oil and filter',cat:'Oil',rule:'either',due:D(2026,12,1),dueKm:48000,everyMonths:6,everyKm:10000,lead:14,leadKm:1000,source:'template'},
+      {id:'r2',assetId:'a1',title:'Cukai taksiran (Jul to Dec)',cat:'Cukai taksiran',rule:'repeat',due:D(2026,8,31),everyMonths:6,repeatFrom:'due',lead:14,source:'preset',estimated:true,note:'MBSA. Payable in July; in arrears after the end of August.',confirm:'your council'},
+      {id:'r3',assetId:'a2',title:'Road tax renewal',cat:'Road tax',rule:'fixed',due:D(2026,11,3),lead:14,source:'template'},
+      {id:'r4',assetId:'a1',title:'Aircond service (3 units)',cat:'Aircond',rule:'repeat',due:D(2026,11,8),everyMonths:6,lead:7,source:'template'},
+      {id:'r5',assetId:'a3',title:'Insurance expires',cat:'Insurance premium',rule:'fixed',due:D(2026,11,15),lead:30,source:'template'},
+      {id:'r6',assetId:'a1',title:'Report defects before DLP ends',cat:'Other',rule:'fixed',due:D(2027,2,13),lead:30,source:'preset',estimated:true,note:'30 days before the estimated DLP end (24 months from vacant possession).',confirm:'your SPA'},
+      {id:'r7',assetId:'a1',title:'Cukai tanah',cat:'Cukai tanah',rule:'repeat',due:D(2027,5,31),everyMonths:12,repeatFrom:'due',lead:14,source:'preset',estimated:true,note:'31 May is a common deadline. It varies by state and year.',confirm:'your land office'},
+      {id:'r8',assetId:'a3',title:'Chain and sprocket check',cat:'Chain/sprocket',rule:'mileage',dueKm:32000,everyKm:3000,leadKm:500,source:'template'},
+      {id:'r9',assetId:'a1',title:'Termite inspection',cat:'Pest control',rule:'repeat',due:D(2027,9,30),everyMonths:12,lead:14,source:'manual'},
+    ],
+    rec:[
+      {id:'c1',assetId:'a1',kind:'maintenance',cat:'Pest control',title:'Quarterly pest control',date:D(2026,10,2),cost:120,vendor:'v3',area:'Whole house'},
+      {id:'c2',assetId:'a1',kind:'maintenance',cat:'Plumbing',title:'Kitchen sink trap replaced',date:D(2026,9,3),cost:180,vendor:'v1',area:'Kitchen'},
+      {id:'c3',assetId:'a1',kind:'payment',cat:'Cukai taksiran',title:'Cukai taksiran Jan to Jun 2026',date:D(2026,2,26),cost:412},
+      {id:'c4',assetId:'a1',kind:'incident',cat:'Leak',title:'Roof leak above master bath after storm',date:D(2026,1,12),cost:650,vendor:'v2',status:'done',claim:'No'},
+      {id:'c5',assetId:'a1',kind:'renovation',cat:'Minor',title:'Wet kitchen extension',date:D(2025,5,20),cost:18500,vendor:'v2',warranty:D(2026,5,20)},
+      {id:'c6',assetId:'a2',kind:'maintenance',cat:'Tyre',title:'Tyre rotation',date:D(2026,9,25),cost:40,vendor:'v4',odo:47900},
+      {id:'c7',assetId:'a2',kind:'maintenance',cat:'Oil',title:'Engine oil and filter',date:D(2026,6,5),cost:210,vendor:'v4',odo:38000},
+      {id:'c8',assetId:'a3',kind:'maintenance',cat:'Oil',title:'Engine oil change',date:D(2026,8,1),cost:45,odo:30100},
+      {id:'d1',assetId:'a1',kind:'defect',cat:'Wall/crack',title:'Hairline crack, living room wall',date:D(2026,8,30),area:'Living room',status:'open',reported:D(2026,9,2)},
+      {id:'d2',assetId:'a1',kind:'defect',cat:'Door/window',title:'Master bath door does not close fully',date:D(2026,8,10),area:'Master bath',status:'in_progress',reported:D(2026,8,14)},
+      {id:'d3',assetId:'a1',kind:'defect',cat:'Floor/tiles',title:'Hollow floor tiles near back door',date:D(2026,10,11),area:'Kitchen',status:'open'},
+      {id:'d4',assetId:'a1',kind:'defect',cat:'Plumbing',title:'Water heater pipe dripping',date:D(2025,11,4),area:'Bathroom 2',status:'done',reported:D(2025,11,5)},
+    ],
+    docs:[
+      {id:'f1',assetId:'a1',title:'Sale and purchase agreement',type:'SPA',file:'PDF · 38 pages',added:D(2022,6,12)},
+      {id:'f2',assetId:'a1',title:'Vacant possession letter',type:'VP letter',file:'Photo',added:D(2025,3,15)},
+      {id:'f3',assetId:'a1',title:'Cukai taksiran 2026 bill',type:'Tax bill',file:'PDF · 1 page',added:D(2026,1,20)},
+      {id:'f4',assetId:'a1',title:'Wet kitchen extension invoice',type:'Receipt',file:'PDF · 2 pages',added:D(2025,5,21)},
+      {id:'f5',assetId:'a2',title:'Myvi insurance policy 2026',type:'Insurance',file:'PDF · 6 pages',added:D(2026,2,10),expiry:D(2027,2,9)},
+      {id:'f6',assetId:'a2',title:'Service receipt, June 2026',type:'Receipt',file:'Photo',added:D(2026,6,5)},
+      {id:'f7',assetId:'a3',title:'Y15 ownership certificate',type:'Geran',file:'Photo',added:D(2024,7,1)},
+      {id:'f8',assetId:'a3',title:'Y15 insurance cover note',type:'Insurance',file:'PDF · 2 pages',added:D(2025,11,14),expiry:D(2026,11,15)},
+    ],
+    vendors:[
+      {id:'v1',name:'Ali Plumbing Works',trade:'Plumbing',phone:'012-000 4471',note:'Fixed the sink, fair price'},
+      {id:'v2',name:'Rekabina Renovation',trade:'Renovation',phone:'03-0000 8812',note:'Kitchen extension, 12-month warranty'},
+      {id:'v3',name:'Pest Free Klang',trade:'Pest control',phone:'016-000 2290',note:'Quarterly contract'},
+      {id:'v4',name:'Bengkel Ah Seng',trade:'Workshop',phone:'019-000 7713',note:'Myvi servicing'},
+      {id:'v5',name:'CoolAir Services',trade:'Aircond',phone:'011-0000 5520',note:''},
+    ],
+    completed:[
+      {title:'Quarterly pest control',assetId:'a1',date:D(2026,10,2)},
+      {title:'Tyre rotation',assetId:'a2',date:D(2026,9,25)},
+    ],
+    notif:true,lastBackup:D(2026,9,16),lock:false,bio:false,
+    view:{n:'today'},hist:[],sheet:null,q:{assets:'',docs:''},docFilter:'All',remFilter:'all',
+    firstRun:false,locked:false,broken:false,rebuild:'Today, 8:02 am',
+  });
+}
+seed();
+
+const asset=id=>S.assets.find(a=>a.id===id);
+const vendor=id=>S.vendors.find(v=>v.id===id);
+const isVeh=a=>a&&a.cat!=='house';
+const assetSub=a=>a.cat==='house'?`${PTYPE[a.house.ptype]}${a.house.council?' · '+a.house.council.split(' (')[0]:''}`:`${a.veh.make||''} ${a.veh.model||''}`.trim()||(a.cat==='car'?'Car':'Motorcycle');
+function dlpEnd(a){return a.cat==='house'&&a.house.vp?addMonths(a.house.vp,24):null}
+function dlpLeft(a){const e=dlpEnd(a);return e?days(T0,e):null}
+
+/* ---------- reminder logic ---------- */
+function rStatus(r){
+  if(r.done)return'done';
+  if(r.snooze&&r.snooze>T0)return'soon';
+  const a=asset(r.assetId);let m=1;
+  if(r.due){const d=days(T0,r.due);m=Math.max(m,d<0?3:d<=30?2:1)}
+  if(r.dueKm!=null&&isVeh(a)){const left=r.dueKm-a.veh.odo;m=Math.max(m,left<=0?3:left<=(r.leadKm||1000)?2:1)}
+  return m===3?'over':m===2?'soon':'up';
+}
+function dateText(d){const n=days(T0,d);if(n<0)return`${-n} day${n===-1?'':'s'} overdue · was due ${fmtS(d)}`;if(n===0)return'Due today';if(n===1)return'Due tomorrow';return`Due ${fmtS(d)} · in ${n} days`}
+function kmText(r,a){const left=r.dueKm-a.veh.odo;return left<=0?`${km(-left)} past ${km(r.dueKm)}`:`${km(left)} to go · at ${km(r.dueKm)}`}
+function dueText(r){
+  const a=asset(r.assetId);
+  if(r.snooze&&r.snooze>T0)return`Snoozed until ${fmtS(r.snooze)}`;
+  if(r.rule==='mileage')return kmText(r,a);
+  if(r.rule==='either'){const left=r.dueKm-a.veh.odo;return left<=0?kmText(r,a)+' (whichever first)':`${km(left)} or ${fmtS(r.due)}, whichever first`}
+  return dateText(r.due);
+}
+function sortKey(r){const a=asset(r.assetId);let k=Infinity;if(r.due)k=r.due.getTime();if(r.dueKm!=null&&isVeh(a))k=Math.min(k,T0.getTime()+(r.dueKm-a.veh.odo)/40*864e5);if(r.snooze)k=r.snooze.getTime();return k}
+function ruleText(r){
+  const from=r.repeatFrom==='due'?'counted from the previous due date':'counted from when you mark it done';
+  if(r.rule==='fixed')return'One-off date';
+  if(r.rule==='repeat')return`Every ${r.everyMonths} month${r.everyMonths>1?'s':''}, ${from}`;
+  if(r.rule==='mileage')return`Every ${km(r.everyKm)}`;
+  return`Every ${km(r.everyKm)} or ${r.everyMonths} months, whichever comes first`;
+}
+function leadText(r){const p=[];if(r.due&&r.lead!=null)p.push(r.lead===0?'on the day':`${(LEADS.find(l=>l[0]===r.lead)||[0,r.lead+' days'])[1]} before`);if(r.dueKm!=null)p.push(`${km(r.leadKm||1000)} before`);return p.join(' or ')}
+function markDone(r){
+  const a=asset(r.assetId);
+  S.completed.unshift({title:r.title,assetId:r.assetId,date:T0});
+  r.lastDone=T0;r.snooze=null;
+  const parts=[];
+  if(r.rule==='fixed'){r.done=true;return'This was a one-off reminder, so nothing new was scheduled.'}
+  if(r.rule==='repeat'||r.rule==='either'){
+    let base=r.repeatFrom==='due'?r.due:T0;let next=addMonths(base,r.everyMonths);
+    while(next<=T0)next=addMonths(next,r.everyMonths);
+    r.due=next;parts.push(fmt(next));
+  }
+  if(r.rule==='mileage'||r.rule==='either'){r.dueKm=a.veh.odo+r.everyKm;parts.unshift(km(r.dueKm))}
+  const why=r.repeatFrom==='due'?'counted from the previous due date':r.rule==='mileage'?`${km(r.everyKm)} from today's odometer`:'counted from today';
+  return`Next one: ${parts.join(' or ')}${r.rule==='either'?', whichever first':''} (${why}).`;
+}
+function notifyAt(r){if(!r.due)return null;return addDays(r.due,-(r.lead||0))}
+
+/* ---------- small renderers ---------- */
+function remRow(r){
+  const st=rStatus(r),a=asset(r.assetId);
+  const lab={over:'Overdue',soon:'Due soon',up:'Upcoming',done:'Done'}[st];
+  return`<button class="row rem ${st}" data-act="rem" data-id="${r.id}">
+    <span class="ric">${ic(a.cat)}</span>
+    <span class="body"><span class="t">${esc(r.title)}${r.estimated?'<span class="est">est.</span>':''}</span><span class="m">${esc(a.name)} · ${esc(dueText(r))}</span></span>
+    <span class="pill ${st}">${lab}</span></button>`;
+}
+function recRow(c){
+  const a=asset(c.assetId),v=vendor(c.vendor);
+  const meta=[fmt(c.date),KIND[c.kind]+(c.cat?' · '+c.cat:''),c.cost?rm(c.cost):'',c.odo?km(c.odo):'',v?v.name:''].filter(Boolean).join(' · ');
+  return`<div class="row"><span class="ric">${ic(c.kind==='defect'?'defect':c.kind==='payment'?'doc':'wrench')}</span><span class="body"><span class="t">${esc(c.title)}</span><span class="m">${esc(meta)}</span></span></div>`;
+}
+function docRow(f,showAsset=true){
+  const a=asset(f.assetId);let tag='';
+  if(f.expiry){const n=days(T0,f.expiry);tag=`<span class="pill ${n<0?'over':n<=30?'soon':'up'}">${n<0?'Expired':'Exp. '+fmtS(f.expiry)}</span>`}
+  return`<button class="row" data-act="doc" data-id="${f.id}"><span class="ric">${ic(f.file.startsWith('Photo')?'image':'doc')}</span><span class="body"><span class="t">${esc(f.title)}</span><span class="m">${esc(f.type)} · ${esc(f.file)}${showAsset?' · '+esc(a.name):''}</span></span>${tag}</button>`;
+}
+const top=(title,eyebrow='',right='')=>`<header class="top"><div>${eyebrow?`<p class="eyebrow">${eyebrow}</p>`:''}<h1>${title}</h1></div>${right}</header>`;
+const navtop=(title,sub='')=>`<div class="navtop"><button class="iconbtn" data-act="back" aria-label="Back">${ic('back')}</button><div style="min-width:0"><h1>${esc(title)}</h1>${sub?`<p class="sub">${sub}</p>`:''}</div></div>`;
+const blk=(title,count,inner)=>`<section class="blk"><h2 class="h2"><span>${title}</span>${count!=null?`<span class="c">${count}</span>`:''}</h2>${inner}</section>`;
+const listOr=(items,empty)=>items.length?`<div class="list">${items.join('')}</div>`:`<p class="none">${empty}</p>`;
+
+/* ---------- views ---------- */
+const V={};
+V.today=()=>{
+  const wd=T0.toLocaleDateString('en-GB',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+  if(!S.assets.length)return top('Today',wd)+`<div class="empty">
+    <div class="trio"><span>${ic('house')}</span><span>${ic('car')}</span><span>${ic('motorcycle')}</span></div>
+    <h2>Add your first asset</h2>
+    <p>A house, car or motorcycle. Kukira will show what's overdue and what's coming up, right here.</p>
+    <button class="btn" data-act="addAsset">${ic('plus')} Add your first asset</button>
+    <p class="fine">Works offline. Your records stay on this phone.</p></div>`;
+  const live=S.rem.filter(r=>!r.done);
+  const over=live.filter(r=>rStatus(r)==='over').sort((a,b)=>sortKey(a)-sortKey(b));
+  const soon=live.filter(r=>rStatus(r)==='soon').sort((a,b)=>sortKey(a)-sortKey(b));
+  const bn=[];
+  if(S.notif===false)bn.push(`<div class="banner warn">${ic('belloff')}<div class="bt"><b>Notifications are off.</b> Reminders appear only when you open the app.<br><button data-act="permAsk">Turn on notifications</button></div></div>`);
+  if(S.lastBackup&&days(S.lastBackup,T0)>30)bn.push(`<div class="banner info">${ic('backup')}<div class="bt">Last backup ${ago(S.lastBackup)}. If this phone is lost, records since then are gone.<br><button data-act="backupNow">Back up now</button></div></div>`);
+  if(!S.lastBackup&&S.rem.length)bn.push(`<div class="banner info">${ic('backup')}<div class="bt">You haven't made a backup yet.<br><button data-act="backupNow">Make a backup file</button></div></div>`);
+  const stale=S.assets.filter(a=>isVeh(a)&&days(a.veh.odoDate,T0)>30&&S.rem.some(r=>!r.done&&r.assetId===a.id&&r.dueKm!=null));
+  const staleRows=stale.map(a=>`<button class="row" data-act="odo" data-id="${a.id}"><span class="ric">${ic('gauge')}</span><span class="body"><span class="t">Update ${esc(a.name)} odometer</span><span class="m">Last updated ${ago(a.veh.odoDate)}. Mileage reminders use it.</span></span><span class="chev">${ic('chev')}</span></button>`);
+  const done=S.completed.filter(c=>days(c.date,T0)<=30).slice(0,4).map(c=>`<div class="row"><span class="ric">${ic('check')}</span><span class="body"><span class="t">${esc(c.title)}</span><span class="m">${esc(asset(c.assetId)?.name||'')} · done ${ago(c.date)}</span></span></div>`);
+  return top('Today',wd,`<span class="pill done" title="Last backup">${S.lastBackup?'Backup '+fmtS(S.lastBackup):'No backup'}</span>`)
+    +(bn.length?`<div class="banners">${bn.join('')}</div>`:'')
+    +blk('Overdue',over.length,listOr(over.map(remRow),'Nothing overdue.'))
+    +blk('Due soon · next 30 days',soon.length,listOr(soon.map(remRow).concat(staleRows),'Nothing due in the next 30 days.'))
+    +blk('Recently completed',null,listOr(done,'Nothing marked done in the last 30 days.'))
+    +`<div style="margin-top:12px"><button class="link" data-act="go" data-n="allrem">All reminders (${live.length}) ${ic('chev')}</button></div>`;
+};
+function assetsResults(){
+  const q=S.q.assets.trim().toLowerCase();
+  if(!q){
+    const cards=S.assets.map(a=>{
+      const nx=S.rem.filter(r=>!r.done&&r.assetId===a.id).sort((x,y)=>({over:0,soon:1,up:2}[rStatus(x)]-{over:0,soon:1,up:2}[rStatus(y)])||sortKey(x)-sortKey(y))[0];
+      const left=dlpLeft(a);
+      return`<button class="acard" data-act="go" data-n="asset" data-id="${a.id}">
+        <span class="ahead"><span class="aic">${ic(a.cat)}</span><span style="flex:1;min-width:0"><span class="aname">${esc(a.name)}</span><br><span class="sub">${isVeh(a)?`<span class="plate">${esc(a.veh.plate)}</span> `:''}${esc(assetSub(a))}</span></span><span class="chev" style="color:var(--faint)">${ic('chev')}</span></span>
+        ${nx?`<span class="anext"><span class="tx">Next: <b>${esc(nx.title)}</b><br>${esc(dueText(nx))}</span><span class="pill ${rStatus(nx)}">${{over:'Overdue',soon:'Due soon',up:'Upcoming'}[rStatus(nx)]}</span></span>`:`<span class="anext"><span class="tx">No reminders yet</span></span>`}
+        ${left!=null&&left>0?`<span class="anext"><span class="tx">${ic('defect')} DLP: <b>${left} days left</b> to report defects <span class="est">est.</span></span></span>`:''}
+      </button>`}).join('');
+    return`<div class="cards">${cards}<button class="dash" data-act="addAsset">${ic('plus')} Add asset</button></div>`;
+  }
+  const as=S.assets.filter(a=>(a.name+' '+(a.veh?.plate||'')+' '+assetSub(a)).toLowerCase().includes(q));
+  const rs=S.rec.filter(c=>(c.title+' '+c.cat+' '+(vendor(c.vendor)?.name||'')).toLowerCase().includes(q));
+  const rr=S.rem.filter(r=>!r.done&&r.title.toLowerCase().includes(q));
+  return blk('Assets',as.length,listOr(as.map(a=>`<button class="row" data-act="go" data-n="asset" data-id="${a.id}"><span class="ric">${ic(a.cat)}</span><span class="body"><span class="t">${esc(a.name)}</span><span class="m">${esc(assetSub(a))}</span></span></button>`),'No assets match.'))
+    +blk('Reminders',rr.length,listOr(rr.map(remRow),'No reminders match.'))
+    +blk('Records',rs.length,listOr(rs.map(recRow),'No records match.'));
+}
+V.assets=()=>top('Assets')+`<label class="search">${ic('search')}<input id="q-assets" data-q="assets" placeholder="Search assets, records, vendors" value="${esc(S.q.assets)}"></label><div id="results" style="margin-top:14px">${assetsResults()}</div>`;
+
+V.asset=v=>{
+  const a=asset(v.id);if(!a)return'';
+  const house=a.cat==='house',left=dlpLeft(a);
+  const tabs=[['overview','Overview'],['upkeep','Upkeep'],['reminders','Reminders'],['documents','Documents']];
+  if(house&&left!=null&&left>0)tabs.push(['defects','Defects']);
+  const sub=v.sub||'overview';
+  let body='';
+  if(sub==='overview'){
+    if(house){
+      const h=a.house,end=dlpEnd(a);
+      body+=`<dl class="facts"><dt>Type</dt><dd>${PTYPE[h.ptype]}</dd>${h.source?`<dt>Bought</dt><dd>${esc(h.source)}</dd>`:''}${h.vp?`<dt>Vacant possession</dt><dd>${fmt(h.vp)}</dd>`:''}${h.occupancy?`<dt>Occupancy</dt><dd>${esc(h.occupancy)}</dd>`:''}</dl>`;
+      if(end){const tot=days(h.vp,end),gone=Math.min(tot,days(h.vp,T0)),pct=Math.max(0,Math.min(100,gone/tot*100));
+        body+=left>0?`<div class="dlp"><span class="eyebrow" style="margin:0">Defect liability period</span><span class="big">${left}<small>days left to report defects</small></span><div class="bar ${left<90?'late':''}"><i style="width:${pct}%"></i></div><div class="ends"><span>VP ${fmtS(h.vp)}</span><span>Ends about ${fmt(end)}</span></div><div class="note warn">${ic('alert')}<span>Estimated: 24 months from vacant possession, as in the standard SPA for new homes. Confirm the date in your SPA.</span></div><button class="link" data-act="sub" data-sub="defects">Open defect list (${S.rec.filter(c=>c.assetId===a.id&&c.kind==='defect'&&c.status!=='done').length} open) ${ic('chev')}</button></div>`
+        :`<div class="note">${ic('info')}<span>The estimated DLP ended on ${fmt(end)}. The defect list is hidden but your records are kept.</span></div>`}
+      if(h.ptype==='strata')body+=`<div class="note">${ic('shield')}<span>For strata buildings, your management body (JMB or MC) insures the building. Check what your own contents cover needs.</span></div>`;
+      body+=`<details class="more"><summary>More details</summary><dl class="facts">${h.spa?`<dt>SPA date</dt><dd>${fmt(h.spa)}</dd>`:''}<dt>Title status</dt><dd>${esc(h.title||'Not set')}</dd><dt>Council</dt><dd>${esc(h.council||'Not set')}</dd><dt>State</dt><dd>${esc(h.state||'Not set')}</dd><dt>Contact</dt><dd>${esc(h.contact||'Not set')}</dd>${a.notes?`<dt>Notes</dt><dd>${esc(a.notes)}</dd>`:''}</dl></details>`;
+    }else{
+      const x=a.veh;
+      body+=`<div style="display:flex;justify-content:center;padding:6px 0"><span class="plate big">${esc(x.plate)}</span></div>
+      <div class="odo"><span class="aic">${ic('gauge')}</span><span class="body"><span class="v">${km(x.odo)}</span><br><span class="sub">Odometer · updated ${ago(x.odoDate)}</span></span><button class="btn ghost" data-act="odo" data-id="${a.id}">Update</button></div>
+      <dl class="facts" style="margin-top:12px">${x.make?`<dt>Vehicle</dt><dd>${esc(x.make)} ${esc(x.model)} · ${x.year}</dd>`:''}<dt>Road tax expiry</dt><dd>${x.roadTax?fmt(x.roadTax):'Not set'}</dd><dt>Insurance expiry</dt><dd>${x.insExp?fmt(x.insExp):'Not set'}${x.insurer?' · '+esc(x.insurer):''}</dd>${x.warranty?`<dt>Warranty</dt><dd>${esc(x.warranty)}</dd>`:''}</dl>
+      <details class="more"><summary>More details</summary><dl class="facts">${x.cc?`<dt>Engine</dt><dd>${x.cc} cc</dd>`:''}${x.cond?`<dt>Bought</dt><dd>${esc(x.cond)}</dd>`:''}${x.policy?`<dt>Policy no.</dt><dd>${esc(x.policy)}</dd>`:''}${x.chassis?`<dt>Chassis no.</dt><dd class="num">${esc(x.chassis)}</dd>`:''}${x.engine?`<dt>Engine no.</dt><dd class="num">${esc(x.engine)}</dd>`:''}</dl></details>`;
+    }
+    body=`<div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">${body}</div>`;
+  }
+  if(sub==='upkeep'){
+    const rs=S.rec.filter(c=>c.assetId===a.id&&c.kind!=='defect').sort((x,y)=>y.date-x.date);
+    const yr=rs.filter(c=>c.date.getFullYear()===2026).reduce((s,c)=>s+(c.cost||0),0);
+    body=`<div style="display:flex;flex-direction:column;gap:12px;margin-top:14px"><div class="stat"><span>Spent in 2026 so far</span><b>${rm(yr)}</b></div>${listOr(rs.map(recRow),'No records yet.')}<button class="dash" data-act="addRec" data-asset="${a.id}">${ic('plus')} Add record</button></div>`;
+  }
+  if(sub==='reminders'){
+    const rs=S.rem.filter(r=>r.assetId===a.id&&!r.done).sort((x,y)=>sortKey(x)-sortKey(y));
+    body=`<div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">${listOr(rs.map(remRow),'No reminders yet.')}<button class="dash" data-act="addRem" data-asset="${a.id}">${ic('plus')} Add reminder</button></div>`;
+  }
+  if(sub==='documents'){
+    const ds=S.docs.filter(f=>f.assetId===a.id);
+    body=`<div style="display:flex;flex-direction:column;gap:12px;margin-top:14px">${listOr(ds.map(f=>docRow(f,false)),'No documents yet.')}<button class="dash" data-act="addDoc" data-asset="${a.id}">${ic('plus')} Attach document</button></div>`;
+  }
+  if(sub==='defects'){
+    const ds=S.rec.filter(c=>c.assetId===a.id&&c.kind==='defect');
+    const grp=(st,lab)=>{const g=ds.filter(c=>c.status===st);return blk(lab,g.length,listOr(g.map(c=>`<button class="row" data-act="defect" data-id="${c.id}"><span class="ric">${ic('defect')}</span><span class="body"><span class="t">${esc(c.title)}</span><span class="m">${esc(c.area||'')} · found ${fmtS(c.date)} · ${c.reported?'reported '+fmtS(c.reported):'<b style="color:var(--soon)">not reported yet</b>'}</span></span><span class="chev">${ic('chev')}</span></button>`),'None.'))};
+    body=`<div class="dlp" style="margin-top:14px"><span class="big">${left}<small>days left · ends about ${fmt(dlpEnd(a))}</small></span><div class="note warn">${ic('alert')}<span>Estimated. Report defects to your developer in writing before the DLP ends, and keep a copy in Documents.</span></div></div>`
+      +grp('open','Open')+grp('in_progress','Developer working on it')+grp('done','Fixed')
+      +`<div style="margin-top:12px"><button class="dash" data-act="addRec" data-asset="${a.id}" data-kind="defect">${ic('plus')} Add defect</button></div>`;
+  }
+  return navtop(a.name,(isVeh(a)?`<span class="plate">${esc(a.veh.plate)}</span> `:'')+esc(assetSub(a)))
+    +`<nav class="seg">${tabs.map(([k,l])=>`<button data-act="sub" data-sub="${k}" aria-current="${k===sub}">${l}</button>`).join('')}</nav>`+body;
+};
+function docsResults(){
+  const q=S.q.docs.trim().toLowerCase();
+  const ds=S.docs.filter(f=>(S.docFilter==='All'||f.type===S.docFilter)&&(!q||(f.title+' '+f.type+' '+asset(f.assetId).name).toLowerCase().includes(q)));
+  if(!ds.length)return`<p class="none">No documents match.</p>`;
+  return S.assets.map(a=>{const g=ds.filter(f=>f.assetId===a.id);return g.length?blk(esc(a.name),g.length,`<div class="list">${g.map(f=>docRow(f,false)).join('')}</div>`):''}).join('');
+}
+V.docs=()=>top('Documents','',`<button class="btn ghost" data-act="addDoc" style="padding:8px 12px">${ic('plus')} Attach</button>`)
+  +`<label class="search">${ic('search')}<input id="q-docs" data-q="docs" placeholder="Search documents" value="${esc(S.q.docs)}"></label>
+  <div class="scroller" style="margin-top:10px">${['All',...DOCTYPES].map(t=>`<button class="chip" data-act="docFilter" data-v="${t}" aria-pressed="${S.docFilter===t}">${t}</button>`).join('')}</div>
+  <div id="results">${docsResults()}</div>
+  <p class="fine" style="margin-top:16px">Files are stored encrypted inside Kukira. They open in your phone's own viewer.</p>`;
+
+const moreRow=(n,icon,t,m)=>`<button class="row" data-act="go" data-n="${n}"><span class="ric">${ic(icon)}</span><span class="body"><span class="t">${t}</span><span class="m">${m}</span></span><span class="chev">${ic('chev')}</span></button>`;
+V.more=()=>top('More')+`<div style="display:flex;flex-direction:column;gap:14px">
+  <div class="list">${moreRow('backup','backup','Backup and restore',S.lastBackup?'Last backup '+ago(S.lastBackup):'No backup yet')}${moreRow('security','lock','App lock',S.lock?(S.bio?'PIN and fingerprint':'PIN'):'Off')}${moreRow('health','pulse','Reminder health check',S.notif?'Notifications allowed':'Notifications off')}</div>
+  <div class="list">${moreRow('allrem','list','All reminders',S.rem.filter(r=>!r.done).length+' active')}${moreRow('vendors','user','Vendor book',S.vendors.length+' contacts')}</div>
+  <div class="list">${moreRow('about','info','Privacy and about','No account. No internet. No tracking.')}</div></div>`;
+
+V.backup=()=>navtop('Backup and restore')+`<div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
+  <div class="dlp"><span class="eyebrow" style="margin:0">Last backup</span><span class="big" style="font-size:24px">${S.lastBackup?fmt(S.lastBackup):'Never'}<small>${S.lastBackup?ago(S.lastBackup):''}</small></span>
+  <p class="sub">Your records live only on this phone. A backup file is the only way to move them to a new phone or get them back after a reset.</p></div>
+  <button class="btn block" data-act="backupNow">${ic('backup')} Create backup file</button>
+  <button class="btn ghost block" data-act="restore">${ic('restore')} Restore from backup file</button>
+  <div class="note warn">${ic('key')}<span>The backup is locked with a passphrase you choose. If you forget it, nobody can open the file, including us.</span></div>
+  <div class="note">${ic('phone')}<span>Your phone's automatic backup does not include Kukira data. If you lose the phone or uninstall without a backup file, your records are gone.</span></div>
+  <div class="note">${ic('bell')}<span>Kukira reminds you to back up every 30 days.</span></div></div>`;
+
+V.security=()=>navtop('App lock')+`<div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
+  <div class="list"><div class="row"><span class="body"><span class="t">Lock with PIN</span><span class="m">Asked each time you open Kukira</span></span><button class="toggle" role="switch" aria-checked="${S.lock}" aria-label="Lock with PIN" data-act="lockToggle"></button></div>
+  <div class="row" style="${S.lock?'':'opacity:.5'}"><span class="body"><span class="t">Unlock with fingerprint</span><span class="m">Uses your phone's fingerprint or face unlock</span></span><button class="toggle" role="switch" aria-checked="${S.bio}" aria-label="Unlock with fingerprint" data-act="bioToggle" ${S.lock?'':'disabled'}></button></div></div>
+  <div class="note">${ic('shield')}<span>The lock protects the key that opens your records, so the data stays encrypted until you unlock. It is separate from your backup passphrase.</span></div>
+  ${S.lock?`<button class="btn ghost" data-act="lockNow">${ic('lock')} Lock now (see the lock screen)</button>`:''}</div>`;
+
+V.health=()=>{
+  const live=S.rem.filter(r=>!r.done&&r.due&&notifyAt(r)>=T0).sort((a,b)=>notifyAt(a)-notifyAt(b));
+  const nx=live[0];
+  return navtop('Reminder health check')+`<div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
+  <div class="list">
+   <div class="row"><span class="ric">${ic(S.notif?'bell':'belloff')}</span><span class="body"><span class="t">Notification permission</span><span class="m">${S.notif?'Allowed':S.notif===null?'Not asked yet':'Not allowed. Reminders only show inside the app.'}</span></span>${S.notif?'<span class="pill done">OK</span>':'<button class="btn ghost" data-act="permAsk" style="padding:6px 10px">Allow</button>'}</div>
+   <div class="row"><span class="ric">${ic('battery')}</span><span class="body"><span class="t">Battery optimisation</span><span class="m">Some phones stop reminders when the app is closed. Set Kukira to "Unrestricted".</span></span><button class="btn ghost" data-act="toast" data-t="Opens your phone's battery settings for Kukira" style="padding:6px 10px">Open</button></div>
+   <div class="row"><span class="ric">${ic('today')}</span><span class="body"><span class="t">Schedule last rebuilt</span><span class="m">${S.rebuild} · ${Math.min(50,S.rem.filter(r=>!r.done).length*2)} notifications queued (up to 50)</span></span></div>
+   ${nx?`<div class="row"><span class="ric">${ic('chev')}</span><span class="body"><span class="t">Next notification</span><span class="m">${esc(nx.title)} · ${fmt(notifyAt(nx))}, 9:00 am</span></span></div>`:''}
+  </div>
+  <button class="btn block" data-act="testNotif">${ic('send')} Send a test reminder</button>
+  <div class="note">${ic('info')}<span>Phones can delay or drop notifications. The Today screen always shows what's overdue and due soon, so open it now and then.</span></div></div>`;
+};
+V.allrem=()=>{
+  const f=S.remFilter;
+  const rs=S.rem.filter(r=>!r.done&&(f==='all'||asset(r.assetId).cat===f)).sort((a,b)=>sortKey(a)-sortKey(b));
+  return navtop('All reminders')+`<div class="chips" style="margin:4px 0 12px">${[['all','All'],['house','House'],['car','Car'],['motorcycle','Motorcycle']].map(([k,l])=>`<button class="chip" data-act="remFilter" data-v="${k}" aria-pressed="${f===k}">${l}</button>`).join('')}</div>${listOr(rs.map(remRow),'No reminders.')}<div style="margin-top:12px"><button class="dash" data-act="addRem">${ic('plus')} Add reminder</button></div>`;
+};
+V.vendors=()=>navtop('Vendor book')+`<div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">${listOr(S.vendors.map(v=>{const n=S.rec.filter(c=>c.vendor===v.id).length;return`<div class="row"><span class="ric">${ic('user')}</span><span class="body"><span class="t">${esc(v.name)}</span><span class="m">${esc(v.trade)} · <span class="num" style="user-select:all">${esc(v.phone)}</span>${n?` · ${n} job${n>1?'s':''}`:''}</span>${v.note?`<span class="m">${esc(v.note)}</span>`:''}</span></div>`}),'No vendors yet.')}<button class="dash" data-act="toast" data-t="Adding vendors comes in the real build. You can also add one from a record.">${ic('plus')} Add vendor</button></div>`;
+V.about=()=>navtop('Privacy and about')+`<div style="display:flex;flex-direction:column;gap:12px;margin-top:6px">
+  <div class="list">
+   <div class="row"><span class="ric">${ic('user')}</span><span class="body"><span class="t">No account</span><span class="m">You never sign up or log in.</span></span></div>
+   <div class="row"><span class="ric">${ic('noweb')}</span><span class="body"><span class="t">No internet needed</span><span class="m">Kukira does not ask for network access. Nothing is uploaded.</span></span></div>
+   <div class="row"><span class="ric">${ic('shield')}</span><span class="body"><span class="t">Encrypted on your phone</span><span class="m">Records and files are encrypted. Backups go only where you send them.</span></span></div>
+   <div class="row"><span class="ric">${ic('info')}</span><span class="body"><span class="t">No ads or analytics</span><span class="m">Nobody sees how you use the app.</span></span></div>
+  </div>
+  <div class="note warn">${ic('alert')}<span>Tax, title and DLP dates in Kukira are estimates to help you plan. They are not legal advice. Confirm with your agreement, land office or council.</span></div>
+  <p class="fine">Kukira Asset · prototype 0.1</p></div>`;
+
+/* ---------- sheets ---------- */
+const SH={};
+const shead=(t,step='')=>`<div class="grab"></div><div class="shead"><div style="min-width:0">${step?`<div class="steps">${step}</div>`:''}<h2>${t}</h2></div><button class="iconbtn" data-act="close" aria-label="Close">${ic('x')}</button></div>`;
+const chipSet=(k,opts,cur)=>`<div class="chips">${opts.map(o=>{const[v,l]=Array.isArray(o)?o:[o,o];return`<button class="chip" data-act="set" data-k="${k}" data-v="${esc(v)}" aria-pressed="${String(cur)===String(v)}">${esc(l)}</button>`}).join('')}</div>`;
+const assetSelect=(cur,filter=()=>true)=>`<div class="field"><label for="f-asset">Asset</label><select class="inp" id="f-asset" data-f="assetId" data-rr="1">${S.assets.filter(filter).map(a=>`<option value="${a.id}" ${a.id===cur?'selected':''}>${esc(a.name)}</option>`).join('')}</select></div>`;
+
+SH.add=()=>{
+  const has=S.assets.length>0;
+  const o=(act,icon,t,m,dis)=>`<button class="optrow" data-act="${act}" ${dis?'disabled style="opacity:.45"':''}><span class="ric">${ic(icon)}</span><span class="body"><span class="t">${t}</span><span class="m">${m}</span></span></button>`;
+  return shead('Add')+`<div class="opt">${o('addAsset','house','Asset','House, car or motorcycle')}${o('addRec','wrench','Record','Maintenance, repair, renovation, defect, payment',!has)}${o('addRem','bell','Reminder','A date, a repeat or a mileage',!has)}${o('addDoc','doc','Document','Photo or PDF, like an SPA, geran or receipt',!has)}</div>${has?'':'<p class="fine">Add an asset first. Everything else hangs off it.</p>'}`;
+};
+
+function suggestions(cat,ptype){
+  if(cat==='house'){
+    const taks={key:'taks',title:'Cukai taksiran',hint:'Est. Jan–Jun half due by end Feb. Confirm with your council.',def:D(2027,2,28),rule:'repeat',everyMonths:6,repeatFrom:'due',est:true,confirm:'your council',cat:'Cukai taksiran'};
+    const tanah={key:'tanah',title:ptype==='strata'?'Cukai petak':'Cukai tanah',hint:ptype==='strata'?'Est. 31 May. Until strata title is issued, your management office pays it.':'Est. 31 May. Varies by state. Confirm with your land office.',def:D(2027,5,31),rule:'repeat',everyMonths:12,repeatFrom:'due',est:true,confirm:'your land office',cat:ptype==='strata'?'Cukai petak':'Cukai tanah'};
+    const ins={key:'ins',title:'House insurance renewal',hint:'You insure your own building. Pick the expiry date.',def:null,rule:'fixed',cat:'Insurance premium'};
+    const mc={key:'mc',title:'Maintenance charge and sinking fund',hint:'Monthly. Pick the next due date.',def:D(2026,11,1),rule:'repeat',everyMonths:1,repeatFrom:'due',cat:'Maintenance charge'};
+    if(ptype==='strata')return[mc,taks,tanah];
+    if(ptype==='strata_landed')return[mc,ins,taks];
+    return[tanah,taks,ins];
+  }
+  return[
+    {key:'rt',title:'Road tax renewal',hint:'Pick the expiry date on your road tax.',def:null,rule:'fixed',cat:'Road tax',lead:14},
+    {key:'in',title:'Insurance expires',hint:'Pick the expiry date on your policy.',def:null,rule:'fixed',cat:'Insurance premium',lead:30},
+    {key:'sv',title:cat==='car'?'Next service':'Next oil change',hint:cat==='car'?'Repeats every 6 months. Add mileage later.':'Repeats every 3 months. Add mileage later.',def:null,rule:'repeat',everyMonths:cat==='car'?6:3,cat:'Oil'},
+  ];
+}
+SH.asset=s=>{
+  if(s.step===1)return shead('What are you adding?','Step 1 of 2')+`<div class="tiles">${[['house','House'],['car','Car'],['motorcycle','Motorcycle']].map(([k,l])=>`<button class="tile" data-act="assetCat" data-v="${k}">${ic(k)}${l}</button>`).join('')}</div><p class="fine">You can add more details later. Only a name is needed now.</p>`;
+  if(s.step===2){
+    const house=s.cat==='house';
+    return shead(house?'Name your house':s.cat==='car'?'Name your car':'Name your motorcycle','Step 2 of 2')+
+    `<div class="field"><label for="f-name">Nickname</label><input class="inp ${s.err==='name'?'err':''}" id="f-name" data-f="name" value="${esc(s.name)}" placeholder="${house?'e.g. Bangi house':s.cat==='car'?'e.g. Axia':'e.g. Ex5'}" autocomplete="off">${s.err==='name'?'<span class="errtx">Give it a name you will recognise.</span>':''}</div>`+
+    (house?`<div class="field"><span class="flabel">Property type</span><div class="opt">${[['landed','Landed','Terrace, semi-D, bungalow with its own title'],['strata','Strata','Condo or apartment with a JMB or MC'],['strata_landed','Strata landed','Gated landed homes with strata title']].map(([k,t,m])=>`<button class="optrow" data-act="set" data-k="ptype" data-v="${k}" aria-pressed="${s.ptype===k}"><span class="box">${ic('check')}</span><span class="body"><span class="t">${t}</span><span class="m">${m}</span></span></button>`).join('')}</div><span class="fine">This decides which tax and insurance reminders we suggest.</span></div>`
+    :`<div class="field"><label for="f-plate">Plate number</label><input class="inp num ${s.err==='plate'?'err':''}" id="f-plate" data-f="plate" value="${esc(s.plate)}" placeholder="e.g. VKE 2231" style="text-transform:uppercase" autocomplete="off">${s.err==='plate'?'<span class="errtx">Add the plate number so you can tell vehicles apart.</span>':''}</div>`)+
+    `<div class="actions h"><button class="btn ghost" data-act="assetBack">Back</button><button class="btn" data-act="assetSave">Done</button></div>`;
+  }
+  if(s.step===3){
+    const sug=suggestions(s.cat,s.ptype);
+    return shead('Suggested reminders','Optional')+`<p class="sub">Tick the ones you want. Each needs only a date.</p><div class="opt">${sug.map(g=>{const p=s.picks[g.key];return`<div style="display:flex;flex-direction:column;gap:6px"><button class="optrow" data-act="pick" data-k="${g.key}" aria-pressed="${!!p}"><span class="box">${ic('check')}</span><span class="body"><span class="t">${esc(g.title)}${g.est?'<span class="est">est.</span>':''}</span><span class="m">${esc(g.hint)}</span></span></button>${p?`<input type="date" class="inp" id="pick-${g.key}" data-pick="${g.key}" value="${p.date}" aria-label="${esc(g.title)} date">`:''}</div>`}).join('')}</div>`
+    +(s.cat==='house'&&s.ptype==='strata'?`<div class="note">${ic('shield')}<span>Your JMB or MC insures a strata building, so no building insurance reminder is suggested.</span></div>`:'')
+    +(s.err?`<span class="errtx">${s.err}</span>`:'')
+    +`<div class="actions h"><button class="btn ghost" data-act="assetSkip">Skip</button><button class="btn" data-act="assetPicks">Save ${Object.keys(s.picks).length||''} reminder${Object.keys(s.picks).length===1?'':'s'}</button></div>`;
+  }
+  if(s.step===4){
+    return`<div class="grab"></div><div class="big-ok"><span class="ring">${ic('check')}</span><h2>${esc(s.name)} is set up</h2><p>Added in ${s.elapsed}. A few things keep your records safe:</p></div>
+    <div class="list">
+      <div class="row"><span class="ric">${ic(S.notif?'bell':'belloff')}</span><span class="body"><span class="t">Notifications</span><span class="m">${S.notif?'Allowed':'Get a nudge before things are due'}</span></span>${S.notif?'<span class="pill done">On</span>':'<button class="btn ghost" data-act="permAsk" style="padding:6px 10px">Allow</button>'}</div>
+      <div class="row"><span class="ric">${ic('lock')}</span><span class="body"><span class="t">App lock</span><span class="m">${S.lock?'On':'PIN or fingerprint'}</span></span>${S.lock?'<span class="pill done">On</span>':'<button class="btn ghost" data-act="lockToggle" style="padding:6px 10px">Set up</button>'}</div>
+      <div class="row"><span class="ric">${ic('backup')}</span><span class="body"><span class="t">Backup file</span><span class="m">Your data is only on this phone</span></span><button class="btn ghost" data-act="backupNow" style="padding:6px 10px">Back up</button></div>
+    </div><button class="btn block" data-act="close">Go to Today</button>`;
+  }
+};
+
+const TPL={
+  house:[{t:'Aircond service',cat:'Aircond',rule:'repeat',everyMonths:6},{t:'Pest control',cat:'Pest control',rule:'repeat',everyMonths:3},{t:'Water tank cleaning',cat:'Plumbing',rule:'repeat',everyMonths:12},{t:'Cukai tanah',cat:'Cukai tanah',rule:'repeat',everyMonths:12,repeatFrom:'due',due:D(2027,5,31),est:true,confirm:'your land office',note:'31 May is a common deadline. It varies by state and year.'},{t:'Cukai taksiran',cat:'Cukai taksiran',rule:'repeat',everyMonths:6,repeatFrom:'due',due:D(2027,2,28),est:true,confirm:'your council',note:'Two halves a year. Payable in January and July; in arrears after end February and end August.'},{t:'House insurance renewal',cat:'Insurance premium',rule:'fixed'}],
+  car:[{t:'Service',cat:'Oil',rule:'either',everyMonths:6,everyKm:10000},{t:'Road tax renewal',cat:'Road tax',rule:'fixed'},{t:'Insurance expires',cat:'Insurance premium',rule:'fixed'},{t:'Tyre change',cat:'Tyre',rule:'mileage',everyKm:40000},{t:'Battery check',cat:'Battery',rule:'repeat',everyMonths:12}],
+  motorcycle:[{t:'Oil change',cat:'Oil',rule:'either',everyMonths:3,everyKm:3000},{t:'Chain and sprocket',cat:'Chain/sprocket',rule:'mileage',everyKm:3000},{t:'Road tax renewal',cat:'Road tax',rule:'fixed'},{t:'Insurance expires',cat:'Insurance premium',rule:'fixed'}],
+};
+SH.remform=s=>{
+  const a=asset(s.assetId),veh=isVeh(a);
+  const rules=[['fixed','One date'],['repeat','Repeats']].concat(veh?[['mileage','Mileage'],['either','Whichever first']]:[]);
+  const needDate=s.rule!=='mileage',needKm=s.rule==='mileage'||s.rule==='either';
+  return shead(s.editId?'Edit reminder':'New reminder')+
+  (s.editId?'':assetSelect(s.assetId))+
+  (s.editId?'':`<div class="field"><span class="flabel">Start from a template</span><div class="scroller">${TPL[a.cat].map((t,i)=>`<button class="chip" data-act="tpl" data-i="${i}" aria-pressed="${s.tpl===i}">${esc(t.t)}</button>`).join('')}</div></div>`)+
+  `<div class="field"><label for="f-title">Title</label><input class="inp ${s.err==='title'?'err':''}" id="f-title" data-f="title" value="${esc(s.title)}" placeholder="What needs doing?">${s.err==='title'?'<span class="errtx">Add a short title.</span>':''}</div>
+  <div class="field"><span class="flabel">When</span>${chipSet('rule',rules,s.rule)}</div>
+  ${needDate?`<div class="field"><label for="f-due">${s.rule==='either'?'Or by date':'Due date'}</label><input type="date" class="inp ${s.err==='due'?'err':''}" id="f-due" data-f="due" value="${s.due||''}">${s.err==='due'?'<span class="errtx">Pick a date.</span>':''}</div>`:''}
+  ${s.rule==='repeat'||s.rule==='either'?`<div class="field"><span class="flabel">Every</span>${chipSet('everyMonths',[[1,'Month'],[3,'3 months'],[6,'6 months'],[12,'Year']],s.everyMonths)}${s.repeatFrom==='due'?'':'<span class="fine">The next one is counted from the day you mark it done.</span>'}</div>`:''}
+  ${needKm?`<div class="two"><div class="field"><label for="f-dueKm">Due at (km)</label><input type="number" class="inp num" id="f-dueKm" data-f="dueKm" value="${s.dueKm||''}" placeholder="${a.veh.odo+5000}"></div><div class="field"><label for="f-everyKm">Then every (km)</label><input type="number" class="inp num" id="f-everyKm" data-f="everyKm" value="${s.everyKm||''}"></div></div><span class="fine">Odometer now: ${km(a.veh.odo)}, updated ${ago(a.veh.odoDate)}.</span>`:''}
+  ${needDate?`<div class="field"><span class="flabel">Remind me</span>${chipSet('lead',LEADS.map(([v,l])=>[v,v?l+' before':l]),s.lead)}</div>`:''}
+  ${s.est?`<div class="note warn">${ic('alert')}<span><b>Estimated date.</b> ${esc(s.note||'')} Confirm with ${esc(s.confirm||'the authority')}.</span></div>`:''}
+  <div class="actions h">${s.editId?'<button class="btn ghost" data-act="close">Cancel</button>':''}<button class="btn" data-act="remSave">${s.editId?'Save changes':'Save reminder'}</button></div>`;
+};
+
+SH.rem=s=>{
+  const r=S.rem.find(x=>x.id===s.id),a=asset(r.assetId),st=rStatus(r);
+  const nt=notifyAt(r);
+  return shead(esc(r.title))+`<p class="sub">${ic(a.cat)} ${esc(a.name)}</p>
+  <div class="list"><div class="row"><span class="body"><span class="m">Status</span><span class="t">${esc(dueText(r))}</span></span><span class="pill ${st}">${{over:'Overdue',soon:'Due soon',up:'Upcoming'}[st]}</span></div>
+  <div class="row"><span class="body"><span class="m">Rule</span><span class="t">${ruleText(r)}</span></span></div>
+  <div class="row"><span class="body"><span class="m">Notification</span><span class="t">${leadText(r)||'None'}${nt&&nt>=T0?` · ${fmtS(nt)}, 9:00 am`:''}</span></span></div>
+  ${r.lastDone?`<div class="row"><span class="body"><span class="m">Last done</span><span class="t">${fmt(r.lastDone)}</span></span></div>`:''}</div>
+  ${r.estimated?`<div class="note warn">${ic('alert')}<span><b>Estimated.</b> ${esc(r.note||'')} Confirm with ${esc(r.confirm||'the authority')}.</span></div>`:''}
+  <button class="btn block" data-act="done" data-id="${r.id}">${ic('check')} Mark done</button>
+  <div class="field"><span class="flabel">Snooze</span><div class="chips">${[[1,'1 day'],[3,'3 days'],[7,'1 week']].map(([d,l])=>`<button class="chip" data-act="snooze" data-id="${r.id}" data-d="${d}">${l}</button>`).join('')}</div></div>
+  <button class="btn ghost block" data-act="editRem" data-id="${r.id}">Edit reminder</button>`;
+};
+SH.doneok=s=>`<div class="grab"></div><div class="big-ok"><span class="ring">${ic('check')}</span><h2>Marked done</h2><p>${esc(s.msg)}</p>${s.nt?`<p class="fine">Old notification cancelled. New one set for ${s.nt}, 9:00 am.</p>`:''}</div>
+  <div class="actions"><button class="btn" data-act="addRec" data-asset="${s.assetId}" data-link="${s.id}">Add cost and details</button><button class="btn ghost" data-act="close">Not now</button></div>`;
+
+SH.rec=s=>{
+  const a=asset(s.assetId),veh=isVeh(a),C=CATS[a.cat];
+  const kinds=Object.keys(C);
+  const match=s.linkFixed?S.rem.find(r=>r.id===s.linkFixed):S.rem.find(r=>!r.done&&r.assetId===a.id&&r.cat===s.cat&&rStatus(r)!=='up');
+  const vs=S.vendors;
+  return shead(s.kind==='defect'?'New defect':'New record')+assetSelect(s.assetId)+
+  `<div class="field"><span class="flabel">Kind</span>${chipSet('kind',kinds.map(k=>[k,KIND[k]]),s.kind)}</div>
+  <div class="field"><span class="flabel">Category</span>${chipSet('cat',C[s.kind],s.cat)}</div>
+  <div class="field"><label for="f-rtitle">What was done${s.kind==='defect'?' or found':''}</label><input class="inp ${s.err==='title'?'err':''}" id="f-rtitle" data-f="title" value="${esc(s.title)}" placeholder="${s.kind==='defect'?'e.g. Crack above bedroom window':'e.g. Replaced kitchen tap'}">${s.err==='title'?'<span class="errtx">Add a short description.</span>':''}</div>
+  <div class="two"><div class="field"><label for="f-rdate">Date</label><input type="date" class="inp" id="f-rdate" data-f="date" value="${s.date}"></div>${s.kind==='defect'?`<div class="field"><label for="f-area">Area</label><input class="inp" id="f-area" data-f="area" value="${esc(s.area||'')}" placeholder="e.g. Kitchen"></div>`:`<div class="field"><label for="f-cost">Total cost (RM)</label><input type="number" inputmode="decimal" class="inp num" id="f-cost" data-f="cost" value="${esc(s.cost||'')}" placeholder="0.00"></div>`}</div>
+  ${s.kind!=='defect'?(s.items?`<div class="lines"><span class="flabel">Items</span>${[0,1,2].map(i=>`<div class="two"><input class="inp" id="f-it${i}" placeholder="${['Labour','Parts','Other'][i]}" aria-label="Item ${i+1}"><input class="inp num" id="f-ic${i}" type="number" placeholder="RM" aria-label="Item ${i+1} cost"></div>`).join('')}</div>`:`<button class="link" data-act="toggle" data-k="items">${ic('plus')} Split cost into items</button>`):''}
+  ${s.kind==='defect'?`<label class="check"><input type="checkbox" id="f-reported" data-f="reported" ${s.reported?'checked':''}> Already reported to the developer</label>`:''}
+  ${s.kind==='incident'?`<label class="check"><input type="checkbox" id="f-claim" data-f="claim" ${s.claim?'checked':''}> I made an insurance claim</label>`:''}
+  <details class="more" ${s.open?'open':''}><summary data-act="toggleOpen">More details</summary><div style="display:flex;flex-direction:column;gap:10px;padding-top:12px">
+   ${s.kind!=='defect'?`<div class="field"><label for="f-vendor">${veh?'Workshop':'Vendor'}</label><select class="inp" id="f-vendor" data-f="vendor"><option value="">None</option>${vs.map(v=>`<option value="${v.id}" ${s.vendor===v.id?'selected':''}>${esc(v.name)} · ${esc(v.trade)}</option>`).join('')}</select></div>`:''}
+   ${veh?`<div class="field"><label for="f-rodo">Odometer (km)</label><input type="number" class="inp num" id="f-rodo" data-f="odo" value="${esc(s.odo||'')}" placeholder="${a.veh.odo}"></div>`:(s.kind!=='defect'?`<div class="field"><label for="f-area2">Area</label><input class="inp" id="f-area2" data-f="area" value="${esc(s.area||'')}" placeholder="e.g. Master bedroom"></div>`:'')}
+   ${s.kind!=='defect'&&s.kind!=='payment'?`<div class="field"><label for="f-warr">Warranty ends</label><input type="date" class="inp" id="f-warr" data-f="warranty" value="${s.warranty||''}"><span class="fine">We'll remind you a month before it ends.</span></div>`:''}
+   <div class="field"><label for="f-notes">Notes</label><textarea class="inp" id="f-notes" data-f="notes" rows="2">${esc(s.notes||'')}</textarea></div>
+   <div class="tiles"><button class="tile" data-act="toast" data-t="Opens the camera">${ic('camera')}Photo</button><button class="tile" data-act="toast" data-t="Opens your gallery">${ic('image')}Gallery</button><button class="tile" data-act="toast" data-t="Opens your files">${ic('folder')}File</button></div>
+  </div></details>
+  ${match&&s.kind!=='defect'?`<button class="optrow" data-act="toggle" data-k="markDone" aria-pressed="${!!s.markDone}"><span class="box">${ic('check')}</span><span class="body"><span class="t">${s.linkFixed?'Linked to':'This looks like'} “${esc(match.title)}”</span><span class="m">${s.linkFixed?'Already marked done. This record is saved against it.':'Mark it done and schedule the next one'}</span></span></button>`:''}
+  <button class="btn block" data-act="recSave" data-match="${match?match.id:''}">Save ${s.kind==='defect'?'defect':'record'}</button>`;
+};
+
+SH.doc=s=>{
+  if(s.step===1)return shead('Attach a document','Step 1 of 2')+`<div class="tiles">${[['camera','Camera'],['image','Photos'],['folder','Files']].map(([i,l])=>`<button class="tile" data-act="docSrc" data-v="${l}">${ic(i)}${l}</button>`).join('')}</div><p class="fine">The file is copied into Kukira and encrypted. The original stays where it was.</p>`;
+  return shead('About this document','Step 2 of 2')+`<div class="note">${ic(s.src==='Files'?'doc':'image')}<span>${s.src==='Files'?'insurance-renewal.pdf · 3 pages':'Photo from '+s.src.toLowerCase()} (sample)</span></div>`+assetSelect(s.assetId)+
+  `<div class="field"><label for="f-dtitle">Title</label><input class="inp ${s.err==='title'?'err':''}" id="f-dtitle" data-f="title" value="${esc(s.title)}" placeholder="e.g. House insurance 2027">${s.err==='title'?'<span class="errtx">Add a title so you can find it later.</span>':''}</div>
+  <div class="field"><span class="flabel">Type</span>${chipSet('dtype',DOCTYPES,s.dtype)}</div>
+  <div class="field"><label for="f-exp">Expiry date (optional)</label><input type="date" class="inp" id="f-exp" data-f="expiry" data-rr="1" value="${s.expiry||''}"></div>
+  ${s.expiry?`<label class="check"><input type="checkbox" id="f-expRem" data-f="expRem" ${s.expRem!==false?'checked':''}> Remind me 1 month before it expires</label>`:''}
+  <div class="actions h"><button class="btn ghost" data-act="docBack">Back</button><button class="btn" data-act="docSave">Save document</button></div>`;
+};
+SH.docview=s=>{const f=S.docs.find(x=>x.id===s.id);return shead(esc(f.title))+`<div class="preview">${ic(f.file.startsWith('Photo')?'image':'doc')}</div>
+  <dl class="facts"><dt>Type</dt><dd>${esc(f.type)}</dd><dt>Asset</dt><dd>${esc(asset(f.assetId).name)}</dd><dt>File</dt><dd>${esc(f.file)}</dd><dt>Added</dt><dd>${fmt(f.added)}</dd>${f.expiry?`<dt>Expires</dt><dd>${fmt(f.expiry)}</dd>`:''}</dl>
+  <div class="actions h"><button class="btn" data-act="toast" data-t="Opens in your phone's ${f.file.startsWith('Photo')?'photo':'PDF'} viewer">Open</button><button class="btn ghost" data-act="toast" data-t="Opens your phone's share sheet. You choose where it goes.">Share a copy</button></div>`};
+
+SH.odo=s=>{const a=asset(s.id);return shead(`${esc(a.name)} odometer`)+`<p class="sub">Last: ${km(a.veh.odo)}, ${ago(a.veh.odoDate)}</p>
+  <div class="field"><label for="f-odo">Current reading (km)</label><input type="number" class="inp num ${s.err?'err':''}" id="f-odo" data-f="km" value="${esc(s.km)}" style="font-size:22px">${s.err?`<span class="errtx">${s.err}</span>`:''}</div>
+  <button class="btn block" data-act="odoSave">Save reading</button><p class="fine">Mileage reminders are checked when you save.</p>`};
+
+SH.defect=s=>{const c=S.rec.find(x=>x.id===s.id);return shead(esc(c.title))+`<dl class="facts"><dt>Area</dt><dd>${esc(c.area||'Not set')}</dd><dt>Found</dt><dd>${fmt(c.date)}</dd><dt>Reported</dt><dd>${c.reported?fmt(c.reported):'Not yet'}</dd></dl>
+  <div class="field"><span class="flabel">Status</span><div class="chips">${[['open','Open'],['in_progress','Developer working on it'],['done','Fixed']].map(([k,l])=>`<button class="chip" data-act="defStatus" data-id="${c.id}" data-v="${k}" aria-pressed="${c.status===k}">${l}</button>`).join('')}</div></div>
+  ${c.reported?'':`<button class="btn block" data-act="defReport" data-id="${c.id}">Mark reported to developer today</button>`}
+  <div class="tiles"><button class="tile" data-act="toast" data-t="Opens the camera">${ic('camera')}Photo</button><button class="tile" data-act="toast" data-t="Opens your gallery">${ic('image')}Gallery</button><button class="tile" data-act="toast" data-t="Attach your complaint letter as a document">${ic('doc')}Letter</button></div>`};
+
+SH.backup=s=>{
+  if(s.step===1){const ok=s.p1&&s.p1.length>=8&&s.p1===s.p2&&s.ack;return shead('Create backup file','Step 1 of 2')+`<p class="sub">Choose a passphrase to lock the file. It is separate from your app PIN.</p>
+  <div class="field"><label for="f-p1">Passphrase</label><input type="password" class="inp" id="f-p1" data-f="p1" data-rr="1" value="${esc(s.p1||'')}" autocomplete="new-password"><span class="fine">At least 8 characters. A short sentence is easy to remember.</span></div>
+  <div class="field"><label for="f-p2">Type it again</label><input type="password" class="inp ${s.p2&&s.p1!==s.p2?'err':''}" id="f-p2" data-f="p2" data-rr="1" value="${esc(s.p2||'')}" autocomplete="new-password">${s.p2&&s.p1!==s.p2?'<span class="errtx">The two passphrases are different.</span>':''}</div>
+  <label class="check"><input type="checkbox" id="f-ack" data-f="ack" data-rr="1" ${s.ack?'checked':''}> I understand that if I forget this passphrase, the backup cannot be opened by anyone.</label>
+  <button class="btn block" data-act="backupGo" ${ok?'':'disabled'}>Create file</button>`}
+  return shead('Save your backup','Step 2 of 2')+`<div class="note">${ic('shield')}<span><b>kukira-backup-2026-10-20.kukira</b><br>${S.assets.length} assets, ${S.rec.length} records, ${S.docs.length} documents · encrypted</span></div>
+  <p class="sub">Pick where to keep it. Somewhere off this phone is best. Kukira never uploads it for you.</p>
+  <div class="share">${[['folder','Files'],['backup','Drive'],['send','Email'],['phone','Nearby']].map(([i,l])=>`<button data-act="backupDone" data-v="${l}"><span class="ic">${ic(i)}</span>${l}</button>`).join('')}</div><p class="fine">This is your phone's share sheet. The options depend on your apps.</p>`;
+};
+SH.restore=s=>{
+  if(s.step===1)return shead('Restore from backup','Step 1 of 3')+`<p class="sub">Choose a .kukira backup file.</p><button class="optrow" data-act="restoreFile"><span class="ric">${ic('doc')}</span><span class="body"><span class="t">kukira-backup-2026-09-16.kukira</span><span class="m">Downloads · 4.2 MB (sample)</span></span></button>`;
+  if(s.step===2)return shead('Enter passphrase','Step 2 of 3')+`<div class="field"><label for="f-rp">Backup passphrase</label><input type="password" class="inp ${s.err?'err':''}" id="f-rp" data-f="pass" value="${esc(s.pass||'')}">${s.err?`<span class="errtx">${s.err}</span>`:''}</div><p class="fine">Prototype: any passphrase works except “wrong”.</p><button class="btn block" data-act="restoreCheck">Unlock file</button>`;
+  return shead('Check before restoring','Step 3 of 3')+`<dl class="facts"><dt>Made on</dt><dd>16 Sep 2026</dd><dt>Assets</dt><dd>3</dd><dt>Records</dt><dd>11</dd><dt>Documents</dt><dd>8</dd><dt>Reminders</dt><dd>9</dd></dl>
+  <div class="note warn">${ic('alert')}<span>Restoring replaces everything on this phone with what's in the file. Anything added after 16 Sep 2026 will be lost.</span></div>
+  <div class="actions"><button class="btn danger" data-act="restoreGo">Replace my data</button><button class="btn ghost" data-act="close">Cancel</button></div>`;
+};
+SH.pin=s=>shead(s.confirm?'Type the PIN again':'Choose a 4-digit PIN')+`<div class="pin">${[0,1,2,3].map(i=>`<i class="${i<s.v.length?'on':''}"></i>`).join('')}</div>${s.err?`<p class="errtx" style="text-align:center;margin:0">${s.err}</p>`:''}<div class="pad">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>k===''?'<span></span>':`<button data-act="pinKey" data-k="${k}">${k}</button>`).join('')}</div>`;
+
+/* ---------- render ---------- */
+const TABS=[['today','Today','today'],['assets','Assets','assets'],['add','Add','plus'],['docs','Documents','doc'],['more','More','more']];
+const tabOf=n=>({asset:'assets',backup:'more',security:'more',health:'more',vendors:'more',about:'more',allrem:'today'}[n]||n);
+function render(keepScroll=true){
+  const sc=$('#screen'),y=sc.scrollTop;
+  sc.innerHTML=V[S.view.n](S.view);
+  if(keepScroll)sc.scrollTop=y;else sc.scrollTop=0;
+  const cur=tabOf(S.view.n);
+  $('#tabbar').innerHTML=TABS.map(([k,l,i])=>k==='add'?`<button class="tab plus" data-act="addMenu" aria-label="Add"><span class="ring">${ic('plus')}</span>Add</button>`:`<button class="tab" data-act="tab" data-n="${k}" ${cur===k?'aria-current="page"':''}>${ic(i)}${l}</button>`).join('');
+  $('#sbar-r').innerHTML=`${S.notif===false?ic('belloff'):''}${ic('noweb')}<span>No network</span>`;
+  $('#demo-notif').textContent=S.notif?'Deny notifications':'Allow notifications';
+  renderSheet();renderFull();
+}
+function renderSheet(){
+  const el=$('#sheet');
+  if(!S.sheet){el.innerHTML='';return}
+  const old=el.querySelector('.sheet'),y=old?old.scrollTop:0,fresh=!old||el.dataset.t!==S.sheet.type+S.sheet.step;
+  const act=document.activeElement&&document.activeElement.id;
+  el.innerHTML=`<div class="sheetwrap" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">${SH[S.sheet.type](S.sheet)}</div></div>`;
+  const ns=el.querySelector('.sheet');
+  if(!fresh){ns.style.animation='none';el.querySelector('.sheetwrap').style.animation='none';ns.scrollTop=y;if(act){const f=document.getElementById(act);if(f&&f.tagName==='INPUT'){f.focus();try{const l=f.value.length;f.setSelectionRange(l,l)}catch(e){}}}}
+  el.dataset.t=S.sheet.type+S.sheet.step;
+}
+function renderFull(){
+  const el=$('#full');
+  if(S.broken){el.innerHTML=`<div class="full"><span class="mark">${ic('key')}</span><h2>We can't open your records on this phone</h2><p>The key that unlocks your records stays with the phone it was made on. This often happens after moving to a new phone or restoring from a phone backup.</p><p>If you have a Kukira backup file, restore it now. You'll need its passphrase.</p><button class="btn block" data-act="restore">${ic('restore')} Restore from backup file</button>${S.brokenConfirm?`<div class="note warn">${ic('alert')}<span>This erases the unreadable data for good. Only do this if you have no backup file.</span></div><div class="actions h"><button class="btn ghost" data-act="brokenNo">Keep it</button><button class="btn danger" data-act="brokenFresh">Erase and start</button></div>`:`<button class="btn ghost block" data-act="brokenAsk">Start fresh instead</button>`}</div>`;return}
+  if(S.locked){el.innerHTML=`<div class="full" style="align-items:center;text-align:center"><span class="mark">${ic('lock')}</span><h2>Kukira is locked</h2><div class="pin">${[0,1,2,3].map(i=>`<i class="${i<(S.unl||'').length?'on':''}"></i>`).join('')}</div><div class="pad" style="width:100%">${[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>k===''?'<span></span>':`<button data-act="unlockKey" data-k="${k}">${k}</button>`).join('')}</div>${S.bio?`<button class="link" data-act="unlockBio">${ic('finger')} Use fingerprint</button>`:''}<p class="fine">Prototype: any 4 digits unlock.</p></div>`;return}
+  el.innerHTML='';
+}
+let tt;function toast(t){const el=$('#toast');el.innerHTML=`<div class="toast" role="status">${esc(t)}</div>`;clearTimeout(tt);tt=setTimeout(()=>el.innerHTML='',3600)}
+let nt;function notify(t,b){const el=$('#notif');el.innerHTML=`<div class="notif"><span class="mark">${ic('today')}</span><div class="body"><b>${esc(t)}</b>${esc(b)}</div><span class="fine">now</span></div>`;clearTimeout(nt);nt=setTimeout(()=>el.innerHTML='',4200)}
+function go(v){S.hist.push(S.view);S.view=v;S.sheet=null;render(false)}
+function openSheet(s){S.sheet=s;renderSheet()}
+function closeSheet(){S.sheet=null;renderSheet()}
+function rebuilt(){S.rebuild='Today, just now'}
+
+/* ---------- actions ---------- */
+const A={};
+A.tab=d=>{S.hist=[];S.view={n:d.n};S.sheet=null;render(false)};
+A.go=d=>go({n:d.n,id:d.id,sub:d.sub});
+A.back=()=>{S.view=S.hist.pop()||{n:'today'};render(false)};
+A.sub=d=>{S.view={...S.view,sub:d.sub};render(false)};
+A.close=closeSheet;
+A.scrim=(d,el,e)=>{if(e.target===el)closeSheet()};
+A.toast=d=>toast(d.t);
+A.addMenu=()=>openSheet({type:'add'});
+A.set=d=>{const n=Number(d.v);S.sheet[d.k]=(d.v!==''&&!isNaN(n)&&['lead','everyMonths'].includes(d.k))?n:d.v;
+  if(S.sheet.type==='rec'&&d.k==='kind'){S.sheet.cat=CATS[asset(S.sheet.assetId).cat][d.v][0];S.sheet.markDone=true}
+  if(S.sheet.type==='rec'&&d.k==='cat')S.sheet.markDone=true;
+  if(S.sheet.type==='remform'&&d.k==='rule'){const r=d.v;if((r==='repeat'||r==='either')&&!S.sheet.everyMonths)S.sheet.everyMonths=6;if((r==='mileage'||r==='either')&&!S.sheet.everyKm)S.sheet.everyKm=5000}
+  renderSheet()};
+A.toggle=d=>{S.sheet[d.k]=!S.sheet[d.k];renderSheet()};
+A.toggleOpen=(d,el,e)=>{e.preventDefault();S.sheet.open=!S.sheet.open;renderSheet()};
+A.docFilter=d=>{S.docFilter=d.v;render()};
+A.remFilter=d=>{S.remFilter=d.v;render()};
+
+// asset flow
+A.addAsset=()=>openSheet({type:'asset',step:1,name:'',ptype:'landed',plate:'',picks:{},t0:Date.now()});
+A.assetCat=d=>{Object.assign(S.sheet,{cat:d.v,step:2});renderSheet();setTimeout(()=>$('#f-name')?.focus(),50)};
+A.assetBack=()=>{S.sheet.step=1;S.sheet.err=null;renderSheet()};
+A.assetSave=()=>{
+  const s=S.sheet;s.err=null;
+  if(!s.name.trim())s.err='name';else if(s.cat!=='house'&&!s.plate.trim())s.err='plate';
+  if(s.err){renderSheet();return}
+  const id=nid('a');
+  const a={id,cat:s.cat,name:s.name.trim()};
+  if(s.cat==='house')a.house={ptype:s.ptype};
+  else a.veh={plate:s.plate.trim().toUpperCase(),odo:0,odoDate:T0};
+  S.assets.push(a);s.newId=id;s.step=3;s.err=null;
+  S.hist=[];S.view={n:'asset',id};render(false);
+};
+A.pick=d=>{const s=S.sheet;if(s.picks[d.k])delete s.picks[d.k];else{const g=suggestions(s.cat,s.ptype).find(x=>x.key===d.k);s.picks[d.k]={date:iso(g.def)}}s.err=null;renderSheet()};
+function finishAsset(){
+  const s=S.sheet,sec=Math.round((Date.now()-s.t0)/1000);
+  s.elapsed=`${Math.floor(sec/60)}:${String(sec%60).padStart(2,'0')}`;
+  if(S.firstRun){S.firstRun=false;s.step=4;renderSheet()}else{closeSheet();toast(`${s.name} added in ${s.elapsed}`)}
+}
+A.assetSkip=()=>{render();finishAsset()};
+A.assetPicks=()=>{
+  const s=S.sheet,sug=suggestions(s.cat,s.ptype),keys=Object.keys(s.picks);
+  if(!keys.length){A.assetSkip();return}
+  if(keys.some(k=>!s.picks[k].date)){s.err='Pick a date for each ticked reminder, or untick it.';renderSheet();return}
+  keys.forEach(k=>{const g=sug.find(x=>x.key===k);S.rem.push({id:nid('r'),assetId:s.newId,title:g.title,cat:g.cat,rule:g.rule,due:parse(s.picks[k].date),everyMonths:g.everyMonths,repeatFrom:g.repeatFrom,lead:g.lead??14,source:'preset',estimated:!!g.est,confirm:g.confirm,note:g.est?g.hint.replace(/^Est\. /,''):''})});
+  rebuilt();S.view.sub='reminders';render();finishAsset();
+};
+
+// reminders
+A.rem=d=>openSheet({type:'rem',id:d.id});
+A.done=d=>{const r=S.rem.find(x=>x.id===d.id);const msg=markDone(r);rebuilt();const n=notifyAt(r);openSheet({type:'doneok',id:r.id,assetId:r.assetId,msg,nt:!r.done&&n?fmt(n):''});render()};
+A.snooze=d=>{const r=S.rem.find(x=>x.id===d.id);r.snooze=addDays(T0,+d.d);rebuilt();closeSheet();render();toast(`Snoozed until ${fmt(r.snooze)}. You'll get one reminder that morning.`)};
+A.addRem=d=>{const id=d.asset||S.view.id||S.assets[0].id;const a=asset(id)||S.assets[0];openSheet({type:'remform',assetId:a.id,title:'',rule:'fixed',due:'',lead:7,everyMonths:6,tpl:null})};
+A.tpl=d=>{const s=S.sheet,t=TPL[asset(s.assetId).cat][+d.i],a=asset(s.assetId);
+  Object.assign(s,{tpl:+d.i,title:t.t,rule:t.rule,everyMonths:t.everyMonths||6,everyKm:t.everyKm||'',dueKm:t.everyKm&&isVeh(a)?a.veh.odo+t.everyKm:'',due:t.due?iso(t.due):s.due,est:!!t.est,confirm:t.confirm,note:t.note,repeatFrom:t.repeatFrom,cat:t.cat,err:null});renderSheet()};
+A.editRem=d=>{const r=S.rem.find(x=>x.id===d.id);openSheet({type:'remform',editId:r.id,assetId:r.assetId,title:r.title,rule:r.rule,due:iso(r.due),lead:r.lead??7,everyMonths:r.everyMonths||6,everyKm:r.everyKm||'',dueKm:r.dueKm||'',est:r.estimated,confirm:r.confirm,note:r.note,repeatFrom:r.repeatFrom,cat:r.cat})};
+A.remSave=()=>{
+  const s=S.sheet;s.err=null;
+  if(!s.title.trim())s.err='title';else if(s.rule!=='mileage'&&!s.due)s.err='due';
+  if(s.err){renderSheet();return}
+  const a=asset(s.assetId);
+  const data={title:s.title.trim(),rule:s.rule,due:s.rule==='mileage'?null:parse(s.due),lead:s.lead,everyMonths:(s.rule==='repeat'||s.rule==='either')?s.everyMonths:null,everyKm:+s.everyKm||null,dueKm:(s.rule==='mileage'||s.rule==='either')?(+s.dueKm||a.veh.odo+(+s.everyKm||5000)):null,estimated:!!s.est,confirm:s.confirm,note:s.note,repeatFrom:s.repeatFrom,cat:s.cat||'Other',leadKm:1000};
+  let r;
+  if(s.editId){r=S.rem.find(x=>x.id===s.editId);Object.assign(r,data,{snooze:null})}else{r={id:nid('r'),assetId:a.id,source:s.tpl!=null?'template':'manual',...data};S.rem.push(r)}
+  rebuilt();closeSheet();render();
+  const n=notifyAt(r);
+  toast(s.editId?(n?`Saved. Old notification cancelled; new one set for ${fmt(n)}, 9:00 am.`:'Saved. Mileage is checked when you update the odometer.'):(n?`Reminder saved. You'll be notified on ${fmt(n)}.`:'Reminder saved. Mileage is checked when you update the odometer.'));
+  if(!s.editId&&S.notif===null){}
+};
+
+// records
+A.addRec=d=>{const id=d.asset||S.view.id||S.assets[0].id;const a=asset(id)||S.assets[0];const kind=d.kind||'maintenance';
+  let link=d.link?S.rem.find(r=>r.id===d.link):null;
+  const C=CATS[a.cat];
+  openSheet({type:'rec',assetId:a.id,kind,cat:link&&C[kind].includes(link.cat)?link.cat:C[kind][0],title:link?link.title:'',date:iso(T0),cost:'',items:false,markDone:!link,linkFixed:link?link.id:null,open:false})};
+A.recSave=d=>{
+  const s=S.sheet;s.err=null;
+  if(!s.title.trim()){s.err='title';renderSheet();return}
+  const a=asset(s.assetId);
+  const c={id:nid('c'),assetId:a.id,kind:s.kind,cat:s.cat,title:s.title.trim(),date:parse(s.date)||T0,cost:+s.cost||0,vendor:s.vendor||null,area:s.area||'',notes:s.notes||'',odo:+s.odo||null,warranty:parse(s.warranty),linked:s.linkFixed||null};
+  if(s.kind==='defect'){c.status='open';if(s.reported)c.reported=T0}
+  if(s.kind==='incident')c.claim=s.claim?'Yes':'No';
+  S.rec.push(c);
+  const msgs=[s.kind==='defect'?'Defect added':'Record saved'];
+  if(isVeh(a)&&c.odo&&c.odo>a.veh.odo){a.veh.odo=c.odo;a.veh.odoDate=c.date}
+  if(d.match&&s.markDone&&!s.linkFixed){const r=S.rem.find(x=>x.id===d.match);markDone(r);c.linked=r.id;const n=notifyAt(r);msgs.push(`“${r.title}” marked done${r.done?'':'; next '+(n?fmt(r.due):'scheduled')}`)}
+  if(c.warranty){S.rem.push({id:nid('r'),assetId:a.id,title:`Warranty ends: ${c.title}`,cat:'Other',rule:'fixed',due:c.warranty,lead:30,source:'manual'});msgs.push('warranty reminder added')}
+  rebuilt();closeSheet();
+  if(S.view.n==='asset'&&S.view.id===a.id&&s.kind!=='defect')S.view.sub='upkeep';
+  render();toast(msgs.join('. ')+'.');
+};
+
+// documents
+A.addDoc=d=>{const id=d.asset||S.view.id||S.assets[0].id;openSheet({type:'doc',step:1,assetId:(asset(id)||S.assets[0]).id,title:'',dtype:'Insurance',expiry:'',expRem:true})};
+A.docSrc=d=>{Object.assign(S.sheet,{src:d.v,step:2});renderSheet()};
+A.docBack=()=>{S.sheet.step=1;renderSheet()};
+A.docSave=()=>{const s=S.sheet;s.err=null;if(!s.title.trim()){s.err='title';renderSheet();return}
+  const f={id:nid('f'),assetId:s.assetId,title:s.title.trim(),type:s.dtype,file:s.src==='Files'?'PDF · 3 pages':'Photo',added:T0,expiry:parse(s.expiry)};S.docs.push(f);
+  let m='Document saved';
+  if(f.expiry&&s.expRem!==false){S.rem.push({id:nid('r'),assetId:f.assetId,title:`${f.title} expires`,cat:'Other',rule:'fixed',due:f.expiry,lead:30,source:'manual'});m+='. Expiry reminder set for '+fmt(addDays(f.expiry,-30));rebuilt()}
+  closeSheet();render();toast(m+'.')};
+A.doc=d=>openSheet({type:'docview',id:d.id});
+
+// vehicles, defects
+A.odo=d=>{const a=asset(d.id);openSheet({type:'odo',id:a.id,km:String(a.veh.odo)})};
+A.odoSave=()=>{const s=S.sheet,a=asset(s.id),v=+s.km;
+  if(!v||v<a.veh.odo){s.err=`Enter a reading of at least ${km(a.veh.odo)}.`;renderSheet();return}
+  const before=S.rem.filter(r=>r.assetId===a.id&&!r.done).map(r=>[r,rStatus(r)]);
+  a.veh.odo=v;a.veh.odoDate=T0;
+  const changed=before.filter(([r,st])=>rStatus(r)!==st&&r.dueKm!=null).map(([r])=>`“${r.title}” is now ${rStatus(r)==='over'?'overdue':'due soon'}`);
+  rebuilt();closeSheet();render();toast(changed.length?`Odometer saved. ${changed.join('. ')}.`:`Odometer saved: ${km(v)}.`);
+  if(changed.length&&S.notif)setTimeout(()=>notify('Mileage reminder',changed[0].replace(/“|”/g,'')),900)};
+A.defect=d=>openSheet({type:'defect',id:d.id});
+A.defStatus=d=>{const c=S.rec.find(x=>x.id===d.id);c.status=d.v;renderSheet();render()};
+A.defReport=d=>{const c=S.rec.find(x=>x.id===d.id);c.reported=T0;if(c.status==='open')c.status='in_progress';renderSheet();render();toast('Marked as reported today. Attach your letter or email in Documents.')};
+
+// backup & restore
+A.backupNow=()=>openSheet({type:'backup',step:1,p1:'',p2:'',ack:false});
+A.backupGo=()=>{S.sheet.step=2;renderSheet()};
+A.backupDone=d=>{S.lastBackup=T0;closeSheet();render();toast(`Backup saved to ${d.v}. Next backup reminder: ${fmt(addDays(T0,30))}.`)};
+A.restore=()=>openSheet({type:'restore',step:1});
+A.restoreFile=()=>{S.sheet.step=2;renderSheet();setTimeout(()=>$('#f-rp')?.focus(),50)};
+A.restoreCheck=()=>{const s=S.sheet;if(!s.pass){s.err='Enter the passphrase you chose when you made this backup.';renderSheet();return}if(s.pass.trim().toLowerCase()==='wrong'){s.err="That passphrase doesn't open this file. Nothing on this phone was changed.";renderSheet();return}s.err=null;s.step=3;renderSheet()};
+A.restoreGo=()=>{const keep={notif:S.notif};seed();Object.assign(S,keep);S.broken=false;S.brokenConfirm=false;S.view={n:'today'};render(false);toast('Restored from the 16 Sep 2026 backup. Reminders rescheduled.')};
+A.brokenAsk=()=>{S.brokenConfirm=true;renderFull()};
+A.brokenNo=()=>{S.brokenConfirm=false;renderFull()};
+A.brokenFresh=()=>{startEmpty();S.broken=false;S.brokenConfirm=false;render(false)};
+
+// notifications, lock
+A.permAsk=()=>{$('#dlg').innerHTML=`<div class="sysdlg"><div>${ic('bell')}<b>Allow Kukira Asset to send you notifications?</b><div class="r"><button data-act="perm" data-v="1">Allow</button><button data-act="perm" data-v="0">Don't allow</button></div></div></div>`};
+A.perm=d=>{$('#dlg').innerHTML='';S.notif=d.v==='1';rebuilt();render();toast(S.notif?'Notifications on. Your reminders are scheduled.':'Notifications stay off. Today still lists everything due.')};
+A.testNotif=()=>{if(!S.notif){toast("Notifications are off, so the test can't show. Allow them first.");return}notify('Test reminder','Reminders from Kukira will look like this.')};
+A.lockToggle=()=>{if(S.lock){S.lock=false;S.bio=false;render();toast('App lock turned off.');return}S.prevSheet=S.sheet;openSheet({type:'pin',v:'',first:''})};
+A.bioToggle=()=>{S.bio=!S.bio;render()};
+A.pinKey=d=>{const s=S.sheet;s.err=null;if(d.k==='⌫'){s.v=s.v.slice(0,-1)}else if(s.v.length<4)s.v+=d.k;
+  if(s.v.length===4){if(!s.confirm){s.first=s.v;s.v='';s.confirm=true}else if(s.v===s.first){S.lock=true;const back=S.prevSheet;S.sheet=back&&back.type==='asset'?back:null;S.prevSheet=null;render();toast('App lock on. Your records unlock with this PIN.');return}else{s.v='';s.confirm=false;s.err="PINs didn't match. Try again."}}
+  renderSheet()};
+A.lockNow=()=>{S.locked=true;S.unl='';renderFull()};
+A.unlockKey=d=>{S.unl=d.k==='⌫'?(S.unl||'').slice(0,-1):(S.unl||'')+d.k;if(S.unl.length>=4){S.locked=false;S.unl=''}renderFull()};
+A.unlockBio=()=>{S.locked=false;renderFull()};
+
+// demo panel
+function startEmpty(){seed();Object.assign(S,{assets:[],rem:[],rec:[],docs:[],completed:[],lastBackup:null,firstRun:true,notif:null})}
+A.demo=d=>{
+  $('#dlg').innerHTML='';S.locked=false;
+  const need=()=>{if(!asset('a1')||S.broken){seed();}};
+  switch(d.d){
+    case'first':startEmpty();S.view={n:'today'};S.hist=[];render(false);break;
+    case'done':need();S.hist=[];S.view={n:'today'};render(false);openSheet({type:'rem',id:(S.rem.find(r=>r.id==='r4'&&!r.done)||S.rem.find(r=>!r.done&&r.rule==='repeat')).id});break;
+    case'record':need();S.hist=[];S.view={n:'asset',id:'a1',sub:'upkeep'};render(false);A.addRec({asset:'a1'});Object.assign(S.sheet,{cat:'Aircond',title:'Serviced 3 aircond units',cost:'240',vendor:'v5',markDone:true});renderSheet();break;
+    case'doc':need();S.hist=[];S.view={n:'docs'};render(false);A.addDoc({asset:'a1'});break;
+    case'backup':need();S.hist=[{n:'more'}];S.view={n:'backup'};render(false);break;
+    case'defects':need();S.hist=[{n:'assets'}];S.view={n:'asset',id:'a1',sub:'defects'};S.sheet=null;render(false);break;
+    case'odo':need();S.hist=[{n:'assets'}];S.view={n:'asset',id:'a3',sub:'overview'};render(false);A.odo({id:'a3'});S.sheet.km='32100';renderSheet();break;
+    case'notif':S.notif=!S.notif;S.hist=[];S.view={n:'today'};S.sheet=null;render(false);break;
+    case'health':need();S.hist=[{n:'more'}];S.view={n:'health'};S.sheet=null;render(false);break;
+    case'broken':need();S.broken=true;S.brokenConfirm=false;S.sheet=null;render(false);break;
+    case'reset':seed();render(false);toast('Sample data restored.');break;
+  }
+};
+
+/* ---------- events ---------- */
+document.addEventListener('click',e=>{const t=e.target.closest('[data-act]');if(!t||t.disabled)return;const f=A[t.dataset.act];if(f)f(t.dataset,t,e)});
+document.addEventListener('input',e=>{
+  const el=e.target;
+  if(el.dataset.q){S.q[el.dataset.q]=el.value;$('#results').innerHTML=el.dataset.q==='assets'?assetsResults():docsResults();return}
+  if(el.dataset.pick&&S.sheet){S.sheet.picks[el.dataset.pick].date=el.value;return}
+  if(el.dataset.f&&S.sheet){S.sheet[el.dataset.f]=el.type==='checkbox'?el.checked:el.value;
+    if(el.dataset.f==='assetId'&&S.sheet.type==='rec'){const C=CATS[asset(el.value).cat];if(!C[S.sheet.kind])S.sheet.kind='maintenance';S.sheet.cat=C[S.sheet.kind][0]}
+    if(el.dataset.f==='assetId'&&S.sheet.type==='remform'){S.sheet.tpl=null;if(!isVeh(asset(el.value))&&(S.sheet.rule==='mileage'||S.sheet.rule==='either'))S.sheet.rule='fixed'}
+    if(el.dataset.rr)renderSheet()}
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&S.sheet)closeSheet()});
+$('#brandmark').innerHTML=ic('house');
+render(false);
+</script>

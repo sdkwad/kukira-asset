@@ -1,0 +1,23 @@
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+*.g.dart
+pubspec.lock
+
+# The android/ folder is generated in CI from the Flutter template,
+# then patched from android_overrides/ by tool/patch_android.py.
+/android/
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# APKs downloaded for testing
+*.apk
+*.zip
