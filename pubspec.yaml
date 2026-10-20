@@ -1,7 +1,7 @@
 name: kukira_asset
 description: Kukira Asset. Rekod rumah, kereta dan motosikal anda, disimpan di telefon sahaja.
 publish_to: 'none'
-version: 0.1.0+1
+version: 0.2.0+2
 
 environment:
   sdk: ">=3.6.0 <4.0.0"
@@ -25,6 +25,12 @@ dependencies:
   cryptography: ^2.7.0
   share_plus: ^10.1.4
   file_picker: ^8.1.7
+  image_picker: ^1.1.2
+  open_filex: ^4.6.0
+  app_settings: ^5.1.1
+  # Fingerprint unlock. Keys are stored with Android Keystore keys that require
+  # user authentication, so the fingerprint really gates the database key.
+  biometric_storage: ^5.0.1
 
 dev_dependencies:
   flutter_test:

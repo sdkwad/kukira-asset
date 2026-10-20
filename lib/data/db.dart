@@ -98,6 +98,9 @@ class Reminders extends Table {
   IntColumn get repeatMonths => integer().nullable()();
   IntColumn get repeatKm => integer().nullable()();
 
+  /// Added in schema 2: repeat every N days (weeks are stored as 7N days).
+  IntColumn get repeatDays => integer().nullable()();
+
   /// completion | due
   TextColumn get repeatFrom => text().withDefault(const Constant('completion'))();
   IntColumn get leadDays => integer().withDefault(const Constant(7))();
@@ -142,6 +145,16 @@ class Records extends Table {
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
 
+/// Optional cost breakdown for a record (added in schema 2).
+class CostItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get recordId => integer().references(Records, #id, onDelete: KeyAction.cascade)();
+  TextColumn get label => text()();
+  RealColumn get amount => real()();
+}
+
+/// Documents and photos. [filePath] is the name of an encrypted file in app storage
+/// (see SecureFiles); docType 'photo' is a photo attached to a record.
 @DataClassName('AssetDocument')
 class Documents extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -187,6 +200,7 @@ class World {
     required this.vendors,
     required this.documents,
     required this.settings,
+    required this.costItems,
   });
 
   final List<Asset> assets;
@@ -198,6 +212,23 @@ class World {
   final List<Vendor> vendors;
   final List<AssetDocument> documents;
   final Map<String, String> settings;
+  final Map<int, List<CostItem>> costItems;
+
+  List<AssetDocument> photosOf(int recordId) =>
+      documents.where((d) => d.docType == 'photo' && d.linkedRecordId == recordId).toList();
+
+  List<AssetDocument> get files => documents.where((d) => d.docType != 'photo').toList();
+
+  Vendor? vendor(int? id) {
+    if (id == null) return null;
+    for (final v in vendors) {
+      if (v.id == id) return v;
+    }
+    return null;
+  }
+
+  int get notifyHour => int.tryParse(settings['notifyHour'] ?? '') ?? 9;
+  int get notifyMinute => int.tryParse(settings['notifyMinute'] ?? '') ?? 0;
 
   Asset? asset(int id) {
     for (final a in assets) {
@@ -221,6 +252,7 @@ extension ReminderInfo on Reminder {
         dueKm: dueOdometer,
         repeatMonths: repeatMonths,
         repeatKm: repeatKm,
+        repeatDays: repeatDays,
         repeatFrom: repeatFrom,
         leadDays: leadDays,
         leadKm: leadKm,
@@ -238,6 +270,7 @@ extension ReminderInfo on Reminder {
   OdometerReadings,
   Reminders,
   Records,
+  CostItems,
   Documents,
   Vendors,
   Settings,
@@ -246,11 +279,17 @@ class AppDb extends _$AppDb {
   AppDb(super.e);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
         onCreate: (m) => m.createAll(),
+        onUpgrade: (m, from, to) async {
+          if (from < 2) {
+            await m.createTable(costItems);
+            await m.addColumn(reminders, reminders.repeatDays);
+          }
+        },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
@@ -266,6 +305,11 @@ class AppDb extends _$AppDb {
     final ven = await select(vendors).get();
     final docs = await select(documents).get();
     final st = await select(settings).get();
+    final items = await select(costItems).get();
+    final byRecord = <int, List<CostItem>>{};
+    for (final i in items) {
+      (byRecord[i.recordId] ??= []).add(i);
+    }
     final latest = <int, OdometerReading>{};
     for (final x in o) {
       final cur = latest[x.assetId];
@@ -281,6 +325,7 @@ class AppDb extends _$AppDb {
       vendors: ven,
       documents: docs,
       settings: {for (final x in st) x.key: x.value},
+      costItems: byRecord,
     );
   }
 
@@ -292,6 +337,9 @@ class AppDb extends _$AppDb {
   }
 
   // -------- settings
+  Future<String?> getSetting(String key) async =>
+      (await (select(settings)..where((t) => t.key.equals(key))).getSingleOrNull())?.value;
+
   Future<void> setSetting(String key, String value) =>
       into(settings).insertOnConflictUpdate(SettingsCompanion(key: Value(key), value: Value(value)));
 
@@ -351,6 +399,27 @@ class AppDb extends _$AppDb {
 
   Future<void> deleteRecord(int id) => (delete(records)..where((t) => t.id.equals(id))).go();
 
+  Future<void> setCostItems(int recordId, List<(String, double)> items) => transaction(() async {
+        await (delete(costItems)..where((t) => t.recordId.equals(recordId))).go();
+        for (final (label, amount) in items) {
+          await into(costItems).insert(CostItemsCompanion(recordId: Value(recordId), label: Value(label), amount: Value(amount)));
+        }
+      });
+
+  // -------- vendors
+  Future<int> addVendor(VendorsCompanion c) => into(vendors).insert(c);
+
+  Future<void> updateVendor(int id, VendorsCompanion c) => (update(vendors)..where((t) => t.id.equals(id))).write(c);
+
+  Future<void> deleteVendor(int id) => (delete(vendors)..where((t) => t.id.equals(id))).go();
+
+  // -------- documents and photos
+  Future<int> addDocument(DocumentsCompanion c) => into(documents).insert(c);
+
+  Future<void> updateDocument(int id, DocumentsCompanion c) => (update(documents)..where((t) => t.id.equals(id))).write(c);
+
+  Future<void> deleteDocument(int id) => (delete(documents)..where((t) => t.id.equals(id))).go();
+
   Future<void> addOdometer(int assetId, int km, DateTime date) =>
       into(odometerReadings).insert(OdometerReadingsCompanion(assetId: Value(assetId), km: Value(km), date: Value(date)));
 
@@ -363,6 +432,7 @@ class AppDb extends _$AppDb {
         'reminders': (await select(reminders).get()).map((e) => e.toJson()).toList(),
         'records': (await select(records).get()).map((e) => e.toJson()).toList(),
         'documents': (await select(documents).get()).map((e) => e.toJson()).toList(),
+        'costItems': (await select(costItems).get()).map((e) => e.toJson()).toList(),
         'vendors': (await select(vendors).get()).map((e) => e.toJson()).toList(),
       };
 
@@ -372,6 +442,7 @@ class AppDb extends _$AppDb {
         ((t[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
     return transaction(() async {
       await delete(documents).go();
+      await delete(costItems).go();
       await delete(records).go();
       await delete(odometerReadings).go();
       await delete(reminders).go();
@@ -387,6 +458,7 @@ class AppDb extends _$AppDb {
         b.insertAll(odometerReadings, rows('odometerReadings').map(OdometerReading.fromJson));
         b.insertAll(reminders, rows('reminders').map(Reminder.fromJson));
         b.insertAll(records, rows('records').map(UpkeepRecord.fromJson));
+        b.insertAll(costItems, rows('costItems').map(CostItem.fromJson));
         b.insertAll(documents, rows('documents').map(AssetDocument.fromJson));
       });
     });

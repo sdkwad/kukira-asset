@@ -265,8 +265,6 @@ class StrMs extends Str {
   @override
   String get notifyWord => 'Pemberitahuan';
   @override
-  String notifyOn(String date) => '$date, 9:00 pagi';
-  @override
   String get lastDoneWord => 'Terakhir selesai';
   @override
   String estimatedNote(String note, String confirmWith) => 'Tarikh anggaran. $note Sahkan dengan $confirmWith.';
@@ -390,8 +388,6 @@ class StrMs extends Str {
   String get warrantyHelp => 'Kami akan ingatkan anda sebulan sebelum waranti tamat.';
   @override
   String get notes => 'Nota';
-  @override
-  String get photosLater => 'Gambar dan resit akan datang dalam versi seterusnya.';
   @override
   String linkedTo(String title) => 'Dipautkan kepada “$title”, yang sudah ditanda selesai.';
   @override
@@ -533,8 +529,6 @@ class StrMs extends Str {
   @override
   String get yes => 'Ya';
   @override
-  String get deleteRecord => 'Padam rekod';
-  @override
   String get deleteRecordQ => 'Padam rekod ini?';
   @override
   String get cannotUndo => 'Ini tidak boleh dibatalkan.';
@@ -566,8 +560,6 @@ class StrMs extends Str {
   String get defectFixed => 'Sudah dibaiki';
   @override
   String get addDefect => 'Tambah kecacatan';
-  @override
-  String get found => 'Dijumpai';
   @override
   String get reported => 'Dilaporkan';
   @override
@@ -666,8 +658,6 @@ class StrMs extends Str {
   String get addReminderHint => 'Satu tarikh, berulang atau ikut jarak';
   @override
   String get document => 'Dokumen';
-  @override
-  String get comingSoon => 'Akan datang dalam versi seterusnya';
 
   // ------------------------------------------------ more
   @override
@@ -821,10 +811,6 @@ class StrMs extends Str {
   @override
   String get testBuild => 'versi ujian';
   @override
-  String get docsComingTitle => 'Dokumen akan datang';
-  @override
-  String get docsComingBody => 'Versi seterusnya akan menyimpan SPA, geran, surat VP, bil cukai dan resit di sini, disulitkan dan boleh dibuka tanpa internet.';
-  @override
   String get unreadableTitle => 'Rekod anda tidak dapat dibuka di telefon ini';
   @override
   String get unreadableBody => 'Kunci yang membuka rekod anda kekal di telefon tempat ia dibuat. Ini biasanya berlaku selepas berpindah ke telefon baharu atau memulihkan dari sandaran telefon.\n\nJika anda ada fail sandaran Kukira, pulihkan sekarang. Anda perlukan frasa laluannya.';
@@ -858,4 +844,240 @@ class StrMs extends Str {
   String get testNoteTitle => 'Peringatan ujian';
   @override
   String get testNoteBody => 'Peringatan dari Kukira akan kelihatan begini.';
+
+  // ------------------------------------------------ 0.2
+  @override
+  String get aboutDocument => 'Butiran dokumen';
+  @override
+  String get addDocumentHint => 'SPA, geran, surat VP, bil, resit, polisi';
+  @override
+  String get addItem => 'Tambah item';
+  @override
+  String get addVendor => 'Tambah vendor';
+  @override
+  String get added => 'Ditambah';
+  @override
+  String get alsoFingerprintBody => 'Anda boleh buka Kukira dengan cap jari. PIN masih boleh digunakan jika cap jari gagal.';
+  @override
+  String get alsoFingerprintQ => 'Guna cap jari juga?';
+  @override
+  String get appLockSub => 'PIN atau cap jari';
+  @override
+  String get attach => 'Lampir';
+  @override
+  String get attachDocument => 'Lampirkan dokumen';
+  @override
+  String get camera => 'Kamera';
+  @override
+  String get changesSaved => 'Perubahan disimpan.';
+  @override
+  String get choosePin => 'Pilih PIN 4 digit';
+  @override
+  String get chooseSource => 'Dari mana?';
+  @override
+  String contactsCount(int n) => '$n kenalan';
+  @override
+  String get copied => 'Disalin.';
+  @override
+  String get copy => 'Salin';
+  @override
+  String get costBreakdown => 'Pecahan kos';
+  @override
+  String get couldNotOpen => 'Rekod tidak dapat dibuka. Cuba lagi.';
+  @override
+  String get couldNotSave => 'Tidak dapat disimpan. Cuba lagi.';
+  @override
+  String get customRepeat => 'Lain';
+  @override
+  String daysShort(int n) => n == 0 ? 'Hari ini' : '$n hari';
+  @override
+  String get daysWord => 'hari';
+  @override
+  String get deleteDocBody => 'Fail ini dipadam dari telefon, bersama peringatan tarikh tamatnya.';
+  @override
+  String get deleteDocQ => 'Padam dokumen ini?';
+  @override
+  String get deleteVendorBody => 'Rekod lama masih menyimpan nama vendor ini.';
+  @override
+  String deleteVendorQ(String name) => 'Padam $name?';
+  @override
+  String dlpEndOverrideHelp(String date) => 'Biarkan kosong untuk guna anggaran ($date). Isi jika SPA anda menyatakan tarikh lain.';
+  @override
+  String get dlpEndOverrideLabel => 'Tarikh tamat DLP (jika berbeza)';
+  @override
+  String get dlpOverrideNote => 'Tarikh tamat ini anda tetapkan sendiri dari SPA.';
+  @override
+  String get dlpSetByYou => 'Ditetapkan oleh anda';
+  @override
+  String get docCopiedNote => 'Fail disalin ke dalam Kukira dan disulitkan. Fail asal kekal di tempatnya.';
+  @override
+  String docExpires(String title) => '$title tamat';
+  @override
+  String get docSaved => 'Dokumen disimpan.';
+  @override
+  String docSavedWithReminder(String date) => 'Dokumen disimpan. Peringatan tarikh tamat pada $date.';
+  @override
+  String get docTitleHint => 'cth. Polisi insurans rumah 2027';
+  @override
+  String get docType => 'Jenis dokumen';
+  @override
+  String docTypeName(String t) => switch (t) { 'spa' => 'SPA', 'geran' => 'Geran', 'vp_letter' => 'Surat VP', 'dlp' => 'DLP', 'tax_bill' => 'Bil cukai', 'insurance' => 'Insurans', 'receipt' => 'Resit', 'photo' => 'Gambar', _ => 'Lain-lain' };
+  @override
+  String get docsPrivacyNote => 'Fail disimpan secara tersulit dalam Kukira dan dibuka dengan pemapar telefon anda.';
+  @override
+  String get dueSoonShort => 'Hampir tiba';
+  @override
+  String get edit => 'Ubah';
+  @override
+  String get editDefect => 'Ubah kecacatan';
+  @override
+  String get editDocument => 'Ubah dokumen';
+  @override
+  String get editRecord => 'Ubah rekod';
+  @override
+  String get editVendor => 'Ubah vendor';
+  @override
+  String get enterPin => 'Masukkan PIN anda';
+  @override
+  String get errDocTitle => 'Beri tajuk supaya mudah dicari nanti.';
+  @override
+  String get errRepeat => 'Masukkan berapa kerap ia berulang.';
+  @override
+  String get expired => 'Tamat';
+  @override
+  String expiresShort(String date) => 'Tamat $date';
+  @override
+  String get expiry => 'Tarikh tamat';
+  @override
+  String get expiryOptional => 'Tarikh tamat (pilihan)';
+  @override
+  String get filesPdf => 'Fail (PDF atau gambar)';
+  @override
+  String get fingerprintFailed => 'Cap jari tidak dapat ditetapkan. Cuba lagi.';
+  @override
+  String get fingerprintSub => 'Buka dengan cap jari atau wajah';
+  @override
+  String get fingerprintUnavailable => 'Telefon ini tiada cap jari yang didaftarkan';
+  @override
+  String get forgotPin => 'Lupa PIN?';
+  @override
+  String get forgotPinBody => 'PIN tidak boleh dipulihkan kerana ia mengunci rekod anda. Pulihkan dari fail sandaran Kukira (perlukan frasa laluannya), atau mula semula tanpa data.';
+  @override
+  String get forgotPinTitle => 'Lupa PIN';
+  @override
+  String get gallery => 'Galeri';
+  @override
+  String greeting(int hour) => hour < 12 ? 'Selamat pagi' : hour < 15 ? 'Selamat tengah hari' : hour < 19 ? 'Selamat petang' : 'Selamat malam';
+  @override
+  String get item => 'Item';
+  @override
+  String get itemHint => 'cth. Upah';
+  @override
+  String jobsCount(int n) => '$n kerja';
+  @override
+  String get jobsTitle => 'Kerja yang direkod';
+  @override
+  String get labour => 'Upah';
+  @override
+  String get lockExplainer => 'Kunci ini melindungi kunci yang membuka rekod anda, bukan sekadar menyorok skrin. Kukira dikunci semula selepas 2 minit di latar belakang.';
+  @override
+  String get lockFailed => 'Kunci tidak dapat dihidupkan. Cuba lagi.';
+  @override
+  String get lockNow => 'Kunci sekarang';
+  @override
+  String get lockOff => 'Kunci app dimatikan.';
+  @override
+  String get lockOn => 'Kunci app dihidupkan.';
+  @override
+  String get lockWithPin => 'Kunci dengan PIN';
+  @override
+  String get lockWithPinSub => 'Diminta setiap kali anda buka Kukira';
+  @override
+  String get lockedTitle => 'Kukira dikunci';
+  @override
+  String get monthlyOdoReminder => 'Peringatan bulanan odometer';
+  @override
+  String get monthlyOdoReminderSub => 'Supaya peringatan ikut jarak kekal tepat';
+  @override
+  String get noDocsBody => 'Simpan SPA, geran, surat VP, bil cukai, polisi insurans dan resit di sini. Semuanya disulitkan dan boleh dibuka tanpa internet.';
+  @override
+  String get noDocsForAsset => 'Belum ada dokumen.';
+  @override
+  String get noDocsTitle => 'Belum ada dokumen';
+  @override
+  String get noVendors => 'Belum ada vendor. Tambah tukang paip, bengkel atau kontraktor yang anda percaya.';
+  @override
+  String get noViewer => 'Tiada app di telefon ini yang boleh membuka fail ini.';
+  @override
+  String notifyOnAt(String date, String time) => '$date, $time';
+  @override
+  String get notifyTime => 'Masa pemberitahuan';
+  @override
+  String get open => 'Buka';
+  @override
+  String openDefectList(int n) => 'Buka senarai kecacatan ($n belum selesai)';
+  @override
+  String overdueCount(int n) => '$n lewat';
+  @override
+  String get parts => 'Barang';
+  @override
+  String get phone => 'Telefon';
+  @override
+  String get photos => 'Gambar';
+  @override
+  String photosCount(int n) => '$n gambar';
+  @override
+  String get pinAgain => 'Masukkan PIN sekali lagi';
+  @override
+  String get pinForgetNote => 'Jika anda lupa PIN, rekod hanya boleh dipulihkan dari fail sandaran. Buat sandaran dahulu.';
+  @override
+  String get pinMismatch => 'PIN tidak sama. Cuba lagi.';
+  @override
+  String get remindBeforeExpiry => 'Ingatkan saya sebulan sebelum tamat';
+  @override
+  String get remove => 'Buang';
+  @override
+  String get removePhoto => 'Buang gambar';
+  @override
+  String ruleEveryDays(int n, bool fromDue) => 'Setiap ${n % 7 == 0 ? '${n ~/ 7} minggu' : '$n hari'}, dikira dari ${fromDue ? 'tarikh akhir sebelumnya' : 'hari anda tandakan selesai'}';
+  @override
+  String get saveDocument => 'Simpan dokumen';
+  @override
+  String get saveToVendorBook => 'Simpan dalam buku vendor';
+  @override
+  String get searchDocs => 'Cari dokumen';
+  @override
+  String get securing => 'Mengunci rekod anda…';
+  @override
+  String get shareCopy => 'Kongsi salinan';
+  @override
+  String get splitCost => 'Pecahkan kos kepada item';
+  @override
+  String tooManyTries(int sec) => 'Terlalu banyak cubaan. Cuba lagi dalam $sec saat.';
+  @override
+  String get trade => 'Bidang';
+  @override
+  String tradeName(String t) => switch (t) { 'plumbing' => 'Paip', 'electrical' => 'Elektrik', 'aircond' => 'Penghawa dingin', 'renovation' => 'Ubah suai', 'pest_control' => 'Kawalan perosak', 'roof' => 'Bumbung', 'cleaning' => 'Pembersihan', 'workshop' => 'Bengkel', 'tyre' => 'Tayar', 'insurance' => 'Insurans', _ => 'Lain-lain' };
+  @override
+  String unitName(String u) => switch (u) { 'day' => 'hari', 'week' => 'minggu', 'year' => 'tahun', _ => 'bulan' };
+  @override
+  String get unlockTitle => 'Buka Kukira';
+  @override
+  String get updateOdometer => 'Kemas kini odometer';
+  @override
+  String get useFingerprint => 'Guna cap jari';
+  @override
+  String get usePin => 'Guna PIN';
+  @override
+  String get useSingleTotal => 'Guna satu jumlah sahaja';
+  @override
+  String get vendorBook => 'Buku vendor';
+  @override
+  String get vendorName => 'Nama';
+  @override
+  String get vendorPickHint => 'Pilih dari buku vendor atau taip nama baharu';
+  @override
+  String get wrongPin => 'PIN salah.';
+  @override
+  String get yesUseIt => 'Ya, guna';
 }

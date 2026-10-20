@@ -18,6 +18,8 @@ class AppScope extends InheritedWidget {
     required this.rebuildInfo,
     required this.setLang,
     required this.rebuildNow,
+    required this.lockChanged,
+    required this.lockNow,
     required super.child,
   });
 
@@ -31,6 +33,12 @@ class AppScope extends InheritedWidget {
   final ValueNotifier<RebuildInfo?> rebuildInfo;
   final void Function(String lang) setLang;
   final Future<void> Function() rebuildNow;
+
+  /// Re-reads the lock setting after it was turned on or off.
+  final VoidCallback lockChanged;
+
+  /// Shows the lock screen now.
+  final VoidCallback lockNow;
 
   static AppScope of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<AppScope>()!;
 
@@ -123,6 +131,7 @@ String ruleText(Str s, Reminder r) {
     case 'fixed':
       return s.ruleOnce;
     case 'repeat':
+      if ((r.repeatDays ?? 0) > 0 && (r.repeatMonths ?? 0) == 0) return s.ruleEveryDays(r.repeatDays!, r.repeatFrom == 'due');
       return s.ruleEveryMonths(r.repeatMonths ?? 0, r.repeatFrom == 'due');
     case 'mileage':
       return s.ruleEveryKm(s.km(r.repeatKm ?? 0));
@@ -148,6 +157,19 @@ IconData catIcon(String category) => switch (category) {
       _ => Icons.home_outlined,
     };
 
+/// Background and foreground colour for each asset category.
+(Color, Color) catColors(BuildContext context, String category) {
+  final dark = Theme.of(context).brightness == Brightness.dark;
+  switch (category) {
+    case 'car':
+      return dark ? (const Color(0xFF1C2D44), const Color(0xFF9CC3F5)) : (const Color(0xFFDCE8F8), const Color(0xFF1F4C86));
+    case 'motorcycle':
+      return dark ? (const Color(0xFF3A2A12), const Color(0xFFF3B95A)) : (const Color(0xFFFBEBD0), const Color(0xFF8A4F00));
+    default:
+      return dark ? (const Color(0xFF173528), const Color(0xFF7FD3A8)) : (const Color(0xFFD9EEE3), const Color(0xFF1E6A4E));
+  }
+}
+
 class AssetAvatar extends StatelessWidget {
   const AssetAvatar(this.category, {super.key, this.size = 40});
   final String category;
@@ -155,12 +177,12 @@ class AssetAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
+    final (bg, fg) = catColors(context, category);
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: c.primaryContainer, borderRadius: BorderRadius.circular(size * 0.28)),
-      child: Icon(catIcon(category), color: c.onPrimaryContainer, size: size * 0.55),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(size * 0.28)),
+      child: Icon(catIcon(category), color: fg, size: size * 0.55),
     );
   }
 }

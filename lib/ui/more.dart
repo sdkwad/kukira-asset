@@ -1,15 +1,19 @@
 import 'dart:typed_data';
 
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
 import '../data/vault.dart';
 import '../l10n/strings.dart';
 import '../services/backup.dart';
+import '../services/files.dart';
 import '../services/notifications.dart';
 import 'common.dart';
 import 'forms.dart';
+import 'lock.dart';
 import 'today.dart';
+import 'vendors.dart';
 
 // ================================================================ More
 
@@ -57,6 +61,13 @@ class MoreScreen extends StatelessWidget {
                 onTap: () => go(const AllRemindersScreen()),
               ),
               ListTile(
+                leading: const Icon(Icons.contacts_outlined),
+                title: Text(s.vendorBook),
+                subtitle: Text(s.contactsCount(w.vendors.length)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => go(const VendorsScreen()),
+              ),
+              ListTile(
                 leading: const Icon(Icons.translate),
                 title: Text(s.language),
                 subtitle: Text(context.app.lang == 'ms' ? 'Bahasa Melayu' : 'English'),
@@ -69,8 +80,9 @@ class MoreScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.lock_outline),
                 title: Text(s.appLock),
-                subtitle: Text(s.comingSoon),
-                enabled: false,
+                subtitle: Text(s.appLockSub),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => go(const SecurityScreen()),
               ),
               ListTile(
                 leading: const Icon(Icons.info_outline),
@@ -156,7 +168,9 @@ class HealthScreen extends StatelessWidget {
   const HealthScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => WorldView(builder: _build);
+
+  Widget _build(BuildContext context, World w) {
     final s = context.s;
     final app = context.app;
     return Scaffold(
@@ -174,9 +188,26 @@ class HealthScreen extends StatelessWidget {
                 trailing: on == true ? const Icon(Icons.check_circle_outline) : FilledButton.tonal(onPressed: () => askNotifications(context), child: Text(s.allow)),
               ),
               ListTile(
+                leading: const Icon(Icons.access_time),
+                title: Text(s.notifyTime),
+                subtitle: Text(s.hm(w.notifyHour, w.notifyMinute)),
+                trailing: const Icon(Icons.edit_outlined),
+                onTap: () async {
+                  final db = context.db;
+                  final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: w.notifyHour, minute: w.notifyMinute));
+                  if (t == null) return;
+                  await db.setSetting('notifyHour', '${t.hour}');
+                  await db.setSetting('notifyMinute', '${t.minute}');
+                },
+              ),
+              ListTile(
                 leading: const Icon(Icons.battery_alert_outlined),
                 title: Text(s.batteryTitle),
                 subtitle: Text(s.batteryBody),
+                trailing: FilledButton.tonal(
+                  onPressed: () => AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization),
+                  child: Text(s.open),
+                ),
               ),
               ListTile(
                 leading: const Icon(Icons.event_repeat_outlined),
@@ -331,7 +362,8 @@ Future<BackupContents?> pickAndOpenBackup(BuildContext context, Str s) async {
       content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
         Text(s.backupMadeOn(s.dLong(c.created))),
         const SizedBox(height: 8),
-        Text(s.backupCounts(c.count('assets'), c.count('reminders'), c.count('records'), c.count('documents'))),
+        Text(s.backupCounts(c.count('assets'), c.count('reminders'), c.count('records'), c.count('documents') - c.photoCount)),
+        if (c.photoCount > 0) Text(s.photosCount(c.photoCount)),
         const SizedBox(height: 12),
         NoteBox(s.restoreReplaces(s.dLong(c.created)), warn: true),
       ]),
@@ -392,7 +424,7 @@ class BackupScreen extends StatelessWidget {
     final db = context.db;
     final c = await pickAndOpenBackup(context, s);
     if (c == null || !context.mounted) return;
-    await withProgress(context, s.restoring, () => db.replaceAll(c.tables));
+    await withProgress(context, s.restoring, () => Backup.restore(db, c));
     if (context.mounted) snack(context, s.restoredFrom(s.dLong(c.created)));
   }
 
@@ -434,7 +466,7 @@ class BackupScreen extends StatelessWidget {
   }
 }
 
-// ================================================================ about, documents
+// ================================================================ about
 
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
@@ -460,45 +492,13 @@ class AboutScreen extends StatelessWidget {
   }
 }
 
-class DocumentsScreen extends StatelessWidget {
-  const DocumentsScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    final theme = Theme.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
-            child: Text(s.documentsTab, style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
-          ),
-          Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Icon(Icons.description_outlined, size: 40, color: theme.colorScheme.primary),
-                const SizedBox(height: 12),
-                Text(s.docsComingTitle, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                const SizedBox(height: 6),
-                Text(s.docsComingBody),
-              ]),
-            ),
-          ),
-        ]),
-      ),
-    );
-  }
-}
-
 // ================================================================ unreadable database
 
 /// Shown instead of the app when the database cannot be opened on this phone.
 class UnreadableScreen extends StatefulWidget {
-  const UnreadableScreen({super.key, required this.s, required this.onReady});
+  const UnreadableScreen({super.key, required this.s, required this.onReady, this.forgotPin = false});
   final Str s;
+  final bool forgotPin;
   final void Function(AppDb db) onReady;
 
   @override
@@ -514,7 +514,7 @@ class _UnreadableState extends State<UnreadableScreen> {
     if (c == null || !mounted) return;
     final db = await withProgress(context, s.restoring, () async {
       final db = await Vault.resetAndOpen();
-      await db.replaceAll(c.tables);
+      await Backup.restore(db, c);
       return db;
     });
     widget.onReady(db);
@@ -522,6 +522,8 @@ class _UnreadableState extends State<UnreadableScreen> {
 
   Future<void> _fresh() async {
     final db = await Vault.resetAndOpen();
+    SecureFiles.reset();
+    await SecureFiles.deleteAll();
     widget.onReady(db);
   }
 
@@ -535,9 +537,9 @@ class _UnreadableState extends State<UnreadableScreen> {
           const SizedBox(height: 40),
           Icon(Icons.key_off_outlined, size: 56, color: theme.colorScheme.primary),
           const SizedBox(height: 16),
-          Text(s.unreadableTitle, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(widget.forgotPin ? s.forgotPinTitle : s.unreadableTitle, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
-          Text(s.unreadableBody),
+          Text(widget.forgotPin ? s.forgotPinBody : s.unreadableBody),
           const SizedBox(height: 24),
           FilledButton.icon(icon: const Icon(Icons.restore), label: Text(s.restoreFromFile), onPressed: _restore),
           const SizedBox(height: 10),

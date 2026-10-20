@@ -21,3 +21,4 @@ pubspec.lock
 # APKs downloaded for testing
 *.apk
 *.zip
+apk/

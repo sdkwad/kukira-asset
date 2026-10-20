@@ -61,7 +61,7 @@ if kts:
         '            isMinifyEnabled = false\n'
         '            isShrinkResources = false',
         "release signing")
-    text += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n}\n'
+    text += '\ndependencies {\n    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")\n    implementation("androidx.appcompat:appcompat:1.7.0")\n}\n'
 else:
     sub(r"compileOptions\s*\{", "compileOptions {\n        coreLibraryDesugaringEnabled true", "desugaring")
     signing = """    signingConfigs {
@@ -81,7 +81,7 @@ else:
         "            minifyEnabled false\n"
         "            shrinkResources false",
         "release signing")
-    text += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n}\n"
+    text += "\ndependencies {\n    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.1.4'\n    implementation 'androidx.appcompat:appcompat:1.7.0'\n}\n"
 
 path.write_text(text)
 print("----", path.name, "----")

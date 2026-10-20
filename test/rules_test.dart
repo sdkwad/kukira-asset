@@ -57,6 +57,13 @@ void main() {
       expect(nextAfterDone(r2, today: DateTime(2027, 3, 1)).due, DateTime(2027, 8, 28));
     });
 
+    test('repeat every N days counts from completion', () {
+      final r = RemInfo(rule: 'repeat', due: DateTime(2026, 10, 10), repeatDays: 14);
+      expect(nextAfterDone(r, today: today).due, DateTime(2026, 11, 3));
+      final weekly = RemInfo(rule: 'repeat', due: DateTime(2026, 10, 1), repeatDays: 7, repeatFrom: 'due');
+      expect(nextAfterDone(weekly, today: today).due, DateTime(2026, 10, 22));
+    });
+
     test('fixed reminders finish', () {
       final r = RemInfo(rule: 'fixed', due: DateTime(2026, 11, 3));
       expect(nextAfterDone(r, today: today).done, isTrue);

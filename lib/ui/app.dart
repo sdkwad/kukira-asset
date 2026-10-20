@@ -10,7 +10,9 @@ import '../services/notifications.dart';
 import 'add_asset.dart';
 import 'assets.dart';
 import 'common.dart';
+import 'documents.dart';
 import 'forms.dart';
+import 'lock.dart';
 import 'more.dart';
 import 'today.dart';
 
@@ -45,6 +47,10 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
   final _rebuild = ValueNotifier<RebuildInfo?>(null);
   StreamSubscription<World>? _sub;
   Timer? _debounce;
+  String _lockMode = 'none';
+  bool _locked = false;
+  bool _forgotPin = false;
+  DateTime? _pausedAt;
 
   @override
   void initState() {
@@ -52,6 +58,12 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.addObserver(this);
     _db = widget.boot.db;
     if (_db != null) _attach();
+    _readLock();
+  }
+
+  Future<void> _readLock() async {
+    final m = await Vault.lockMode();
+    if (mounted) setState(() => _lockMode = m);
   }
 
   @override
@@ -90,7 +102,14 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.paused || state == AppLifecycleState.hidden) {
+      _pausedAt ??= DateTime.now();
+    }
     if (state == AppLifecycleState.resumed && _db != null) {
+      final away = _pausedAt == null ? Duration.zero : DateTime.now().difference(_pausedAt!);
+      _pausedAt = null;
+      // Lock again after two minutes away (long enough to take a photo or pick a file).
+      if (_lockMode != 'none' && away > const Duration(minutes: 2)) setState(() => _locked = true);
       _refreshNotif();
       _scheduleRebuild();
     }
@@ -104,6 +123,31 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final s = strFor(_lang);
+    final Widget home;
+    if (_db != null) {
+      home = const Shell();
+    } else if (widget.boot.state == BootState.locked && !_forgotPin) {
+      home = LockScreen(
+        s: s,
+        onOpened: (db) {
+          setState(() => _db = db);
+          _attach();
+        },
+        onForgot: () => setState(() => _forgotPin = true),
+      );
+    } else {
+      home = UnreadableScreen(
+        s: s,
+        forgotPin: _forgotPin,
+        onReady: (db) {
+          setState(() {
+            _db = db;
+            _lockMode = 'none';
+          });
+          _attach();
+        },
+      );
+    }
     final app = MaterialApp(
       title: 'Kukira Asset',
       debugShowCheckedModeBanner: false,
@@ -112,15 +156,18 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       locale: Locale(_lang),
       supportedLocales: const [Locale('ms'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
-      home: _db == null
-          ? UnreadableScreen(
-              s: s,
-              onReady: (db) {
-                setState(() => _db = db);
-                _attach();
-              },
-            )
-          : const Shell(),
+      home: home,
+      builder: (context, child) => Stack(children: [
+        child ?? const SizedBox.shrink(),
+        if (_locked && _db != null)
+          Positioned.fill(
+            child: Navigator(
+              onGenerateRoute: (_) => MaterialPageRoute(
+                builder: (_) => LockScreen(s: s, onChecked: () => setState(() => _locked = false)),
+              ),
+            ),
+          ),
+      ]),
     );
     if (_db == null) return app;
     return AppScope(
@@ -132,6 +179,8 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       rebuildInfo: _rebuild,
       setLang: _setLang,
       rebuildNow: _rebuildNow,
+      lockChanged: _readLock,
+      lockNow: () => setState(() => _locked = true),
       child: app,
     );
   }
@@ -225,10 +274,14 @@ void _showAddSheet(BuildContext context) {
           },
         ),
         ListTile(
-          enabled: false,
+          enabled: hasAssets,
           leading: const Icon(Icons.description_outlined),
           title: Text(s.document),
-          subtitle: Text(s.comingSoon),
+          subtitle: Text(s.addDocumentHint),
+          onTap: () {
+            Navigator.pop(c);
+            go(const DocumentFormScreen());
+          },
         ),
         if (!hasAssets) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text(s.addAssetFirst)),
         const SizedBox(height: 8),

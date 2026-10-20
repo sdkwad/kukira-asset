@@ -2,7 +2,18 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.1.0 (APK ujian)**.
+Versi ini: **0.2.0 (APK ujian)**.
+
+## Baharu dalam 0.2
+
+- Dokumen: ambil gambar atau pilih PDF (SPA, geran, surat VP, bil cukai, insurans, resit). Disimpan tersulit, dibuka dengan pemapar telefon. Tarikh tamat boleh menjadi peringatan.
+- Gambar pada rekod, kecacatan dan insiden. Gambar aset pada kad.
+- Kunci app dengan PIN (membungkus kunci pangkalan data) dan cap jari (Keystore). Dikunci semula selepas 2 minit di latar belakang.
+- Buku vendor: simpan tukang dan bengkel, pilih semasa merekod kerja.
+- Ubah rekod, pecahan kos (upah, barang), ubah tarikh tamat DLP, masa pemberitahuan sendiri, ulangan setiap N hari/minggu/bulan/tahun, peringatan bulanan odometer, butang terus ke tetapan bateri.
+- Sandaran format 2: termasuk dokumen dan gambar. Sandaran 0.1 masih boleh dipulihkan.
+- Rupa: ringkasan di atas Hari ini, kad aset berwarna, bulatan DLP, animasi tanda selesai, skrin pembukaan.
+- APK dipecah ikut jenis pemproses (sekitar 25 MB setiap satu).
 
 ## Apa yang ada dalam 0.1
 
@@ -20,7 +31,7 @@ Versi ini: **0.1.0 (APK ujian)**.
 - Semakan peringatan: status kebenaran, jadual terakhir, hantar ujian.
 - Bahasa Melayu (asal) dan English.
 
-Belum ada (versi seterusnya): dokumen dan gambar, buku vendor, kunci PIN/cap jari, carian dokumen.
+Seterusnya (0.3): senarai semak VP/DLP ikut bilik, rumah sewa, peringatan strata dan musim tengkujuh, jangka hayat alat ganti, jangkaan servis, rekod kemalangan dan NCD, senarai semak balik kampung, sejarah servis untuk jual.
 
 ## Cara dapatkan APK
 
@@ -28,7 +39,7 @@ APK dibina oleh GitHub Actions setiap kali kod ditolak ke `main` (tiada perisian
 
 1. Buka repo di GitHub → tab **Actions** → larian terbaru **Bina APK**.
 2. Di bawah **Artifacts**, muat turun `kukira-asset-apk` (fail zip).
-3. Buka zip, hantar fail `.apk` ke telefon (WhatsApp kepada diri sendiri, kabel USB, atau Google Drive).
+3. Buka zip. Kebanyakan telefon perlukan fail **`arm64-v8a`**. Guna `armeabi-v7a` hanya untuk telefon lama 32-bit. Hantar fail `.apk` itu ke telefon (WhatsApp kepada diri sendiri, kabel USB, atau Google Drive).
 4. Di telefon, buka fail itu. Benarkan **Pasang apl tidak diketahui** untuk app yang anda guna untuk membukanya.
 
 Semua binaan ditandatangani dengan kunci ujian yang sama (`android_overrides/app/kukira-test.p12`), jadi versi baharu boleh dipasang di atas versi lama tanpa kehilangan data. **Kunci ini hanya untuk ujian.** Sebelum terbit di Google Play, buat kunci muat naik baharu dan simpan secara rahsia.

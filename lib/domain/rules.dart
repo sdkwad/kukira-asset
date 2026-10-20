@@ -15,6 +15,7 @@ class RemInfo {
     this.dueKm,
     this.repeatMonths,
     this.repeatKm,
+    this.repeatDays,
     this.repeatFrom = 'completion',
     this.leadDays = 7,
     this.leadKm = 1000,
@@ -28,6 +29,7 @@ class RemInfo {
   final int? dueKm;
   final int? repeatMonths;
   final int? repeatKm;
+  final int? repeatDays;
 
   /// completion | due
   final String repeatFrom;
@@ -98,7 +100,16 @@ NextDue nextAfterDone(RemInfo r, {required DateTime today, int? odometer}) {
   var repeats = false;
 
   final months = r.repeatMonths ?? 0;
-  if (r.usesDate && months > 0) {
+  final everyDays = r.repeatDays ?? 0;
+  if (r.usesDate && everyDays > 0 && months == 0) {
+    final base = (r.repeatFrom == 'due' && r.due != null) ? dayOnly(r.due!) : t;
+    var next = base.add(Duration(days: everyDays));
+    while (!next.isAfter(t)) {
+      next = next.add(Duration(days: everyDays));
+    }
+    due = DateTime(next.year, next.month, next.day);
+    repeats = true;
+  } else if (r.usesDate && months > 0) {
     final base = (r.repeatFrom == 'due' && r.due != null) ? dayOnly(r.due!) : t;
     var k = 1;
     var next = addMonths(base, months * k);
@@ -143,8 +154,8 @@ class PlannedNote {
 /// The rolling notification window. The OS schedule is disposable: it is rebuilt
 /// from the database on app open and after every change. Mileage reminders cannot be
 /// scheduled by time; they are checked when the odometer is updated.
-List<PlannedNote> planNotes(List<RemInfo> rs, {required DateTime now, int hour = 9, int limit = 50}) {
-  DateTime at(DateTime d) => DateTime(d.year, d.month, d.day, hour);
+List<PlannedNote> planNotes(List<RemInfo> rs, {required DateTime now, int hour = 9, int minute = 0, int limit = 50}) {
+  DateTime at(DateTime d) => DateTime(d.year, d.month, d.day, hour, minute);
   final out = <PlannedNote>[];
   for (var i = 0; i < rs.length; i++) {
     final r = rs[i];

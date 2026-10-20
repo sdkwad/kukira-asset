@@ -6,6 +6,14 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <!-- Kukira works fully offline. Strip network access even if a library asks for it. -->
     <uses-permission android:name="android.permission.INTERNET" tools:node="remove" />
+    <!-- Files are picked through the system picker and photos through the camera app,
+         so no storage or install permissions are needed. Strip any a library adds. -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" tools:node="remove" />
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" tools:node="remove" />
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" tools:node="remove" />
 
     <!-- Device backups are treated as untrusted: nothing from this app goes into them.
          The encrypted backup file made inside the app is the only supported move path. -->

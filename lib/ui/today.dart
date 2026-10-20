@@ -1,3 +1,4 @@
+import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
@@ -24,7 +25,7 @@ class TodayScreen extends StatelessWidget {
           Text(s.weekdayDate(t).toUpperCase(),
               style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, letterSpacing: 0.8)),
           const SizedBox(height: 2),
-          Text(s.today, style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(w.assets.isEmpty ? s.today : s.greeting(DateTime.now().hour), style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
         ]),
       );
 
@@ -78,6 +79,8 @@ class TodayScreen extends StatelessWidget {
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
             header,
+            _Summary(over: over.length, soon: soon.length, lastBackup: lastBackup, onBackup: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupScreen()))),
+            const SizedBox(height: 12),
             ValueListenableBuilder<bool?>(
               valueListenable: context.app.notif,
               builder: (c, on, _) => on == false
@@ -136,6 +139,53 @@ class TodayScreen extends StatelessWidget {
   }
 }
 
+/// Three tiles at the top of Today: overdue, due soon, last backup.
+class _Summary extends StatelessWidget {
+  const _Summary({required this.over, required this.soon, required this.lastBackup, required this.onBackup});
+  final int over;
+  final int soon;
+  final DateTime? lastBackup;
+  final VoidCallback onBackup;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final theme = Theme.of(context);
+    Widget tile({required String value, required String label, required (Color, Color) colors, VoidCallback? onTap}) => Expanded(
+          child: Material(
+            color: colors.$1,
+            borderRadius: BorderRadius.circular(16),
+            child: InkWell(
+              borderRadius: BorderRadius.circular(16),
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(value, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w800, color: colors.$2)),
+                  const SizedBox(height: 2),
+                  Text(label, maxLines: 2, style: theme.textTheme.labelMedium?.copyWith(color: colors.$2)),
+                ]),
+              ),
+            ),
+          ),
+        );
+    final calm = (theme.colorScheme.surfaceContainerHighest, theme.colorScheme.onSurfaceVariant);
+    final backupDays = lastBackup == null ? null : daysBetween(lastBackup!, today());
+    return Row(children: [
+      tile(value: '$over', label: s.overdue, colors: over > 0 ? statusColors(context, RStatus.overdue) : calm),
+      const SizedBox(width: 8),
+      tile(value: '$soon', label: s.dueSoonShort, colors: soon > 0 ? statusColors(context, RStatus.dueSoon) : calm),
+      const SizedBox(width: 8),
+      tile(
+        value: backupDays == null ? '–' : s.daysShort(backupDays),
+        label: s.lastBackupLabel,
+        colors: backupDays == null || backupDays > 30 ? statusColors(context, RStatus.dueSoon) : statusColors(context, RStatus.done),
+        onTap: onBackup,
+      ),
+    ]);
+  }
+}
+
 /// Asks for the notification permission and refreshes the shared state.
 Future<void> askNotifications(BuildContext context) async {
   final s = context.s;
@@ -145,5 +195,8 @@ Future<void> askNotifications(BuildContext context) async {
   app.notif.value = on;
   await app.rebuildNow();
   if (!context.mounted) return;
-  if (!ok && !on) snack(context, s.notifDeniedHelp);
+  if (!ok && !on) {
+    snack(context, s.notifDeniedHelp);
+    await AppSettings.openAppSettings(type: AppSettingsType.notification);
+  }
 }

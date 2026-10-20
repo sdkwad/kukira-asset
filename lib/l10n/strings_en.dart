@@ -265,8 +265,6 @@ class StrEn extends Str {
   @override
   String get notifyWord => 'Notification';
   @override
-  String notifyOn(String date) => '$date, 9:00 am';
-  @override
   String get lastDoneWord => 'Last done';
   @override
   String estimatedNote(String note, String confirmWith) => 'Estimated date. $note Confirm with $confirmWith.';
@@ -390,8 +388,6 @@ class StrEn extends Str {
   String get warrantyHelp => "We'll remind you a month before it ends.";
   @override
   String get notes => 'Notes';
-  @override
-  String get photosLater => 'Photos and receipts come in the next version.';
   @override
   String linkedTo(String title) => 'Linked to “$title”, already marked done.';
   @override
@@ -533,8 +529,6 @@ class StrEn extends Str {
   @override
   String get yes => 'Yes';
   @override
-  String get deleteRecord => 'Delete record';
-  @override
   String get deleteRecordQ => 'Delete this record?';
   @override
   String get cannotUndo => 'This cannot be undone.';
@@ -566,8 +560,6 @@ class StrEn extends Str {
   String get defectFixed => 'Fixed';
   @override
   String get addDefect => 'Add defect';
-  @override
-  String get found => 'Found';
   @override
   String get reported => 'Reported';
   @override
@@ -666,8 +658,6 @@ class StrEn extends Str {
   String get addReminderHint => 'A date, a repeat or a mileage';
   @override
   String get document => 'Document';
-  @override
-  String get comingSoon => 'Coming in the next version';
 
   // ------------------------------------------------ more
   @override
@@ -821,10 +811,6 @@ class StrEn extends Str {
   @override
   String get testBuild => 'test build';
   @override
-  String get docsComingTitle => 'Documents are coming';
-  @override
-  String get docsComingBody => 'The next version stores your SPA, geran, VP letter, tax bills and receipts here, encrypted and readable offline.';
-  @override
   String get unreadableTitle => "We can't open your records on this phone";
   @override
   String get unreadableBody => 'The key that unlocks your records stays with the phone it was made on. This usually happens after moving to a new phone or restoring from a phone backup.\n\nIf you have a Kukira backup file, restore it now. You will need its passphrase.';
@@ -858,4 +844,240 @@ class StrEn extends Str {
   String get testNoteTitle => 'Test reminder';
   @override
   String get testNoteBody => 'Reminders from Kukira will look like this.';
+
+  // ------------------------------------------------ 0.2
+  @override
+  String get aboutDocument => 'About this document';
+  @override
+  String get addDocumentHint => 'SPA, geran, VP letter, bills, receipts, policies';
+  @override
+  String get addItem => 'Add item';
+  @override
+  String get addVendor => 'Add vendor';
+  @override
+  String get added => 'Added';
+  @override
+  String get alsoFingerprintBody => 'You can open Kukira with your fingerprint. The PIN still works if the fingerprint fails.';
+  @override
+  String get alsoFingerprintQ => 'Use fingerprint too?';
+  @override
+  String get appLockSub => 'PIN or fingerprint';
+  @override
+  String get attach => 'Attach';
+  @override
+  String get attachDocument => 'Attach document';
+  @override
+  String get camera => 'Camera';
+  @override
+  String get changesSaved => 'Changes saved.';
+  @override
+  String get choosePin => 'Choose a 4-digit PIN';
+  @override
+  String get chooseSource => 'Where from?';
+  @override
+  String contactsCount(int n) => '$n contact${n == 1 ? '' : 's'}';
+  @override
+  String get copied => 'Copied.';
+  @override
+  String get copy => 'Copy';
+  @override
+  String get costBreakdown => 'Cost breakdown';
+  @override
+  String get couldNotOpen => 'Could not open your records. Try again.';
+  @override
+  String get couldNotSave => 'Could not save. Try again.';
+  @override
+  String get customRepeat => 'Custom';
+  @override
+  String daysShort(int n) => n == 0 ? 'Today' : '${n}d';
+  @override
+  String get daysWord => 'days';
+  @override
+  String get deleteDocBody => 'The file is deleted from this phone, with its expiry reminder.';
+  @override
+  String get deleteDocQ => 'Delete this document?';
+  @override
+  String get deleteVendorBody => 'Old records keep the vendor name.';
+  @override
+  String deleteVendorQ(String name) => 'Delete $name?';
+  @override
+  String dlpEndOverrideHelp(String date) => 'Leave empty to use the estimate ($date). Fill it in if your SPA says otherwise.';
+  @override
+  String get dlpEndOverrideLabel => 'DLP end date (if different)';
+  @override
+  String get dlpOverrideNote => 'You set this end date from your SPA.';
+  @override
+  String get dlpSetByYou => 'Set by you';
+  @override
+  String get docCopiedNote => 'The file is copied into Kukira and encrypted. The original stays where it was.';
+  @override
+  String docExpires(String title) => '$title expires';
+  @override
+  String get docSaved => 'Document saved.';
+  @override
+  String docSavedWithReminder(String date) => 'Document saved. Expiry reminder on $date.';
+  @override
+  String get docTitleHint => 'e.g. House insurance policy 2027';
+  @override
+  String get docType => 'Document type';
+  @override
+  String docTypeName(String t) => switch (t) { 'spa' => 'SPA', 'geran' => 'Geran', 'vp_letter' => 'VP letter', 'dlp' => 'DLP', 'tax_bill' => 'Tax bill', 'insurance' => 'Insurance', 'receipt' => 'Receipt', 'photo' => 'Photo', _ => 'Other' };
+  @override
+  String get docsPrivacyNote => 'Files are stored encrypted inside Kukira and open in your phone\'s own viewer.';
+  @override
+  String get dueSoonShort => 'Due soon';
+  @override
+  String get edit => 'Edit';
+  @override
+  String get editDefect => 'Edit defect';
+  @override
+  String get editDocument => 'Edit document';
+  @override
+  String get editRecord => 'Edit record';
+  @override
+  String get editVendor => 'Edit vendor';
+  @override
+  String get enterPin => 'Enter your PIN';
+  @override
+  String get errDocTitle => 'Add a title so you can find it later.';
+  @override
+  String get errRepeat => 'Enter how often it repeats.';
+  @override
+  String get expired => 'Expired';
+  @override
+  String expiresShort(String date) => 'Exp. $date';
+  @override
+  String get expiry => 'Expiry';
+  @override
+  String get expiryOptional => 'Expiry date (optional)';
+  @override
+  String get filesPdf => 'Files (PDF or image)';
+  @override
+  String get fingerprintFailed => 'Fingerprint could not be set up. Try again.';
+  @override
+  String get fingerprintSub => 'Open with fingerprint or face';
+  @override
+  String get fingerprintUnavailable => 'No fingerprint is enrolled on this phone';
+  @override
+  String get forgotPin => 'Forgot PIN?';
+  @override
+  String get forgotPinBody => 'The PIN cannot be recovered because it locks your records. Restore from a Kukira backup file (you need its passphrase), or start fresh.';
+  @override
+  String get forgotPinTitle => 'Forgot PIN';
+  @override
+  String get gallery => 'Gallery';
+  @override
+  String greeting(int hour) => hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  @override
+  String get item => 'Item';
+  @override
+  String get itemHint => 'e.g. Labour';
+  @override
+  String jobsCount(int n) => '$n job${n == 1 ? '' : 's'}';
+  @override
+  String get jobsTitle => 'Recorded jobs';
+  @override
+  String get labour => 'Labour';
+  @override
+  String get lockExplainer => 'The lock protects the key that opens your records, not just the screen. Kukira locks again after 2 minutes in the background.';
+  @override
+  String get lockFailed => 'The lock could not be turned on. Try again.';
+  @override
+  String get lockNow => 'Lock now';
+  @override
+  String get lockOff => 'App lock turned off.';
+  @override
+  String get lockOn => 'App lock is on.';
+  @override
+  String get lockWithPin => 'Lock with PIN';
+  @override
+  String get lockWithPinSub => 'Asked each time you open Kukira';
+  @override
+  String get lockedTitle => 'Kukira is locked';
+  @override
+  String get monthlyOdoReminder => 'Monthly odometer reminder';
+  @override
+  String get monthlyOdoReminderSub => 'Keeps mileage reminders accurate';
+  @override
+  String get noDocsBody => 'Keep your SPA, geran, VP letter, tax bills, insurance policies and receipts here, encrypted and readable offline.';
+  @override
+  String get noDocsForAsset => 'No documents yet.';
+  @override
+  String get noDocsTitle => 'No documents yet';
+  @override
+  String get noVendors => 'No vendors yet. Add the plumbers, workshops and contractors you trust.';
+  @override
+  String get noViewer => 'No app on this phone can open this file.';
+  @override
+  String notifyOnAt(String date, String time) => '$date, $time';
+  @override
+  String get notifyTime => 'Notification time';
+  @override
+  String get open => 'Open';
+  @override
+  String openDefectList(int n) => 'Open defect list ($n open)';
+  @override
+  String overdueCount(int n) => '$n overdue';
+  @override
+  String get parts => 'Parts';
+  @override
+  String get phone => 'Phone';
+  @override
+  String get photos => 'Photos';
+  @override
+  String photosCount(int n) => '$n photo${n == 1 ? '' : 's'}';
+  @override
+  String get pinAgain => 'Enter the PIN again';
+  @override
+  String get pinForgetNote => 'If you forget the PIN, your records can only come back from a backup file. Make a backup first.';
+  @override
+  String get pinMismatch => 'The PINs didn\'t match. Try again.';
+  @override
+  String get remindBeforeExpiry => 'Remind me a month before it expires';
+  @override
+  String get remove => 'Remove';
+  @override
+  String get removePhoto => 'Remove photo';
+  @override
+  String ruleEveryDays(int n, bool fromDue) => 'Every ${n % 7 == 0 ? (n == 7 ? 'week' : '${n ~/ 7} weeks') : '$n days'}, counted from ${fromDue ? 'the previous due date' : 'when you mark it done'}';
+  @override
+  String get saveDocument => 'Save document';
+  @override
+  String get saveToVendorBook => 'Save to vendor book';
+  @override
+  String get searchDocs => 'Search documents';
+  @override
+  String get securing => 'Securing your records…';
+  @override
+  String get shareCopy => 'Share a copy';
+  @override
+  String get splitCost => 'Split cost into items';
+  @override
+  String tooManyTries(int sec) => 'Too many tries. Try again in $sec seconds.';
+  @override
+  String get trade => 'Trade';
+  @override
+  String tradeName(String t) => switch (t) { 'plumbing' => 'Plumbing', 'electrical' => 'Electrical', 'aircond' => 'Aircond', 'renovation' => 'Renovation', 'pest_control' => 'Pest control', 'roof' => 'Roof', 'cleaning' => 'Cleaning', 'workshop' => 'Workshop', 'tyre' => 'Tyres', 'insurance' => 'Insurance', _ => 'Other' };
+  @override
+  String unitName(String u) => switch (u) { 'day' => 'days', 'week' => 'weeks', 'year' => 'years', _ => 'months' };
+  @override
+  String get unlockTitle => 'Unlock Kukira';
+  @override
+  String get updateOdometer => 'Update odometer';
+  @override
+  String get useFingerprint => 'Use fingerprint';
+  @override
+  String get usePin => 'Use PIN';
+  @override
+  String get useSingleTotal => 'Use a single total';
+  @override
+  String get vendorBook => 'Vendor book';
+  @override
+  String get vendorName => 'Name';
+  @override
+  String get vendorPickHint => 'Pick from the vendor book or type a new name';
+  @override
+  String get wrongPin => 'Wrong PIN.';
+  @override
+  String get yesUseIt => 'Yes, use it';
 }

@@ -61,7 +61,7 @@ class Notifier {
   static Future<RebuildInfo> rebuild(World w, Str s) async {
     final now = DateTime.now();
     final live = w.reminders.where((r) => !r.done).toList();
-    final plan = planNotes(live.map((r) => r.info).toList(), now: now, limit: 49);
+    final plan = planNotes(live.map((r) => r.info).toList(), now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: 49);
     try {
       await plugin.cancelAll();
     } catch (_) {}
@@ -83,7 +83,7 @@ class Notifier {
     if (w.assets.isNotEmpty) {
       final base = w.lastBackup ?? w.assets.first.createdAt;
       final d = base.add(const Duration(days: 30));
-      final at = DateTime(d.year, d.month, d.day, 9);
+      final at = DateTime(d.year, d.month, d.day, w.notifyHour, w.notifyMinute);
       if (at.isAfter(now)) {
         await _schedule(_backupId, s.backupNudgeTitle, s.backupNudgeBody, at, details);
         scheduled++;

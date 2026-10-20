@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 
 import '../data/db.dart';
 import '../domain/rules.dart';
+import '../services/files.dart';
 import '../services/notifications.dart';
 import 'add_asset.dart';
 import 'common.dart';
+import 'documents.dart';
 import 'forms.dart';
 
 String assetSubtitle(BuildContext context, Asset a, World w) {
@@ -42,6 +44,69 @@ class Plate extends StatelessWidget {
       );
 }
 
+/// Coloured header of an asset card: the asset photo, or the category colour with a large icon.
+class AssetBanner extends StatelessWidget {
+  const AssetBanner(this.a, {super.key, this.height = 96});
+  final Asset a;
+  final double height;
+
+  @override
+  Widget build(BuildContext context) {
+    final (bg, fg) = catColors(context, a.category);
+    return SizedBox(
+      height: height,
+      width: double.infinity,
+      child: a.photoPath != null
+          ? SecureImage(a.photoPath!, cacheWidth: 900)
+          : DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(colors: [bg, Color.lerp(bg, fg, 0.18)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
+              ),
+              child: Stack(children: [
+                Positioned(right: -10, bottom: -18, child: Icon(catIcon(a.category), size: height * 1.15, color: fg.withValues(alpha: 0.16))),
+                Positioned(left: 16, bottom: 14, child: Icon(catIcon(a.category), size: 30, color: fg)),
+              ]),
+            ),
+    );
+  }
+}
+
+/// Days left in the DLP as a ring.
+class DlpRing extends StatelessWidget {
+  const DlpRing({super.key, required this.left, required this.fraction, this.size = 104});
+  final int left;
+  final double fraction;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final late = left < 90;
+    final color = late ? statusColors(context, RStatus.dueSoon).$2 : theme.colorScheme.primary;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(alignment: Alignment.center, children: [
+        SizedBox(
+          width: size,
+          height: size,
+          child: CircularProgressIndicator(
+            value: 1 - fraction.clamp(0.0, 1.0),
+            strokeWidth: 9,
+            strokeCap: StrokeCap.round,
+            color: color,
+            backgroundColor: theme.colorScheme.surfaceContainerHighest,
+          ),
+        ),
+        Column(mainAxisSize: MainAxisSize.min, children: [
+          Text('$left', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: 1)),
+          Text(context.s.daysWord, style: theme.textTheme.labelSmall),
+        ]),
+      ]),
+    );
+  }
+}
+
 // ================================================================ list
 
 class AssetsScreen extends StatefulWidget {
@@ -62,7 +127,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
       Widget body;
       if (q.isEmpty) {
         body = Column(children: [
-          for (final a in w.assets) ...[_AssetCard(a, w), const SizedBox(height: 10)],
+          for (final a in w.assets) ...[_AssetCard(a, w), const SizedBox(height: 12)],
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
             icon: const Icon(Icons.add),
@@ -74,6 +139,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
         final as = w.assets.where((a) => '${a.nickname} ${w.vehicles[a.id]?.plate ?? ''} ${assetSubtitle(context, a, w)}'.toLowerCase().contains(q)).toList();
         final rs = w.reminders.where((r) => !r.done && r.title.toLowerCase().contains(q)).toList();
         final recs = w.records.where((r) => '${r.title} ${r.vendorName ?? ''} ${r.area ?? ''} ${r.notes ?? ''}'.toLowerCase().contains(q)).toList();
+        final docs = w.files.where((d) => '${d.title} ${s.docTypeName(d.docType)}'.toLowerCase().contains(q)).toList();
         body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
           SectionTitle(s.assetsTab, count: as.length),
           CardList([
@@ -89,6 +155,8 @@ class _AssetsScreenState extends State<AssetsScreen> {
           CardList([for (final r in rs) ReminderTile(r, w, onTap: () => showReminderSheet(context, r.id))], empty: s.noMatch),
           SectionTitle(s.recordsTitle, count: recs.length),
           CardList([for (final r in recs) RecordTile(r, w, showAsset: true)], empty: s.noMatch),
+          SectionTitle(s.documentsTab, count: docs.length),
+          CardList([for (final d in docs) DocTile(d, w, showAsset: true)], empty: s.noMatch),
         ]);
       }
       return Scaffold(
@@ -121,7 +189,9 @@ class _AssetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final next = (w.reminders.where((r) => !r.done && r.assetId == a.id).toList()..sort(remOrder(w))).firstOrNull;
+    final live = w.reminders.where((r) => !r.done && r.assetId == a.id).toList()..sort(remOrder(w));
+    final next = live.firstOrNull;
+    final over = live.where((r) => remStatus(r, w) == RStatus.overdue).length;
     final end = dlpEnd(w, a.id);
     final left = end == null ? null : daysBetween(today(), end);
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
@@ -130,49 +200,70 @@ class _AssetCard extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              AssetAvatar(a.category, size: 44),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(a.nickname, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 2),
-                  Row(children: [
-                    if (w.vehicles[a.id] != null) ...[Plate(w.vehicles[a.id]!.plate), const SizedBox(width: 6)],
-                    Flexible(child: Text(assetSubtitle(context, a, w), style: TextStyle(color: muted, fontSize: 13))),
-                  ]),
-                ]),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Stack(children: [
+            AssetBanner(a),
+            if (over > 0)
+              Positioned(
+                right: 12,
+                top: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(99)),
+                  child: Text(s.overdueCount(over), style: TextStyle(color: Theme.of(context).colorScheme.onError, fontWeight: FontWeight.w700, fontSize: 12)),
+                ),
               ),
-              Icon(Icons.chevron_right, color: muted),
-            ]),
-            const Divider(height: 22),
-            if (next == null)
-              Text(s.noRemindersYet, style: TextStyle(color: muted))
-            else
+          ]),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
                 Expanded(
-                  child: Text.rich(TextSpan(children: [
-                    TextSpan(text: '${s.nextLabel}: '),
-                    TextSpan(text: next.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    TextSpan(text: '\n${dueText(s, next, w)}', style: TextStyle(color: muted, fontSize: 13)),
-                  ])),
+                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Text(a.nickname, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                    const SizedBox(height: 2),
+                    Row(children: [
+                      if (w.vehicles[a.id] != null) ...[Plate(w.vehicles[a.id]!.plate), const SizedBox(width: 6)],
+                      Flexible(child: Text(assetSubtitle(context, a, w), style: TextStyle(color: muted, fontSize: 13))),
+                    ]),
+                  ]),
                 ),
-                StatusPill(remStatus(next, w)),
+                Icon(Icons.chevron_right, color: muted),
               ]),
-            if (left != null && left > 0) ...[
-              const SizedBox(height: 8),
-              Row(children: [
-                Icon(Icons.construction_outlined, size: 16, color: muted),
-                const SizedBox(width: 6),
-                Expanded(child: Text(s.dlpDaysLeftShort(left), style: TextStyle(fontSize: 13, color: muted))),
-                const EstTag(),
-              ]),
-            ],
-          ]),
-        ),
+              const Divider(height: 22),
+              if (next == null)
+                Text(s.noRemindersYet, style: TextStyle(color: muted))
+              else
+                Row(children: [
+                  Expanded(
+                    child: Text.rich(TextSpan(children: [
+                      TextSpan(text: '${s.nextLabel}: '),
+                      TextSpan(text: next.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      TextSpan(text: '\n${dueText(s, next, w)}', style: TextStyle(color: muted, fontSize: 13)),
+                    ])),
+                  ),
+                  StatusPill(remStatus(next, w)),
+                ]),
+              if (left != null && left > 0) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Icon(Icons.construction_outlined, size: 16, color: muted),
+                  const SizedBox(width: 6),
+                  Expanded(child: Text(s.dlpDaysLeftShort(left), style: TextStyle(fontSize: 13, color: muted))),
+                  const EstTag(),
+                ]),
+              ],
+              if (w.vehicles[a.id] != null && w.odometer[a.id] != null) ...[
+                const SizedBox(height: 8),
+                Row(children: [
+                  Icon(Icons.speed_outlined, size: 16, color: muted),
+                  const SizedBox(width: 6),
+                  Text('${s.km(w.odometer[a.id]!.km)} · ${s.ago(w.odometer[a.id]!.date)}', style: TextStyle(fontSize: 13, color: muted)),
+                ]),
+              ],
+            ]),
+          ),
+        ]),
       ),
     );
   }
@@ -192,7 +283,7 @@ class AssetDetailScreen extends StatelessWidget {
       if (a == null) return Scaffold(appBar: AppBar(), body: Center(child: Text(s.assetDeleted)));
       final end = dlpEnd(w, a.id);
       final showDefects = a.category == 'house' && end != null && daysBetween(today(), end) > 0;
-      final tabs = [s.overviewTab, s.upkeepTab, s.remindersTab, if (showDefects) s.defectsTab];
+      final tabs = [s.overviewTab, s.upkeepTab, s.remindersTab, s.documentsTab, if (showDefects) s.defectsTab];
       return DefaultTabController(
         key: ValueKey(tabs.length),
         length: tabs.length,
@@ -207,7 +298,11 @@ class AssetDetailScreen extends StatelessWidget {
                   } else if (v == 'delete') {
                     final ok = await confirm(context, title: s.deleteAssetQ(a.nickname), body: s.deleteAssetBody, ok: s.delete, danger: true);
                     if (ok && context.mounted) {
+                      final files = [...w.documents.where((d) => d.assetId == a.id).map((d) => d.filePath), if (a.photoPath != null) a.photoPath!];
                       await context.db.deleteAsset(a.id);
+                      for (final f in files) {
+                        await SecureFiles.delete(f);
+                      }
                       if (context.mounted) Navigator.pop(context);
                     }
                   }
@@ -224,6 +319,7 @@ class AssetDetailScreen extends StatelessWidget {
             _Overview(a, w),
             _Upkeep(a, w),
             _Reminders(a, w),
+            _Documents(a, w),
             if (showDefects) _Defects(a, w),
           ]),
         ),
@@ -240,7 +336,11 @@ class _Overview extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final children = <Widget>[];
+    final theme = Theme.of(context);
+    final children = <Widget>[
+      ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
+      const SizedBox(height: 12),
+    ];
     void edit() => Navigator.push(context, MaterialPageRoute(builder: (_) => a.category == 'house' ? HouseEditScreen(assetId: a.id) : VehicleEditScreen(assetId: a.id)));
     if (a.category == 'house') {
       final h = w.houses[a.id]!;
@@ -269,22 +369,29 @@ class _Overview extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(s.dlpTitle.toUpperCase(), style: Theme.of(context).textTheme.labelMedium),
-                const SizedBox(height: 6),
-                Text.rich(TextSpan(children: [
-                  TextSpan(text: '$left ', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700)),
-                  TextSpan(text: s.dlpDaysLeft),
-                ])),
-                const SizedBox(height: 10),
-                LinearProgressIndicator(value: total == 0 ? 1.0 : gone / total, minHeight: 8, borderRadius: BorderRadius.circular(8)),
-                const SizedBox(height: 6),
                 Row(children: [
-                  Expanded(child: Text('VP ${s.dShort(h.vpDate!)}', style: Theme.of(context).textTheme.bodySmall)),
-                  Text(s.endsAbout(s.dLong(end)), style: Theme.of(context).textTheme.bodySmall),
+                  DlpRing(left: left, fraction: total == 0 ? 1.0 : gone / total),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Text(s.dlpTitle.toUpperCase(), style: theme.textTheme.labelMedium),
+                      const SizedBox(height: 4),
+                      Text(s.dlpDaysLeft, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
+                      const SizedBox(height: 4),
+                      Text(s.endsAbout(s.dLong(end)), style: theme.textTheme.bodySmall),
+                      if (h.dlpEndOverride != null) Text(s.dlpSetByYou, style: theme.textTheme.bodySmall),
+                    ]),
+                  ),
                 ]),
-                const SizedBox(height: 10),
-                NoteBox(s.dlpNote, warn: true),
+                const SizedBox(height: 12),
+                NoteBox(h.dlpEndOverride != null ? s.dlpOverrideNote : s.dlpNote, warn: h.dlpEndOverride == null),
                 if (h.source == 'subsale') ...[const SizedBox(height: 8), NoteBox(s.dlpSubsaleNote)],
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  icon: const Icon(Icons.construction_outlined),
+                  label: Text(s.openDefectList(w.records.where((r) => r.assetId == a.id && r.kind == 'defect' && r.status != 'done').length)),
+                  onPressed: () => DefaultTabController.of(context).animateTo(4),
+                ),
               ]),
             ),
           ));
@@ -302,17 +409,41 @@ class _Overview extends StatelessWidget {
     } else {
       final v = w.vehicles[a.id]!;
       final o = w.odometer[a.id];
+      final monthly = w.reminders.where((r) => r.assetId == a.id && r.category == 'odometer' && !r.done).firstOrNull;
       children.addAll([
-        Center(child: Padding(padding: const EdgeInsets.symmetric(vertical: 8), child: Plate(v.plate, big: true))),
+        Center(child: Padding(padding: const EdgeInsets.only(bottom: 10), child: Plate(v.plate, big: true))),
         Card(
           margin: EdgeInsets.zero,
-          child: ListTile(
-            contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-            leading: const Icon(Icons.speed_outlined, size: 32),
-            title: Text(o == null ? s.odoNotSet : s.km(o.km), style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-            subtitle: Text(o == null ? s.odoAddFirst : s.odoLastUpdated(s.ago(o.date))),
-            trailing: FilledButton.tonal(onPressed: () => showOdometerDialog(context, a.id), child: Text(s.update)),
-          ),
+          child: Column(children: [
+            ListTile(
+              contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
+              leading: const Icon(Icons.speed_outlined, size: 32),
+              title: Text(o == null ? s.odoNotSet : s.km(o.km), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+              subtitle: Text(o == null ? s.odoAddFirst : s.odoLastUpdated(s.ago(o.date))),
+              trailing: FilledButton.tonal(onPressed: () => showOdometerDialog(context, a.id), child: Text(s.update)),
+            ),
+            SwitchListTile(
+              value: monthly != null,
+              title: Text(s.monthlyOdoReminder),
+              subtitle: Text(s.monthlyOdoReminderSub),
+              onChanged: (on) async {
+                final db = context.db;
+                if (on) {
+                  await db.addReminder(RemindersCompanion(
+                    assetId: Value(a.id),
+                    title: Value(s.updateOdoTitle(a.nickname)),
+                    category: const Value('odometer'),
+                    ruleType: const Value('repeat'),
+                    dueDate: Value(DateTime(today().year, today().month + 1, 1)),
+                    repeatMonths: const Value(1),
+                    leadDays: const Value(0),
+                  ));
+                } else {
+                  await db.deleteReminder(monthly!.id);
+                }
+              },
+            ),
+          ]),
         ),
         const SizedBox(height: 12),
         Facts([
@@ -345,6 +476,7 @@ class RecordTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final photos = w.photosOf(r.id);
     final meta = [
       s.dLong(r.date),
       '${s.kindName(r.kind)}${r.category != null ? ' · ${s.catName(r.category!)}' : ''}',
@@ -354,51 +486,117 @@ class RecordTile extends StatelessWidget {
       if (showAsset) w.asset(r.assetId)?.nickname ?? '',
     ].join(' · ');
     return ListTile(
-      leading: Icon(r.kind == 'payment' ? Icons.receipt_long_outlined : r.kind == 'incident' ? Icons.report_gmailerrorred_outlined : Icons.build_outlined),
+      leading: photos.isNotEmpty
+          ? ClipRRect(borderRadius: BorderRadius.circular(8), child: SecureImage(photos.first.filePath, size: 44, cacheWidth: 150))
+          : SizedBox(
+              width: 44,
+              child: Icon(r.kind == 'payment'
+                  ? Icons.receipt_long_outlined
+                  : r.kind == 'incident'
+                      ? Icons.report_gmailerrorred_outlined
+                      : r.kind == 'defect'
+                          ? Icons.construction_outlined
+                          : Icons.build_outlined),
+            ),
       title: Text(r.title),
       subtitle: Text(meta),
-      onTap: () => _showRecordSheet(context, r),
+      onTap: () => showRecordSheet(context, r.id),
     );
   }
 }
 
-Future<void> _showRecordSheet(BuildContext context, UpkeepRecord r) {
-  final s = context.s;
+Future<void> showRecordSheet(BuildContext context, int recordId) {
   return showModalBottomSheet<void>(
     context: context,
+    isScrollControlled: true,
     showDragHandle: true,
-    builder: (c) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-        child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          Text(r.title, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-          const SizedBox(height: 12),
-          Facts([
-            (s.date, s.dLong(r.date)),
-            (s.kind, s.kindName(r.kind)),
-            if (r.category != null) (s.category, s.catName(r.category!)),
-            if (r.cost != null) (s.totalCost, s.rm(r.cost!)),
-            if (r.vendorName != null) (s.vendor, r.vendorName!),
-            if (r.area != null) (s.area, r.area!),
-            if (r.odometer != null) (s.odometerKm, s.km(r.odometer!)),
-            if (r.warrantyEnd != null) (s.warrantyEndLabel, s.dLong(r.warrantyEnd!)),
-            if (r.insuranceClaim == true) (s.madeClaim, s.yes),
-            if (r.notes != null) (s.notes, r.notes!),
+    builder: (sheet) => WorldView(builder: (c, w) {
+      final s = c.s;
+      final r = w.records.where((x) => x.id == recordId).firstOrNull;
+      if (r == null) return const SizedBox(height: 100);
+      final items = w.costItems[r.id] ?? const [];
+      final defect = r.kind == 'defect';
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text(r.title, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+            const SizedBox(height: 12),
+            PhotoStrip(w.photosOf(r.id)),
+            if (w.photosOf(r.id).isNotEmpty) const SizedBox(height: 12),
+            Facts([
+              (s.date, s.dLong(r.date)),
+              (s.kind, s.kindName(r.kind)),
+              if (r.category != null) (s.category, s.catName(r.category!)),
+              for (final i in items) (i.label, s.rm(i.amount)),
+              if (r.cost != null) (s.totalCost, s.rm(r.cost!)),
+              if (r.vendorName != null) (s.vendor, r.vendorName!),
+              if (r.area != null) (s.area, r.area!),
+              if (r.odometer != null) (s.odometerKm, s.km(r.odometer!)),
+              if (r.warrantyEnd != null) (s.warrantyEndLabel, s.dLong(r.warrantyEnd!)),
+              if (defect) (s.reported, r.reportedToDeveloper == null ? s.notYet : s.dLong(r.reportedToDeveloper!)),
+              if (r.insuranceClaim == true) (s.madeClaim, s.yes),
+              if (r.notes != null) (s.notes, r.notes!),
+            ]),
+            if (defect) ...[
+              const SizedBox(height: 12),
+              FieldLabel(s.statusWord),
+              ChoiceRow<String>(
+                options: const ['open', 'in_progress', 'done'],
+                value: r.status ?? 'open',
+                label: s.defectStatusName,
+                onChanged: (v) => c.db.updateRecord(r.id, RecordsCompanion(status: Value(v))),
+              ),
+              if (r.reportedToDeveloper == null) ...[
+                const SizedBox(height: 8),
+                FilledButton(
+                  onPressed: () async {
+                    await c.db.updateRecord(r.id, RecordsCompanion(
+                      reportedToDeveloper: Value(today()),
+                      status: Value(r.status == null || r.status == 'open' ? 'in_progress' : r.status),
+                    ));
+                    if (c.mounted) snack(c, s.reportedToday);
+                  },
+                  child: Text(s.markReportedToday),
+                ),
+              ],
+            ],
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.edit_outlined),
+                  label: Text(s.edit),
+                  onPressed: () {
+                    Navigator.pop(sheet);
+                    Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(editId: r.id)));
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: TextButton.icon(
+                  icon: const Icon(Icons.delete_outline),
+                  label: Text(s.delete),
+                  onPressed: () async {
+                    final ok = await confirm(c, title: s.deleteRecordQ, body: s.cannotUndo, ok: s.delete, danger: true);
+                    if (!ok || !c.mounted) return;
+                    final photos = w.photosOf(r.id);
+                    final db = c.db;
+                    for (final p in photos) {
+                      await db.deleteDocument(p.id);
+                      await SecureFiles.delete(p.filePath);
+                    }
+                    await db.deleteRecord(r.id);
+                    if (sheet.mounted) Navigator.pop(sheet);
+                  },
+                ),
+              ),
+            ]),
           ]),
-          const SizedBox(height: 12),
-          TextButton.icon(
-            icon: const Icon(Icons.delete_outline),
-            label: Text(s.deleteRecord),
-            onPressed: () async {
-              final ok = await confirm(c, title: s.deleteRecordQ, body: s.cannotUndo, ok: s.delete, danger: true);
-              if (!ok || !c.mounted) return;
-              await c.db.deleteRecord(r.id);
-              if (c.mounted) Navigator.pop(c);
-            },
-          ),
-        ]),
-      ),
-    ),
+        ),
+      );
+    }),
   );
 }
 
@@ -448,6 +646,27 @@ class _Reminders extends StatelessWidget {
   }
 }
 
+class _Documents extends StatelessWidget {
+  const _Documents(this.a, this.w);
+  final Asset a;
+  final World w;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final ds = w.files.where((d) => d.assetId == a.id).toList()..sort((x, y) => y.addedAt.compareTo(x.addedAt));
+    return ListView(padding: const EdgeInsets.all(16), children: [
+      CardList([for (final d in ds) DocTile(d, w)], empty: s.noDocsForAsset),
+      const SizedBox(height: 12),
+      OutlinedButton.icon(
+        icon: const Icon(Icons.attach_file),
+        label: Text(s.attachDocument),
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DocumentFormScreen(assetId: a.id))),
+      ),
+    ]);
+  }
+}
+
 class _Defects extends StatelessWidget {
   const _Defects(this.a, this.w);
   final Asset a;
@@ -457,7 +676,10 @@ class _Defects extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final end = dlpEnd(w, a.id)!;
+    final h = w.houses[a.id]!;
     final left = daysBetween(today(), end);
+    final total = daysBetween(h.vpDate!, end);
+    final gone = daysBetween(h.vpDate!, today()).clamp(0, total);
     final ds = w.records.where((r) => r.assetId == a.id && r.kind == 'defect').toList();
     Widget group(String status, String label) {
       final g = ds.where((r) => (r.status ?? 'open') == status).toList();
@@ -466,7 +688,9 @@ class _Defects extends StatelessWidget {
         CardList([
           for (final r in g)
             ListTile(
-              leading: const Icon(Icons.construction_outlined),
+              leading: w.photosOf(r.id).isNotEmpty
+                  ? ClipRRect(borderRadius: BorderRadius.circular(8), child: SecureImage(w.photosOf(r.id).first.filePath, size: 44, cacheWidth: 150))
+                  : const SizedBox(width: 44, child: Icon(Icons.construction_outlined)),
               title: Text(r.title),
               subtitle: Text([
                 if (r.area != null) r.area!,
@@ -474,7 +698,7 @@ class _Defects extends StatelessWidget {
                 r.reportedToDeveloper == null ? s.notReportedYet : s.reportedOn(s.dShort(r.reportedToDeveloper!)),
               ].join(' · ')),
               trailing: const Icon(Icons.chevron_right),
-              onTap: () => _showDefectSheet(context, r.id),
+              onTap: () => showRecordSheet(context, r.id),
             ),
         ], empty: s.none),
       ]);
@@ -486,10 +710,11 @@ class _Defects extends StatelessWidget {
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text.rich(TextSpan(children: [
-              TextSpan(text: '$left ', style: Theme.of(context).textTheme.displaySmall?.copyWith(fontWeight: FontWeight.w700)),
-              TextSpan(text: s.dlpDaysLeftEnds(s.dLong(end))),
-            ])),
+            Row(children: [
+              DlpRing(left: left, fraction: total == 0 ? 1.0 : gone / total, size: 88),
+              const SizedBox(width: 16),
+              Expanded(child: Text(s.dlpDaysLeftEnds(s.dLong(end)))),
+            ]),
             const SizedBox(height: 10),
             NoteBox(s.defectReportNote, warn: true),
           ]),
@@ -508,65 +733,10 @@ class _Defects extends StatelessWidget {
   }
 }
 
-Future<void> _showDefectSheet(BuildContext context, int recordId) {
-  return showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (sheet) => WorldView(builder: (c, w) {
-      final s = c.s;
-      final r = w.records.where((x) => x.id == recordId).firstOrNull;
-      if (r == null) return const SizedBox(height: 100);
-      return SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-            Text(r.title, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-            const SizedBox(height: 12),
-            Facts([
-              (s.area, r.area ?? s.notSet),
-              (s.found, s.dLong(r.date)),
-              (s.reported, r.reportedToDeveloper == null ? s.notYet : s.dLong(r.reportedToDeveloper!)),
-            ]),
-            const SizedBox(height: 12),
-            FieldLabel(s.statusWord),
-            ChoiceRow<String>(
-              options: const ['open', 'in_progress', 'done'],
-              value: r.status ?? 'open',
-              label: s.defectStatusName,
-              onChanged: (v) => c.db.updateRecord(r.id, RecordsCompanion(status: Value(v))),
-            ),
-            const SizedBox(height: 12),
-            if (r.reportedToDeveloper == null)
-              FilledButton(
-                onPressed: () async {
-                  await c.db.updateRecord(r.id, RecordsCompanion(
-                    reportedToDeveloper: Value(today()),
-                    status: Value(r.status == null || r.status == 'open' ? 'in_progress' : r.status),
-                  ));
-                  if (c.mounted) snack(c, s.reportedToday);
-                },
-                child: Text(s.markReportedToday),
-              ),
-            TextButton.icon(
-              icon: const Icon(Icons.delete_outline),
-              label: Text(s.deleteRecord),
-              onPressed: () async {
-                final ok = await confirm(c, title: s.deleteRecordQ, body: s.cannotUndo, ok: s.delete, danger: true);
-                if (!ok || !c.mounted) return;
-                await c.db.deleteRecord(r.id);
-                if (sheet.mounted) Navigator.pop(sheet);
-              },
-            ),
-          ]),
-        ),
-      );
-    }),
-  );
-}
-
 // ================================================================ odometer
 
-Future<void> showOdometerDialog(BuildContext context, int assetId) async {
+/// Returns true when a new reading was saved.
+Future<bool> showOdometerDialog(BuildContext context, int assetId) async {
   final s = context.s;
   final w = context.app.world.value!;
   final a = w.asset(assetId)!;
@@ -608,7 +778,7 @@ Future<void> showOdometerDialog(BuildContext context, int assetId) async {
     ),
   );
   ctrl.dispose();
-  if (km == null || !context.mounted) return;
+  if (km == null || !context.mounted) return false;
   final before = {for (final r in w.reminders.where((r) => r.assetId == assetId && !r.done && r.info.usesKm)) r.id: statusOf(r.info, today: today(), odometer: cur)};
   await context.db.addOdometer(assetId, km, DateTime.now());
   final changed = <String>[];
@@ -618,7 +788,7 @@ Future<void> showOdometerDialog(BuildContext context, int assetId) async {
       changed.add(s.nowStatus(r.title, s.statusLabel(now)));
     }
   }
-  if (!context.mounted) return;
+  if (!context.mounted) return true;
   if (changed.isEmpty) {
     snack(context, s.odoSaved(s.km(km)));
   } else {
@@ -627,9 +797,48 @@ Future<void> showOdometerDialog(BuildContext context, int assetId) async {
       await Notifier.mileage(s, s.mileageNoteTitle(a.nickname), changed.first);
     }
   }
+  return true;
 }
 
 // ================================================================ edit screens
+
+/// Pick, change or remove the asset photo.
+class AssetPhotoField extends StatelessWidget {
+  const AssetPhotoField({super.key, required this.a});
+  final Asset a;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    Future<void> set(String src) async {
+      final p = await pickFile(context, src);
+      if (p == null || !context.mounted) return;
+      final db = context.db;
+      final name = await SecureFiles.save(db, p.bytes, p.ext);
+      final old = a.photoPath;
+      await db.updateAsset(a.id, AssetsCompanion(photoPath: Value(name)));
+      if (old != null) await SecureFiles.delete(old);
+    }
+
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
+      const SizedBox(height: 8),
+      Wrap(spacing: 8, children: [
+        OutlinedButton.icon(icon: const Icon(Icons.photo_camera_outlined), label: Text(s.camera), onPressed: () => set('camera')),
+        OutlinedButton.icon(icon: const Icon(Icons.photo_library_outlined), label: Text(s.gallery), onPressed: () => set('gallery')),
+        if (a.photoPath != null)
+          TextButton(
+            onPressed: () async {
+              final old = a.photoPath!;
+              await context.db.updateAsset(a.id, const AssetsCompanion(photoPath: Value(null)));
+              await SecureFiles.delete(old);
+            },
+            child: Text(s.removePhoto),
+          ),
+      ]),
+    ]);
+  }
+}
 
 class HouseEditScreen extends StatefulWidget {
   const HouseEditScreen({super.key, required this.assetId});
@@ -652,6 +861,7 @@ class _HouseEditState extends State<HouseEditScreen> {
   String? _occupancy;
   DateTime? _vp;
   DateTime? _spa;
+  DateTime? _dlpOverride;
   bool _loaded = false;
 
   @override
@@ -679,6 +889,7 @@ class _HouseEditState extends State<HouseEditScreen> {
         _occupancy = h.occupancy;
         _vp = h.vpDate;
         _spa = h.spaDate;
+        _dlpOverride = h.dlpEndOverride;
         _council.text = h.council ?? '';
         _state.text = h.state ?? '';
         _address.text = h.address ?? '';
@@ -687,6 +898,8 @@ class _HouseEditState extends State<HouseEditScreen> {
       return Scaffold(
         appBar: AppBar(title: Text(s.editDetails)),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
+          AssetPhotoField(a: a),
+          const SizedBox(height: 16),
           TextField(controller: _name, decoration: InputDecoration(labelText: s.nickname, border: const OutlineInputBorder())),
           const SizedBox(height: 14),
           FieldLabel(s.propertyType),
@@ -697,6 +910,13 @@ class _HouseEditState extends State<HouseEditScreen> {
           const SizedBox(height: 14),
           DateField(label: s.vpDate, value: _vp, onChanged: (d) => setState(() => _vp = d)),
           Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(s.vpHelp, style: Theme.of(context).textTheme.bodySmall)),
+          if (_vp != null) ...[
+            DateField(label: s.dlpEndOverrideLabel, value: _dlpOverride, onChanged: (d) => setState(() => _dlpOverride = d)),
+            Padding(
+              padding: const EdgeInsets.only(top: 4, bottom: 10),
+              child: Text(s.dlpEndOverrideHelp(s.dLong(dlpEndFrom(_vp!))), style: Theme.of(context).textTheme.bodySmall),
+            ),
+          ],
           DateField(label: s.spaDate, value: _spa, onChanged: (d) => setState(() => _spa = d)),
           const SizedBox(height: 14),
           FieldLabel(s.titleStatus),
@@ -724,6 +944,7 @@ class _HouseEditState extends State<HouseEditScreen> {
                 propertyType: Value(_ptype),
                 source: Value(_source),
                 vpDate: Value(_vp),
+                dlpEndOverride: Value(_vp == null ? null : _dlpOverride),
                 spaDate: Value(_spa),
                 titleStatus: Value(_title),
                 occupancy: Value(_occupancy),
@@ -814,6 +1035,8 @@ class _VehicleEditState extends State<VehicleEditScreen> {
       return Scaffold(
         appBar: AppBar(title: Text(s.editDetails)),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
+          AssetPhotoField(a: a),
+          const SizedBox(height: 16),
           tf(_name, s.nickname),
           tf(_plate, s.plate),
           Row(children: [Expanded(child: tf(_make, s.make)), const SizedBox(width: 10), Expanded(child: tf(_model, s.model))]),

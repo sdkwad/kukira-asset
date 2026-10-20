@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../data/db.dart';
+import 'files.dart';
 
 /// Thrown when the passphrase does not open the file.
 class WrongPassphrase implements Exception {}
@@ -19,19 +20,28 @@ class WrongPassphrase implements Exception {}
 class NotABackup implements Exception {}
 
 class BackupContents {
-  BackupContents(this.created, this.tables);
+  BackupContents(this.created, this.tables, this.files);
   final DateTime created;
   final Map<String, dynamic> tables;
 
+  /// Decrypted documents and photos by file name.
+  final Map<String, Uint8List> files;
+
   int count(String table) => ((tables[table] as List?) ?? const []).length;
+
+  int get photoCount => ((tables['documents'] as List?) ?? const []).where((d) => (d as Map)['docType'] == 'photo').length;
 }
 
-/// One encrypted file holding all records. The key comes from a passphrase the
-/// user chooses (PBKDF2-HMAC-SHA256), and the data is sealed with AES-256-GCM.
+/// One encrypted file holding all records, documents and photos. The key comes from a
+/// passphrase the user chooses (PBKDF2-HMAC-SHA256), and everything is sealed with AES-256-GCM.
+///
+/// Format 2 (binary): "KUKIRA2\n" + header JSON + "\n" + ciphertext.
+/// The plaintext is: uint32 length + gzip(JSON tables) + repeated (uint16 name length, name, uint32 length, bytes).
+/// Format 1 (0.1.0, JSON envelope, no files) can still be restored.
 class Backup {
   static const format = 'kukira-backup';
-  static const version = 1;
   static const iterations = 150000;
+  static final _magic = utf8.encode('KUKIRA2\n');
 
   static String fileName(DateTime d) =>
       'kukira-backup-${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}.kukira';
@@ -44,26 +54,113 @@ class Backup {
 
   static Future<Uint8List> create(AppDb db, String pass) async {
     final tables = await db.exportTables();
-    final plain = utf8.encode(jsonEncode({'created': DateTime.now().toIso8601String(), 'tables': tables}));
-    final packed = gzip.encode(plain);
+    final files = <String, Uint8List>{};
+    final names = <String>{
+      for (final d in tables['documents']!) d['filePath'] as String,
+      for (final a in tables['assets']!)
+        if (a['photoPath'] != null) a['photoPath'] as String,
+    };
+    for (final n in names) {
+      try {
+        files[n] = await SecureFiles.read(db, n);
+      } catch (_) {
+        // A missing file should not stop the backup of everything else.
+      }
+    }
+    final json = gzip.encode(utf8.encode(jsonEncode({'created': DateTime.now().toIso8601String(), 'tables': tables})));
+    final b = BytesBuilder(copy: false);
+    void u32(int v) => b.add((ByteData(4)..setUint32(0, v)).buffer.asUint8List());
+    void u16(int v) => b.add((ByteData(2)..setUint16(0, v)).buffer.asUint8List());
+    u32(json.length);
+    b.add(json);
+    files.forEach((name, bytes) {
+      final n = utf8.encode(name);
+      u16(n.length);
+      b.add(n);
+      u32(bytes.length);
+      b.add(bytes);
+    });
+    final plain = b.takeBytes();
+
     final rnd = Random.secure();
     final salt = List<int>.generate(16, (_) => rnd.nextInt(256));
-    final key = SecretKey(await _derive(pass, salt, iterations));
-    final box = await AesGcm.with256bits().encrypt(packed, secretKey: key);
-    final env = {
+    final key = await _derive(pass, salt, iterations);
+    final box = await Isolate.run(() => AesGcm.with256bits().encrypt(plain, secretKey: SecretKey(key)));
+    final header = utf8.encode(jsonEncode({
       'format': format,
-      'version': version,
+      'version': 2,
       'kdf': 'pbkdf2-hmac-sha256',
       'iterations': iterations,
       'salt': base64Encode(salt),
       'nonce': base64Encode(box.nonce),
       'mac': base64Encode(box.mac.bytes),
-      'data': base64Encode(box.cipherText),
-    };
-    return Uint8List.fromList(utf8.encode(jsonEncode(env)));
+    }));
+    final out = BytesBuilder(copy: false)
+      ..add(_magic)
+      ..add(header)
+      ..addByte(10)
+      ..add(box.cipherText);
+    return out.takeBytes();
+  }
+
+  static bool _startsWithMagic(Uint8List bytes) {
+    if (bytes.length < _magic.length) return false;
+    for (var i = 0; i < _magic.length; i++) {
+      if (bytes[i] != _magic[i]) return false;
+    }
+    return true;
   }
 
   static Future<BackupContents> open(Uint8List bytes, String pass) async {
+    if (_startsWithMagic(bytes)) return _openV2(bytes, pass);
+    return _openV1(bytes, pass);
+  }
+
+  static Future<BackupContents> _openV2(Uint8List bytes, String pass) async {
+    final start = _magic.length;
+    final nl = bytes.indexOf(10, start);
+    if (nl < 0) throw NotABackup();
+    Map<String, dynamic> h;
+    try {
+      h = jsonDecode(utf8.decode(bytes.sublist(start, nl))) as Map<String, dynamic>;
+    } catch (_) {
+      throw NotABackup();
+    }
+    if (h['format'] != format) throw NotABackup();
+    final key = await _derive(pass, base64Decode(h['salt'] as String), h['iterations'] as int);
+    final box = SecretBox(
+      Uint8List.sublistView(bytes, nl + 1),
+      nonce: base64Decode(h['nonce'] as String),
+      mac: Mac(base64Decode(h['mac'] as String)),
+    );
+    List<int> clear;
+    try {
+      clear = await Isolate.run(() => AesGcm.with256bits().decrypt(box, secretKey: SecretKey(key)));
+    } on SecretBoxAuthenticationError {
+      throw WrongPassphrase();
+    }
+    final data = clear is Uint8List ? clear : Uint8List.fromList(clear);
+    final view = ByteData.sublistView(data);
+    var o = 0;
+    final jsonLen = view.getUint32(o);
+    o += 4;
+    final body = jsonDecode(utf8.decode(gzip.decode(data.sublist(o, o + jsonLen)))) as Map<String, dynamic>;
+    o += jsonLen;
+    final files = <String, Uint8List>{};
+    while (o < data.length) {
+      final nLen = view.getUint16(o);
+      o += 2;
+      final name = utf8.decode(data.sublist(o, o + nLen));
+      o += nLen;
+      final len = view.getUint32(o);
+      o += 4;
+      files[name] = Uint8List.sublistView(data, o, o + len);
+      o += len;
+    }
+    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>, files);
+  }
+
+  static Future<BackupContents> _openV1(Uint8List bytes, String pass) async {
     Map<String, dynamic> env;
     try {
       env = jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
@@ -71,8 +168,7 @@ class Backup {
       throw NotABackup();
     }
     if (env['format'] != format) throw NotABackup();
-    final salt = base64Decode(env['salt'] as String);
-    final key = SecretKey(await _derive(pass, salt, env['iterations'] as int));
+    final key = SecretKey(await _derive(pass, base64Decode(env['salt'] as String), env['iterations'] as int));
     final box = SecretBox(
       base64Decode(env['data'] as String),
       nonce: base64Decode(env['nonce'] as String),
@@ -85,7 +181,17 @@ class Backup {
       throw WrongPassphrase();
     }
     final body = jsonDecode(utf8.decode(gzip.decode(clear))) as Map<String, dynamic>;
-    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>);
+    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>, const {});
+  }
+
+  /// Replaces everything on the phone with the backup, files included.
+  static Future<void> restore(AppDb db, BackupContents c) async {
+    await db.replaceAll(c.tables);
+    SecureFiles.reset();
+    await SecureFiles.deleteAll();
+    for (final e in c.files.entries) {
+      await SecureFiles.saveNamed(db, e.key, e.value);
+    }
   }
 
   /// Opens the phone's share sheet so the user picks where the file goes.
