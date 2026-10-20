@@ -6,7 +6,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
-import 'package:sqlite3/open.dart';
+import 'package:sqlite3/open.dart' as sqlite_open;
 import 'package:sqlite3/sqlite3.dart';
 
 import 'db.dart';
@@ -31,7 +31,7 @@ class Vault {
     if (_ready) return;
     await applyWorkaroundToOpenSqlCipherOnOldAndroidVersions();
     // Must run on every isolate that opens the database. Kukira opens it on the main isolate only.
-    open.overrideFor(OperatingSystem.android, openCipherOnAndroid);
+    sqlite_open.open.overrideFor(sqlite_open.OperatingSystem.android, openCipherOnAndroid);
     _ready = true;
   }
 
