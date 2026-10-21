@@ -159,7 +159,7 @@ class _LockScreenState extends State<LockScreen> {
     final waiting = _waitUntil != null && DateTime.now().isBefore(_waitUntil!);
     return PopScope(
       canPop: widget.cancellable,
-      child: Scaffold(
+      child: SafeScaffold(
         appBar: widget.cancellable ? AppBar() : null,
         body: SafeArea(
           child: Center(
@@ -223,7 +223,7 @@ class _NewPinState extends State<_NewPinScreen> {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(title: Text(s.appLock)),
       body: Center(
         child: SingleChildScrollView(
@@ -337,7 +337,7 @@ class _SecurityState extends State<SecurityScreen> {
   Widget build(BuildContext context) {
     final s = context.s;
     final on = _mode != 'none';
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(title: Text(s.appLock)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         CardList([

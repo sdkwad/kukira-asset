@@ -77,7 +77,7 @@ class SecureImage extends StatelessWidget {
 Future<void> showPhoto(BuildContext context, String name) => Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => Scaffold(
+        builder: (_) => SafeScaffold(
           backgroundColor: Colors.black,
           appBar: AppBar(backgroundColor: Colors.black, foregroundColor: Colors.white),
           body: Center(child: InteractiveViewer(maxScale: 5, child: SecureImage(name, fit: BoxFit.contain, cacheWidth: null))),
@@ -214,7 +214,7 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
         groups.add(SectionTitle(a.nickname, count: g.length));
         groups.add(CardList([for (final d in g) DocTile(d, w)]));
       }
-      return Scaffold(
+      return SafeScaffold(
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
             Padding(
@@ -516,10 +516,10 @@ class _DocumentFormState extends State<DocumentFormScreen> {
       _load(w);
       final s = context.s;
       final theme = Theme.of(context);
-      if (_assetId == null) return Scaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
+      if (_assetId == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
       final editing = widget.editId != null;
       if (!editing && _file == null) {
-        return Scaffold(
+        return SafeScaffold(
           appBar: AppBar(title: Text(s.attachDocument)),
           body: ListView(padding: const EdgeInsets.all(16), children: [
             Text(s.chooseSource, style: theme.textTheme.titleMedium),
@@ -545,7 +545,7 @@ class _DocumentFormState extends State<DocumentFormScreen> {
           ]),
         );
       }
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(editing ? s.editDocument : s.aboutDocument)),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
           if (_file != null) ...[

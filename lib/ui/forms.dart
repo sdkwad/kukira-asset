@@ -311,7 +311,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       _load(w);
       final s = context.s;
       final a = _assetId == null ? null : w.asset(_assetId!);
-      if (a == null) return Scaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
+      if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
       final vehicle = a.category != 'house';
       final ptype = w.houses[a.id]?.propertyType;
       final rules = ['fixed', 'repeat', if (vehicle) 'mileage', if (vehicle) 'either'];
@@ -320,7 +320,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       final usesKm = _rule == 'mileage' || _rule == 'either';
       final repeats = _rule == 'repeat' || _rule == 'either';
       final odo = w.odoOf(a.id);
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(
           title: Text(widget.editId == null ? s.newReminder : s.editReminder),
           actions: [
@@ -673,7 +673,7 @@ class _RecordFormState extends State<RecordFormScreen> {
       final s = context.s;
       final theme = Theme.of(context);
       final a = _assetId == null ? null : w.asset(_assetId!);
-      if (a == null) return Scaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
+      if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
       final kinds = kindsFor(a.category);
       if (!kinds.contains(_kind)) _kind = 'maintenance';
       final cats = categoriesFor(a.category, _kind);
@@ -684,7 +684,7 @@ class _RecordFormState extends State<RecordFormScreen> {
       final editing = widget.editId != null;
       final total = _itemsTotal();
       final knownVendor = w.vendors.any((v) => v.name.toLowerCase() == _vendor.text.trim().toLowerCase());
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(editing ? (defect ? s.editDefect : s.editRecord) : (defect ? s.newDefect : s.newRecord))),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
           DropdownButtonFormField<int>(

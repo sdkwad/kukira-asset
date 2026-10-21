@@ -25,7 +25,7 @@ class MoreScreen extends StatelessWidget {
     return WorldView(builder: (context, w) {
       final s = context.s;
       void go(Widget page) => Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-      return Scaffold(
+      return SafeScaffold(
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
             Padding(
@@ -138,7 +138,7 @@ class _AllRemindersState extends State<AllRemindersScreen> {
     return WorldView(builder: (context, w) {
       final s = context.s;
       final rs = w.reminders.where((r) => !r.done && (_f == 'all' || w.asset(r.assetId)?.category == _f)).toList()..sort(remOrder(w));
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(s.allRemindersTitle)),
         body: ListView(padding: const EdgeInsets.all(16), children: [
           ChoiceRow<String>(
@@ -173,7 +173,7 @@ class HealthScreen extends StatelessWidget {
   Widget _build(BuildContext context, World w) {
     final s = context.s;
     final app = context.app;
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(title: Text(s.healthCheck)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         ValueListenableBuilder<bool?>(
@@ -433,7 +433,7 @@ class BackupScreen extends StatelessWidget {
     return WorldView(builder: (context, w) {
       final s = context.s;
       final last = w.lastBackup;
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(s.backupRestore)),
         body: ListView(padding: const EdgeInsets.all(16), children: [
           Card(
@@ -474,7 +474,7 @@ class AboutScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    return Scaffold(
+    return SafeScaffold(
       appBar: AppBar(title: Text(s.privacyAbout)),
       body: ListView(padding: const EdgeInsets.all(16), children: [
         CardList([
@@ -531,7 +531,7 @@ class _UnreadableState extends State<UnreadableScreen> {
   Widget build(BuildContext context) {
     final s = widget.s;
     final theme = Theme.of(context);
-    return Scaffold(
+    return SafeScaffold(
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.all(24), children: [
           const SizedBox(height: 40),

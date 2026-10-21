@@ -159,7 +159,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
           CardList([for (final d in docs) DocTile(d, w, showAsset: true)], empty: s.noMatch),
         ]);
       }
-      return Scaffold(
+      return SafeScaffold(
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
             Padding(
@@ -280,14 +280,14 @@ class AssetDetailScreen extends StatelessWidget {
     return WorldView(builder: (context, w) {
       final s = context.s;
       final a = w.asset(assetId);
-      if (a == null) return Scaffold(appBar: AppBar(), body: Center(child: Text(s.assetDeleted)));
+      if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.assetDeleted)));
       final end = dlpEnd(w, a.id);
       final showDefects = a.category == 'house' && end != null && daysBetween(today(), end) > 0;
       final tabs = [s.overviewTab, s.upkeepTab, s.remindersTab, s.documentsTab, if (showDefects) s.defectsTab];
       return DefaultTabController(
         key: ValueKey(tabs.length),
         length: tabs.length,
-        child: Scaffold(
+        child: SafeScaffold(
           appBar: AppBar(
             title: Text(a.nickname),
             actions: [
@@ -878,7 +878,7 @@ class _HouseEditState extends State<HouseEditScreen> {
       final s = context.s;
       final a = w.asset(widget.assetId);
       final h = w.houses[widget.assetId];
-      if (a == null || h == null) return Scaffold(appBar: AppBar());
+      if (a == null || h == null) return SafeScaffold(appBar: AppBar());
       if (!_loaded) {
         _loaded = true;
         _name.text = a.nickname;
@@ -895,7 +895,7 @@ class _HouseEditState extends State<HouseEditScreen> {
         _address.text = h.address ?? '';
         _contact.text = h.contact ?? '';
       }
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(s.editDetails)),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
           AssetPhotoField(a: a),
@@ -1004,7 +1004,7 @@ class _VehicleEditState extends State<VehicleEditScreen> {
       final s = context.s;
       final a = w.asset(widget.assetId);
       final v = w.vehicles[widget.assetId];
-      if (a == null || v == null) return Scaffold(appBar: AppBar());
+      if (a == null || v == null) return SafeScaffold(appBar: AppBar());
       if (!_loaded) {
         _loaded = true;
         _name.text = a.nickname;
@@ -1032,7 +1032,7 @@ class _VehicleEditState extends State<VehicleEditScreen> {
               decoration: InputDecoration(labelText: label, border: const OutlineInputBorder()),
             ),
           );
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(s.editDetails)),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
           AssetPhotoField(a: a),

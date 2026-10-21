@@ -60,7 +60,25 @@ class WorldView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<World?>(
         valueListenable: context.app.world,
-        builder: (c, w, _) => w == null ? const Scaffold(body: Center(child: CircularProgressIndicator())) : builder(c, w),
+        builder: (c, w, _) => w == null ? const SafeScaffold(body: Center(child: CircularProgressIndicator())) : builder(c, w),
+      );
+}
+
+/// A Scaffold whose body stays clear of the system bars. With Android's edge-to-edge
+/// layout the 3-button navigation bar otherwise covers the last field and the Save button.
+class SafeScaffold extends StatelessWidget {
+  const SafeScaffold({super.key, this.appBar, this.body, this.floatingActionButton, this.backgroundColor});
+  final PreferredSizeWidget? appBar;
+  final Widget? body;
+  final Widget? floatingActionButton;
+  final Color? backgroundColor;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: appBar,
+        backgroundColor: backgroundColor,
+        floatingActionButton: floatingActionButton,
+        body: SafeArea(top: appBar == null, child: body ?? const SizedBox.shrink()),
       );
 }
 

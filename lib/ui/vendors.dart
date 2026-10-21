@@ -15,7 +15,7 @@ class VendorsScreen extends StatelessWidget {
     return WorldView(builder: (context, w) {
       final s = context.s;
       final vs = [...w.vendors]..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(title: Text(s.vendorBook)),
         floatingActionButton: FloatingActionButton.extended(
           icon: const Icon(Icons.add),
@@ -82,7 +82,7 @@ class _VendorFormState extends State<VendorFormScreen> {
         }
       }
       final jobs = v == null ? <UpkeepRecord>[] : w.records.where((r) => r.vendorId == v.id).toList();
-      return Scaffold(
+      return SafeScaffold(
         appBar: AppBar(
           title: Text(v == null ? s.addVendor : s.editVendor),
           actions: [

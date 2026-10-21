@@ -220,7 +220,7 @@ class _AddAssetState extends State<AddAssetScreen> {
     }
     return PopScope(
       canPop: _step != 3,
-      child: Scaffold(appBar: AppBar(title: Text(s.addAsset), automaticallyImplyLeading: _step != 3), body: body),
+      child: SafeScaffold(appBar: AppBar(title: Text(s.addAsset), automaticallyImplyLeading: _step != 3), body: body),
     );
   }
 }
@@ -235,7 +235,7 @@ class SetupDoneScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final theme = Theme.of(context);
-    return Scaffold(
+    return SafeScaffold(
       body: SafeArea(
         child: ListView(padding: const EdgeInsets.all(20), children: [
           const SizedBox(height: 32),
