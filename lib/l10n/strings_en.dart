@@ -807,8 +807,6 @@ class StrEn extends Str {
   @override
   String get legalDisclaimer => 'Tax, title and DLP dates in Kukira are estimates to help you plan. They are not legal advice. Confirm with your agreement, land office or council.';
   @override
-  String get testBuild => 'test build';
-  @override
   String get unreadableTitle => "We can't open your records on this phone";
   @override
   String get unreadableBody => 'The key that unlocks your records stays with the phone it was made on. This usually happens after moving to a new phone or restoring from a phone backup.\n\nIf you have a Kukira backup file, restore it now. You will need its passphrase.';
@@ -1122,4 +1120,8 @@ class StrEn extends Str {
   String get vpDateSubsale => 'Original VP date (if still within DLP)';
   @override
   String get vpHelpSubsale => 'From the first owner\'s VP letter. A subsale buyer may still be inside the developer\'s 24-month DLP. Leave it empty if unknown.';
+
+  // ------------------------------------------------ 0.2.1 version
+  @override
+  String aboutVersion(String version, String build) => 'Kukira Asset $version (build $build) · test build';
 }

@@ -398,7 +398,6 @@ abstract class Str {
   String get pNoAds;
   String get pNoAdsBody;
   String get legalDisclaimer;
-  String get testBuild;
   String get unreadableTitle;
   String get unreadableBody;
   String get startFresh;
@@ -560,4 +559,7 @@ abstract class Str {
   String get suggestedForType;
   String get vpDateSubsale;
   String get vpHelpSubsale;
+
+  // ------------------------------------------------ 0.2.1 version
+  String aboutVersion(String version, String build);
 }

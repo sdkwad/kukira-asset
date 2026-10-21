@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import '../data/db.dart';
 import '../data/vault.dart';
@@ -486,7 +487,14 @@ class AboutScreen extends StatelessWidget {
         const SizedBox(height: 12),
         NoteBox(s.legalDisclaimer, warn: true),
         const SizedBox(height: 16),
-        Text('Kukira Asset 0.1.0 · ${s.testBuild}', style: Theme.of(context).textTheme.bodySmall),
+        // The version comes from the installed package (pubspec.yaml), never a hardcoded string.
+        FutureBuilder<PackageInfo>(
+          future: PackageInfo.fromPlatform(),
+          builder: (c, snap) => Text(
+            snap.hasData ? s.aboutVersion(snap.data!.version, snap.data!.buildNumber) : 'Kukira Asset',
+            style: Theme.of(context).textTheme.bodySmall,
+          ),
+        ),
       ]),
     );
   }

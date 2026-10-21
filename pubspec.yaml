@@ -31,6 +31,8 @@ dependencies:
   # Fingerprint unlock. Keys are stored with Android Keystore keys that require
   # user authentication, so the fingerprint really gates the database key.
   biometric_storage: ^5.0.1
+  # Shows the real app version on the About screen.
+  package_info_plus: ^8.3.1
 
 dev_dependencies:
   flutter_test:

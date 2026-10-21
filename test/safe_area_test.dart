@@ -4,6 +4,7 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/ui/add_asset.dart';
 import 'package:kukira_asset/ui/assets.dart';
@@ -19,7 +20,10 @@ import 'helpers.dart';
 const inset = 48.0;
 
 void main() {
-  setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
+  setUpAll(() {
+    driftRuntimeOptions.dontWarnAboutMultipleDatabases = true;
+    PackageInfo.setMockInitialValues(appName: 'Kukira Asset', packageName: 'app.kukira.kukira_asset', version: '0.0.0', buildNumber: '0', buildSignature: '');
+  });
   final s = strFor('en');
 
   final cases = <String, (Widget, Finder)>{
@@ -39,6 +43,7 @@ void main() {
     'Assets': (const AssetsScreen(), find.text(s.addAsset)),
     'Documents': (const DocumentsScreen(), find.text(s.docsPrivacyNote)),
     'More': (const MoreScreen(), find.text(s.privacyAbout)),
+    'Privacy and about': (const AboutScreen(), find.text(s.aboutVersion('0.0.0', '0'))),
     'Today': (const TodayScreen(), find.textContaining(s.allReminders(1))),
   };
 

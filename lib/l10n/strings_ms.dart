@@ -807,8 +807,6 @@ class StrMs extends Str {
   @override
   String get legalDisclaimer => 'Tarikh cukai, hakmilik dan DLP dalam Kukira ialah anggaran untuk membantu anda merancang. Ia bukan nasihat undang-undang. Sahkan dengan perjanjian, pejabat tanah atau PBT anda.';
   @override
-  String get testBuild => 'versi ujian';
-  @override
   String get unreadableTitle => 'Rekod anda tidak dapat dibuka di telefon ini';
   @override
   String get unreadableBody => 'Kunci yang membuka rekod anda kekal di telefon tempat ia dibuat. Ini biasanya berlaku selepas berpindah ke telefon baharu atau memulihkan dari sandaran telefon.\n\nJika anda ada fail sandaran Kukira, pulihkan sekarang. Anda perlukan frasa laluannya.';
@@ -1122,4 +1120,8 @@ class StrMs extends Str {
   String get vpDateSubsale => 'Tarikh VP asal (jika masih dalam DLP)';
   @override
   String get vpHelpSubsale => 'Dari surat VP pemilik asal. Pembeli subsale mungkin masih dalam DLP 24 bulan pemaju. Biarkan kosong jika tidak tahu.';
+
+  // ------------------------------------------------ 0.2.1 version
+  @override
+  String aboutVersion(String version, String build) => 'Kukira Asset $version (binaan $build) · versi ujian';
 }
