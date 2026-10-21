@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
+import '../domain/auto_sync.dart';
 import '../domain/presets.dart';
+import '../services/auto_reminders.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'more.dart';
@@ -66,6 +68,16 @@ class _AddAssetState extends State<AddAssetScreen> {
     if (_picks.values.any((d) => d == null)) return setState(() => _error = s.errPickDates);
     for (final p in sug.where((p) => _picks.containsKey(p.key))) {
       final due = _picks[p.key]!;
+      if (p.profileField != null) {
+        // Road tax and insurance: set the vehicle date; its linked reminder follows.
+        final source = p.profileField == 'roadTax' ? autoRoadTax : autoInsurance;
+        await db.updateVehicle(
+          _newId!,
+          source == autoRoadTax ? VehicleProfilesCompanion(roadTaxExpiry: Value(due)) : VehicleProfilesCompanion(insuranceExpiry: Value(due)),
+        );
+        await applyAuto(db, s, _newId!, [AutoChange(source, planAuto(oldDate: null, newDate: due, existing: null, today: today()), null)]);
+        continue;
+      }
       await db.addReminder(RemindersCompanion(
         assetId: Value(_newId!),
         title: Value(p.title(s)),
@@ -80,11 +92,6 @@ class _AddAssetState extends State<AddAssetScreen> {
         note: Value(p.note(s)),
         confirmWith: Value(p.confirm(s)),
       ));
-      if (p.profileField == 'roadTax') {
-        await db.updateVehicle(_newId!, VehicleProfilesCompanion(roadTaxExpiry: Value(due)));
-      } else if (p.profileField == 'insurance') {
-        await db.updateVehicle(_newId!, VehicleProfilesCompanion(insuranceExpiry: Value(due)));
-      }
     }
     _finish(_picks.isNotEmpty);
   }

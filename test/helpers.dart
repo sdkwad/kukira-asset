@@ -21,6 +21,7 @@ Reminder fakeReminder({
   DateTime? due,
   bool done = false,
   DateTime? snoozedUntil,
+  String? autoSource,
 }) =>
     Reminder(
       id: id,
@@ -35,6 +36,7 @@ Reminder fakeReminder({
       estimated: false,
       done: done,
       snoozedUntil: snoozedUntil,
+      autoSource: autoSource,
       createdAt: _t,
     );
 

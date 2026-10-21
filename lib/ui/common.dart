@@ -427,31 +427,35 @@ class Facts extends StatelessWidget {
 }
 
 class DateField extends StatelessWidget {
-  const DateField({super.key, required this.label, required this.value, required this.onChanged, this.clearable = true});
+  const DateField({super.key, required this.label, required this.value, required this.onChanged, this.clearable = true, this.enabled = true});
   final String label;
   final DateTime? value;
   final ValueChanged<DateTime?> onChanged;
   final bool clearable;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     return InkWell(
       borderRadius: BorderRadius.circular(4),
-      onTap: () async {
-        final d = await showDatePicker(
-          context: context,
-          initialDate: value ?? today(),
-          firstDate: DateTime(1980),
-          lastDate: DateTime(2100),
-        );
-        if (d != null) onChanged(d);
-      },
+      onTap: !enabled
+          ? null
+          : () async {
+              final d = await showDatePicker(
+                context: context,
+                initialDate: value ?? today(),
+                firstDate: DateTime(1980),
+                lastDate: DateTime(2100),
+              );
+              if (d != null) onChanged(d);
+            },
       child: InputDecorator(
         decoration: InputDecoration(
           labelText: label,
+          enabled: enabled,
           border: const OutlineInputBorder(),
-          suffixIcon: value != null && clearable
+          suffixIcon: value != null && clearable && enabled
               ? IconButton(icon: const Icon(Icons.close), tooltip: s.clear, onPressed: () => onChanged(null))
               : const Icon(Icons.calendar_today_outlined),
         ),

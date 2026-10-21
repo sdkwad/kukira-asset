@@ -523,8 +523,6 @@ class StrMs extends Str {
   @override
   String get engineNo => 'No. enjin';
   @override
-  String get expiryNoReminderNote => 'Tarikh di sini untuk rujukan. Untuk diingatkan, tambah peringatan cukai jalan atau insurans.';
-  @override
   String get notSet => 'Belum ditetapkan';
   @override
   String get yes => 'Ya';
@@ -1080,4 +1078,38 @@ class StrMs extends Str {
   String get wrongPin => 'PIN salah.';
   @override
   String get yesUseIt => 'Ya, guna';
+
+  // ------------------------------------------------ 0.2.1 linked reminders
+  @override
+  String autoCreated(String title, String date) => 'Peringatan ditambah: “$title” pada $date.';
+  @override
+  String autoFieldName(String source) => switch (source) { 'roadTax' => 'tarikh tamat cukai jalan', 'insurance' => 'tarikh tamat insurans', _ => 'tarikh tamat DLP' };
+  @override
+  String autoKept(String title) => '“$title” dibiarkan seperti asal.';
+  @override
+  String autoLinkedNote(String field) => 'Peringatan ini mengikut $field. Ubah tarikh itu di halaman aset.';
+  @override
+  String autoRemoved(String title) => 'Peringatan dibuang: “$title”.';
+  @override
+  String get autoSyncNoteDlp => 'Peringatan “lapor kecacatan” mengikut tarikh tamat DLP secara automatik.';
+  @override
+  String get autoSyncNoteVehicle => 'Peringatan cukai jalan dan insurans mengikut tarikh ini secara automatik. Kosongkan tarikh untuk membuang peringatannya.';
+  @override
+  String autoUpdated(String title, String date) => 'Peringatan dikemas kini: “$title” kini pada $date.';
+  @override
+  String conflictReopen(String title, String date) => '“$title” sudah ditanda selesai. Kemas kini akan membukanya semula untuk $date.';
+  @override
+  String conflictSnooze(String title, String until, String date) => '“$title” ditunda hingga $until. Kemas kini akan membatalkan tundaan dan menetapkannya pada $date.';
+  @override
+  String get conflictTitle => 'Kemas kini peringatan berkaitan?';
+  @override
+  String get dlpAutoNote => 'Anggaran tamat tempoh liabiliti kecacatan.';
+  @override
+  String get dlpReminderTitle => 'Lapor kecacatan sebelum DLP tamat';
+  @override
+  String get keepAsIs => 'Biarkan seperti asal';
+  @override
+  String get updateReminders => 'Kemas kini peringatan';
+  @override
+  String get yourSpa => 'SPA anda';
 }

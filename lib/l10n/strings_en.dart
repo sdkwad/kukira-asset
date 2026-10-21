@@ -523,8 +523,6 @@ class StrEn extends Str {
   @override
   String get engineNo => 'Engine no.';
   @override
-  String get expiryNoReminderNote => 'These dates are for reference. To be reminded, add a road tax or insurance reminder.';
-  @override
   String get notSet => 'Not set';
   @override
   String get yes => 'Yes';
@@ -1080,4 +1078,38 @@ class StrEn extends Str {
   String get wrongPin => 'Wrong PIN.';
   @override
   String get yesUseIt => 'Yes, use it';
+
+  // ------------------------------------------------ 0.2.1 linked reminders
+  @override
+  String autoCreated(String title, String date) => 'Reminder added: “$title” on $date.';
+  @override
+  String autoFieldName(String source) => switch (source) { 'roadTax' => 'the road tax expiry date', 'insurance' => 'the insurance expiry date', _ => 'the DLP end date' };
+  @override
+  String autoKept(String title) => '“$title” was left as it was.';
+  @override
+  String autoLinkedNote(String field) => 'This reminder follows $field. Change that date on the asset page.';
+  @override
+  String autoRemoved(String title) => 'Reminder removed: “$title”.';
+  @override
+  String get autoSyncNoteDlp => 'A “report defects” reminder follows the DLP end date automatically.';
+  @override
+  String get autoSyncNoteVehicle => 'Road tax and insurance reminders follow these dates automatically. Clear a date to remove its reminder.';
+  @override
+  String autoUpdated(String title, String date) => 'Reminder updated: “$title” is now due $date.';
+  @override
+  String conflictReopen(String title, String date) => '“$title” is marked done. Updating reopens it for $date.';
+  @override
+  String conflictSnooze(String title, String until, String date) => '“$title” is snoozed until $until. Updating clears the snooze and sets it for $date.';
+  @override
+  String get conflictTitle => 'Update linked reminders?';
+  @override
+  String get dlpAutoNote => 'Estimated end of the defect liability period.';
+  @override
+  String get dlpReminderTitle => 'Report defects before DLP ends';
+  @override
+  String get keepAsIs => 'Keep as they are';
+  @override
+  String get updateReminders => 'Update reminders';
+  @override
+  String get yourSpa => 'your SPA';
 }

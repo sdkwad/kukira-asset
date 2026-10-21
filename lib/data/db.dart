@@ -115,6 +115,10 @@ class Reminders extends Table {
   DateTimeColumn get lastCompleted => dateTime().nullable()();
   DateTimeColumn get snoozedUntil => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// Added in schema 3: the date field this reminder follows (roadTax | insurance | dlp),
+  /// or null for an ordinary reminder. See lib/domain/auto_sync.dart.
+  TextColumn get autoSource => text().nullable()();
 }
 
 @DataClassName('UpkeepRecord')
@@ -279,7 +283,7 @@ class AppDb extends _$AppDb {
   AppDb(super.e);
 
   @override
-  int get schemaVersion => 2;
+  int get schemaVersion => 3;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -289,11 +293,30 @@ class AppDb extends _$AppDb {
             await m.createTable(costItems);
             await m.addColumn(reminders, reminders.repeatDays);
           }
+          if (from < 3) {
+            await m.addColumn(reminders, reminders.autoSource);
+            await _linkExistingAutoReminders();
+          }
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
+
+  /// 0.2 created road tax and insurance reminders during onboarding without a link.
+  /// Link the best match per vehicle so editing the date later does not make a duplicate.
+  Future<void> _linkExistingAutoReminders() async {
+    for (final v in await select(vehicleProfiles).get()) {
+      for (final (source, category) in const [('roadTax', 'road_tax'), ('insurance', 'insurance_premium')]) {
+        final candidates = await (select(reminders)
+              ..where((t) => t.assetId.equals(v.assetId) & t.category.equals(category) & t.ruleType.equals('fixed')))
+            .get();
+        if (candidates.isEmpty) continue;
+        candidates.sort((a, b) => a.done == b.done ? b.id.compareTo(a.id) : (a.done ? 1 : -1));
+        await (update(reminders)..where((t) => t.id.equals(candidates.first.id))).write(RemindersCompanion(autoSource: Value(source)));
+      }
+    }
+  }
 
   Future<World> loadWorld() async {
     final a = await (select(assets)..orderBy([(t) => OrderingTerm.asc(t.createdAt), (t) => OrderingTerm.asc(t.id)])).get();

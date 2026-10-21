@@ -252,7 +252,6 @@ abstract class Str {
   String get warrantyKm;
   String get chassisNo;
   String get engineNo;
-  String get expiryNoReminderNote;
   String get notSet;
   String get yes;
   String get deleteRecordQ;
@@ -537,4 +536,22 @@ abstract class Str {
   String get vendorPickHint;
   String get wrongPin;
   String get yesUseIt;
+
+  // ------------------------------------------------ 0.2.1 linked reminders
+  String autoCreated(String title, String date);
+  String autoFieldName(String source);
+  String autoKept(String title);
+  String autoLinkedNote(String field);
+  String autoRemoved(String title);
+  String get autoSyncNoteDlp;
+  String get autoSyncNoteVehicle;
+  String autoUpdated(String title, String date);
+  String conflictReopen(String title, String date);
+  String conflictSnooze(String title, String until, String date);
+  String get conflictTitle;
+  String get dlpAutoNote;
+  String get dlpReminderTitle;
+  String get keepAsIs;
+  String get updateReminders;
+  String get yourSpa;
 }

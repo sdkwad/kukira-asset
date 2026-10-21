@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
+import '../domain/auto_sync.dart';
 import '../domain/rules.dart';
+import '../services/auto_reminders.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import 'add_asset.dart';
@@ -802,6 +804,46 @@ Future<bool> showOdometerDialog(BuildContext context, int assetId) async {
 
 // ================================================================ edit screens
 
+/// Explains linked reminders that were completed or snoozed and asks what to do.
+/// Returns true to update them, false to keep them as they are, null to cancel saving.
+Future<bool?> askAutoConflicts(BuildContext context, List<AutoChange> changes) {
+  final s = context.s;
+  final lines = <String>[
+    for (final c in changes.where((c) => c.plan.needsConfirm))
+      c.plan.reopens
+          ? s.conflictReopen(c.existing!.title, s.dLong(c.plan.due!))
+          : s.conflictSnooze(c.existing!.title, s.dLong(c.existing!.snoozedUntil!), s.dLong(c.plan.due!)),
+  ];
+  if (lines.isEmpty) return Future.value(true);
+  return showDialog<bool>(
+    context: context,
+    builder: (d) => AlertDialog(
+      title: Text(s.conflictTitle),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        for (final l in lines) Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(l)),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(d), child: Text(s.cancel)),
+        TextButton(onPressed: () => Navigator.pop(d, false), child: Text(s.keepAsIs)),
+        FilledButton(onPressed: () => Navigator.pop(d, true), child: Text(s.updateReminders)),
+      ],
+    ),
+  );
+}
+
+/// Saves the fields, applies the linked-reminder changes, then closes the screen with a summary.
+Future<void> saveWithAutoReminders(BuildContext context, int assetId, List<AutoChange> changes, Future<void> Function() saveFields) async {
+  final s = context.s;
+  final db = context.db;
+  final overwrite = await askAutoConflicts(context, changes);
+  if (overwrite == null || !context.mounted) return;
+  await saveFields();
+  final msgs = await applyAuto(db, s, assetId, changes, overwriteManual: overwrite);
+  if (!context.mounted) return;
+  Navigator.pop(context);
+  snack(context, msgs.isEmpty ? s.changesSaved : msgs.join(' '));
+}
+
 /// Pick, change or remove the asset photo.
 class AssetPhotoField extends StatelessWidget {
   const AssetPhotoField({super.key, required this.a});
@@ -916,6 +958,8 @@ class _HouseEditState extends State<HouseEditScreen> {
               padding: const EdgeInsets.only(top: 4, bottom: 10),
               child: Text(s.dlpEndOverrideHelp(s.dLong(dlpEndFrom(_vp!))), style: Theme.of(context).textTheme.bodySmall),
             ),
+            NoteBox(s.autoSyncNoteDlp, icon: Icons.sync),
+            const SizedBox(height: 12),
           ],
           DateField(label: s.spaDate, value: _spa, onChanged: (d) => setState(() => _spa = d)),
           const SizedBox(height: 14),
@@ -939,8 +983,16 @@ class _HouseEditState extends State<HouseEditScreen> {
             onPressed: () async {
               if (_name.text.trim().isEmpty) return;
               final db = context.db;
-              await db.updateAsset(a.id, AssetsCompanion(nickname: Value(_name.text.trim()), notes: Value(nn(_notes.text))));
-              await db.updateHouse(a.id, HouseProfilesCompanion(
+              final t = today();
+              final changes = [
+                planChange(w.reminders, a.id, autoDlp,
+                    oldDate: activeDlpEnd(vp: h.vpDate, override: h.dlpEndOverride, today: t),
+                    newDate: activeDlpEnd(vp: _vp, override: _vp == null ? null : _dlpOverride, today: t),
+                    today: t),
+              ];
+              await saveWithAutoReminders(context, a.id, changes, () async {
+                await db.updateAsset(a.id, AssetsCompanion(nickname: Value(_name.text.trim()), notes: Value(nn(_notes.text))));
+                await db.updateHouse(a.id, HouseProfilesCompanion(
                 propertyType: Value(_ptype),
                 source: Value(_source),
                 vpDate: Value(_vp),
@@ -953,7 +1005,7 @@ class _HouseEditState extends State<HouseEditScreen> {
                 address: Value(nn(_address.text)),
                 contact: Value(nn(_contact.text)),
               ));
-              if (context.mounted) Navigator.pop(context);
+              });
             },
             child: Text(s.saveChanges),
           ),
@@ -1050,7 +1102,7 @@ class _VehicleEditState extends State<VehicleEditScreen> {
           const SizedBox(height: 12),
           tf(_insurer, s.insurer),
           tf(_policy, s.policyNo),
-          NoteBox(s.expiryNoReminderNote),
+          NoteBox(s.autoSyncNoteVehicle, icon: Icons.sync),
           ExpansionTile(
             tilePadding: EdgeInsets.zero,
             title: Text(s.moreDetails),
@@ -1068,8 +1120,14 @@ class _VehicleEditState extends State<VehicleEditScreen> {
             onPressed: () async {
               if (_name.text.trim().isEmpty || _plate.text.trim().isEmpty) return;
               final db = context.db;
-              await db.updateAsset(a.id, AssetsCompanion(nickname: Value(_name.text.trim()), notes: Value(nn(_notes.text))));
-              await db.updateVehicle(a.id, VehicleProfilesCompanion(
+              final t = today();
+              final changes = [
+                planChange(w.reminders, a.id, autoRoadTax, oldDate: v.roadTaxExpiry, newDate: _roadTax, today: t),
+                planChange(w.reminders, a.id, autoInsurance, oldDate: v.insuranceExpiry, newDate: _insExp, today: t),
+              ];
+              await saveWithAutoReminders(context, a.id, changes, () async {
+                await db.updateAsset(a.id, AssetsCompanion(nickname: Value(_name.text.trim()), notes: Value(nn(_notes.text))));
+                await db.updateVehicle(a.id, VehicleProfilesCompanion(
                 plate: Value(_plate.text.trim().toUpperCase()),
                 make: Value(nn(_make.text)),
                 model: Value(nn(_model.text)),
@@ -1085,7 +1143,7 @@ class _VehicleEditState extends State<VehicleEditScreen> {
                 chassisNo: Value(nn(_chassis.text)),
                 engineNo: Value(nn(_engine.text)),
               ));
-              if (context.mounted) Navigator.pop(context);
+              });
             },
             child: Text(s.saveChanges),
           ),

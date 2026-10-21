@@ -150,6 +150,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
   String? _note;
   String? _confirm;
   String _source = 'manual';
+  String? _autoSource;
   bool _loaded = false;
   String? _error;
 
@@ -205,6 +206,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       _note = e.note;
       _confirm = e.confirmWith;
       _source = e.source;
+      _autoSource = e.autoSource;
     } else {
       _assetId = widget.assetId ?? (w.assets.isEmpty ? null : w.assets.first.id);
     }
@@ -356,7 +358,14 @@ class _ReminderFormState extends State<ReminderFormScreen> {
           ChoiceRow<String>(options: rules, value: _rule, label: s.ruleName, onChanged: (v) => setState(() => _rule = v)),
           if (usesDate) ...[
             const SizedBox(height: 14),
-            DateField(label: _rule == 'either' ? s.orByDate : s.dueDate, value: _due, clearable: false, onChanged: (d) => setState(() => _due = d)),
+            DateField(
+              label: _rule == 'either' ? s.orByDate : s.dueDate,
+              value: _due,
+              clearable: false,
+              enabled: _autoSource == null,
+              onChanged: (d) => setState(() => _due = d),
+            ),
+            if (_autoSource != null) ...[const SizedBox(height: 8), NoteBox(s.autoLinkedNote(s.autoFieldName(_autoSource!)), icon: Icons.link)],
           ],
           if (repeats) ...[
             const SizedBox(height: 14),
