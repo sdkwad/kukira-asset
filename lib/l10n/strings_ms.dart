@@ -1112,4 +1112,14 @@ class StrMs extends Str {
   String get updateReminders => 'Kemas kini peringatan';
   @override
   String get yourSpa => 'SPA anda';
+
+  // ------------------------------------------------ 0.2.1 house form
+  @override
+  String get allSuggestedAdded => 'Semua peringatan yang dicadangkan sudah ditambah.';
+  @override
+  String get suggestedForType => 'Peringatan dicadangkan untuk jenis hartanah ini';
+  @override
+  String get vpDateSubsale => 'Tarikh VP asal (jika masih dalam DLP)';
+  @override
+  String get vpHelpSubsale => 'Dari surat VP pemilik asal. Pembeli subsale mungkin masih dalam DLP 24 bulan pemaju. Biarkan kosong jika tidak tahu.';
 }

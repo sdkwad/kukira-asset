@@ -1112,4 +1112,14 @@ class StrEn extends Str {
   String get updateReminders => 'Update reminders';
   @override
   String get yourSpa => 'your SPA';
+
+  // ------------------------------------------------ 0.2.1 house form
+  @override
+  String get allSuggestedAdded => 'All suggested reminders are already added.';
+  @override
+  String get suggestedForType => 'Suggested reminders for this property type';
+  @override
+  String get vpDateSubsale => 'Original VP date (if still within DLP)';
+  @override
+  String get vpHelpSubsale => 'From the first owner\'s VP letter. A subsale buyer may still be inside the developer\'s 24-month DLP. Leave it empty if unknown.';
 }

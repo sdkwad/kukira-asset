@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../data/db.dart';
 import '../domain/auto_sync.dart';
+import '../domain/presets.dart';
 import '../domain/rules.dart';
 import '../services/auto_reminders.dart';
 import '../services/files.dart';
@@ -349,7 +350,7 @@ class _Overview extends StatelessWidget {
       children.add(Facts([
         (s.propertyType, s.ptypeName(h.propertyType)),
         if (h.source != null) (s.boughtAs, s.sourceName(h.source!)),
-        if (h.vpDate != null) (s.vpDate, s.dLong(h.vpDate!)),
+        if (h.vpDate != null) (h.source == 'subsale' ? s.vpDateSubsale : s.vpDate, s.dLong(h.vpDate!)),
         if (h.spaDate != null) (s.spaDate, s.dLong(h.spaDate!)),
         if (h.titleStatus != null) (s.titleStatus, s.titleName(h.titleStatus!)),
         if (h.council != null) (s.council, h.council!),
@@ -945,13 +946,41 @@ class _HouseEditState extends State<HouseEditScreen> {
           TextField(controller: _name, decoration: InputDecoration(labelText: s.nickname, border: const OutlineInputBorder())),
           const SizedBox(height: 14),
           FieldLabel(s.propertyType),
-          ChoiceRow<String>(options: const ['landed', 'strata', 'strata_landed'], value: _ptype, label: s.ptypeName, onChanged: (v) => setState(() => _ptype = v)),
+          ChoiceRow<String>(
+            options: const ['landed', 'strata', 'strata_landed'],
+            value: _ptype,
+            label: s.ptypeName,
+            onChanged: (v) => setState(() {
+              _ptype = v;
+              if (_title != null && !titleOptionsFor(v).contains(_title)) _title = null;
+            }),
+          ),
+          const SizedBox(height: 14),
+          FieldLabel(s.suggestedForType),
+          Builder(builder: (context) {
+            final open = templatesFor('house', _ptype)
+                .where((p) => !w.reminders.any((r) => r.assetId == a.id && !r.done && r.category == p.category))
+                .toList();
+            if (open.isEmpty) return Text(s.allSuggestedAdded, style: Theme.of(context).textTheme.bodySmall);
+            return Wrap(spacing: 6, runSpacing: 6, children: [
+              for (final p in open)
+                ActionChip(
+                  avatar: const Icon(Icons.add, size: 18),
+                  label: Text(p.title(s)),
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => ReminderFormScreen(assetId: a.id, templateKey: p.key))),
+                ),
+            ]);
+          }),
           const SizedBox(height: 14),
           FieldLabel(s.boughtAs),
           ChoiceRow<String>(options: const ['new_from_developer', 'subsale'], value: _source, label: s.sourceName, onChanged: (v) => setState(() => _source = v)),
           const SizedBox(height: 14),
-          DateField(label: s.vpDate, value: _vp, onChanged: (d) => setState(() => _vp = d)),
-          Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(s.vpHelp, style: Theme.of(context).textTheme.bodySmall)),
+          // Not hidden for subsale: the buyer may still be inside the developer's 24-month DLP.
+          DateField(label: _source == 'subsale' ? s.vpDateSubsale : s.vpDate, value: _vp, onChanged: (d) => setState(() => _vp = d)),
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 10),
+            child: Text(_source == 'subsale' ? s.vpHelpSubsale : s.vpHelp, style: Theme.of(context).textTheme.bodySmall),
+          ),
           if (_vp != null) ...[
             DateField(label: s.dlpEndOverrideLabel, value: _dlpOverride, onChanged: (d) => setState(() => _dlpOverride = d)),
             Padding(
@@ -964,7 +993,7 @@ class _HouseEditState extends State<HouseEditScreen> {
           DateField(label: s.spaDate, value: _spa, onChanged: (d) => setState(() => _spa = d)),
           const SizedBox(height: 14),
           FieldLabel(s.titleStatus),
-          ChoiceRow<String>(options: const ['individual', 'master', 'strata_issued'], value: _title, label: s.titleName, onChanged: (v) => setState(() => _title = v)),
+          ChoiceRow<String>(options: titleOptionsFor(_ptype), value: _title, label: s.titleName, onChanged: (v) => setState(() => _title = v)),
           const SizedBox(height: 14),
           FieldLabel(s.occupancy),
           ChoiceRow<String>(options: const ['owner', 'rented', 'vacant'], value: _occupancy, label: s.occupancyName, onChanged: (v) => setState(() => _occupancy = v)),

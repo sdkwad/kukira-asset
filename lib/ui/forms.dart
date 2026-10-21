@@ -123,9 +123,12 @@ Future<void> _showDoneDialog(BuildContext context, Reminder r, NextDue n) async 
 // ================================================================ reminder form
 
 class ReminderFormScreen extends StatefulWidget {
-  const ReminderFormScreen({super.key, this.assetId, this.editId});
+  const ReminderFormScreen({super.key, this.assetId, this.editId, this.templateKey});
   final int? assetId;
   final int? editId;
+
+  /// Start a new reminder from this preset (see presetByKey).
+  final String? templateKey;
 
   @override
   State<ReminderFormScreen> createState() => _ReminderFormState();
@@ -209,13 +212,17 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       _autoSource = e.autoSource;
     } else {
       _assetId = widget.assetId ?? (w.assets.isEmpty ? null : w.assets.first.id);
+      final p = widget.templateKey == null ? null : presetByKey(widget.templateKey!);
+      if (p != null && _assetId != null) _fill(p, w);
     }
   }
 
-  void _applyTemplate(Preset p, World w) {
+  void _applyTemplate(Preset p, World w) => setState(() => _fill(p, w));
+
+  void _fill(Preset p, World w) {
     final s = context.s;
     final odo = _assetId == null ? null : w.odoOf(_assetId!);
-    setState(() {
+    {
       _template = p.key;
       _title.text = p.title(s);
       _rule = p.rule;
@@ -232,7 +239,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       _confirm = p.confirm(s);
       _source = p.estimated ? 'preset' : 'template';
       _error = null;
-    });
+    }
   }
 
   /// (months, days) from the repeat choice.

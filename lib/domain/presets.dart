@@ -88,26 +88,39 @@ List<Preset> suggestionsFor(String category, String? propertyType) {
   }
 }
 
-/// Templates in the "New reminder" form.
+/// Templates in the "New reminder" form and the house edit screen, by property type.
+/// Strata titles pay cukai petak and a maintenance charge; a condo or apartment owner does not
+/// clean a water tank or insure the building (the JMB or MC does).
 List<Preset> templatesFor(String category, String? propertyType) {
   switch (category) {
     case 'house':
-      final strata = propertyType == 'strata' || propertyType == 'strata_landed';
-      return [
-        aircond,
-        pestControl,
-        waterTank,
-        if (propertyType == 'strata') cukaiPetak else cukaiTanah,
-        cukaiTaksiran,
-        if (strata) maintenanceCharge,
-        if (propertyType != 'strata') houseInsurance,
-      ];
+      switch (propertyType) {
+        case 'strata':
+          return [aircond, pestControl, cukaiPetak, cukaiTaksiran, maintenanceCharge];
+        case 'strata_landed':
+          return [aircond, pestControl, waterTank, cukaiPetak, cukaiTaksiran, maintenanceCharge, houseInsurance];
+        default:
+          return [aircond, pestControl, waterTank, cukaiTanah, cukaiTaksiran, houseInsurance];
+      }
     case 'car':
       return [carService, roadTax, vehicleInsurance, tyres, battery];
     default:
       return [motoOil, chain, roadTax, vehicleInsurance];
   }
 }
+
+/// Title status choices that make sense for each property type.
+/// Landed homes start under a master title until individual titles are issued;
+/// strata homes start under the master title until strata titles are issued.
+List<String> titleOptionsFor(String? propertyType) =>
+    propertyType == 'strata' || propertyType == 'strata_landed' ? const ['master', 'strata_issued'] : const ['individual', 'master'];
+
+final allPresets = <Preset>[
+  cukaiTanah, cukaiPetak, cukaiTaksiran, houseInsurance, maintenanceCharge, aircond, pestControl, waterTank,
+  roadTax, vehicleInsurance, carService, motoOil, tyres, battery, chain, nextServiceCar, nextServiceMoto,
+];
+
+Preset? presetByKey(String key) => allPresets.where((p) => p.key == key).firstOrNull;
 
 // ---------------------------------------------------------------- record categories
 

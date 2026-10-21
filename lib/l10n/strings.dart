@@ -554,4 +554,10 @@ abstract class Str {
   String get keepAsIs;
   String get updateReminders;
   String get yourSpa;
+
+  // ------------------------------------------------ 0.2.1 house form
+  String get allSuggestedAdded;
+  String get suggestedForType;
+  String get vpDateSubsale;
+  String get vpHelpSubsale;
 }
