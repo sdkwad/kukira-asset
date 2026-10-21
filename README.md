@@ -2,7 +2,14 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.0 (APK ujian)**.
+Versi ini: **0.2.1 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.1
+
+- Bar navigasi Android tidak lagi menutup butang Simpan dan medan terakhir.
+- Tarikh cukai jalan, insurans dan VP kini menyegerakkan satu peringatan masing-masing (cipta, kemas kini, buang; tiada pendua). Peringatan yang sudah selesai atau ditunda hanya diubah selepas anda sahkan.
+- Borang rumah menapis status hakmilik dan cadangan peringatan ikut jenis hartanah. Untuk subsale, tarikh VP dilabel "Tarikh VP asal (jika masih dalam DLP)".
+- Skrin Privasi & maklumat memaparkan versi sebenar.
 
 ## Baharu dalam 0.2
 
