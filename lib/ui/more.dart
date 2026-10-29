@@ -520,18 +520,30 @@ class _UnreadableState extends State<UnreadableScreen> {
     final s = widget.s;
     final c = await pickAndOpenBackup(context, s);
     if (c == null || !mounted) return;
-    final db = await withProgress(context, s.restoring, () async {
-      final db = await Vault.resetAndOpen();
-      await Backup.restore(db, c);
-      return db;
-    });
+    final AppDb db;
+    try {
+      db = await withProgress(context, s.restoring, () async {
+        final db = await Vault.resetAndOpen();
+        await Backup.restore(db, c);
+        return db;
+      });
+    } catch (_) {
+      if (mounted) snack(context, s.secureStorageError);
+      return;
+    }
     widget.onReady(db);
   }
 
   Future<void> _fresh() async {
-    final db = await Vault.resetAndOpen();
+    final AppDb db;
+    try {
+      // The unreadable records are set aside by Vault, not deleted.
+      db = await Vault.resetAndOpen();
+    } catch (_) {
+      if (mounted) snack(context, widget.s.secureStorageError);
+      return;
+    }
     SecureFiles.reset();
-    await SecureFiles.deleteAll();
     widget.onReady(db);
   }
 

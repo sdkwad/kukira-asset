@@ -813,11 +813,11 @@ class StrMs extends Str {
   @override
   String get startFresh => 'Mula semula tanpa data';
   @override
-  String get startFreshWarning => 'Ini memadam data yang tidak dapat dibaca untuk selama-lamanya. Lakukan hanya jika anda tiada fail sandaran.';
+  String get startFreshWarning => 'Rekod yang tidak dapat dibaca tidak akan muncul semula dalam app. Kukira mengetepikannya, bukan memadamnya, dan ia kekal berkunci di telefon ini sehingga app dinyahpasang. Lakukan hanya jika anda tiada fail sandaran.';
   @override
   String get keepIt => 'Simpan dahulu';
   @override
-  String get eraseAndStart => 'Padam dan mula';
+  String get eraseAndStart => 'Mula semula';
 
   // ------------------------------------------------ notifications
   @override
@@ -1124,4 +1124,8 @@ class StrMs extends Str {
   // ------------------------------------------------ 0.2.1 version
   @override
   String aboutVersion(String version, String build) => 'Kukira Asset $version (binaan $build) · versi ujian';
+
+  // ------------------------------------------------ unreadable database
+  @override
+  String get secureStorageError => 'Storan selamat telefon tidak dapat dibaca, jadi tiada apa yang diubah. Mulakan semula telefon dan cuba lagi.';
 }

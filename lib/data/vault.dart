@@ -260,16 +260,52 @@ class Vault {
     await _storage.delete(key: _modeName);
   }
 
-  /// Deletes the unreadable database and starts a new, empty one with a new key.
+  /// Starts a new, empty database with a new key. The unreadable database, its files and
+  /// any old key entries are set aside, never deleted, so nothing is lost for good if the
+  /// key turns out to be readable after all (for example a secure storage hiccup).
+  ///
+  /// Throws if secure storage cannot be read: writing a new key then could overwrite the
+  /// only copy of the old one.
   static Future<AppDb> resetAndOpen() async {
     await _setup();
+    final stamp = _stamp(DateTime.now());
+    for (final name in [_keyName, _wrappedName, _modeName]) {
+      final old = await _storage.read(key: name);
+      if (old != null) await _storage.write(key: '${name}_old_$stamp', value: old);
+    }
     await _clearLock();
     final f = await dbFile();
-    for (final x in [f, File('${f.path}-wal'), File('${f.path}-shm'), File('${f.path}-journal')]) {
-      if (await x.exists()) await x.delete();
-    }
+    await setAside(f.parent, stamp);
     final key = _newKey();
     await _storage.write(key: _keyName, value: key);
     return _openDb(f, key);
+  }
+
+  static String _stamp(DateTime d) =>
+      '${d.year}${_two(d.month)}${_two(d.day)}-${_two(d.hour)}${_two(d.minute)}${_two(d.second)}';
+
+  static String _two(int v) => v.toString().padLeft(2, '0');
+
+  /// Moves the database files and the encrypted documents folder from [base] into
+  /// `unreadable/<stamp>/`. Returns that folder, or null when there was nothing to move.
+  static Future<Directory?> setAside(Directory base, String stamp) async {
+    final names = ['kukira.db', 'kukira.db-wal', 'kukira.db-shm', 'kukira.db-journal'];
+    final present = [
+      for (final n in names)
+        if (await File(p.join(base.path, n)).exists()) n,
+    ];
+    final files = Directory(p.join(base.path, 'files'));
+    final hasFiles = await files.exists();
+    if (present.isEmpty && !hasFiles) return null;
+    var dest = Directory(p.join(base.path, 'unreadable', stamp));
+    for (var i = 2; await dest.exists(); i++) {
+      dest = Directory(p.join(base.path, 'unreadable', '$stamp-$i'));
+    }
+    await dest.create(recursive: true);
+    for (final n in present) {
+      await File(p.join(base.path, n)).rename(p.join(dest.path, n));
+    }
+    if (hasFiles) await files.rename(p.join(dest.path, 'files'));
+    return dest;
   }
 }

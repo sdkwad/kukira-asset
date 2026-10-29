@@ -562,4 +562,7 @@ abstract class Str {
 
   // ------------------------------------------------ 0.2.1 version
   String aboutVersion(String version, String build);
+
+  // ------------------------------------------------ unreadable database
+  String get secureStorageError;
 }

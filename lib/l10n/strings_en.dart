@@ -813,11 +813,11 @@ class StrEn extends Str {
   @override
   String get startFresh => 'Start fresh instead';
   @override
-  String get startFreshWarning => 'This erases the unreadable data for good. Only do this if you have no backup file.';
+  String get startFreshWarning => "The unreadable records won't come back in the app. Kukira sets them aside instead of deleting them, and they stay locked on this phone until you uninstall the app. Only do this if you have no backup file.";
   @override
   String get keepIt => 'Keep it';
   @override
-  String get eraseAndStart => 'Erase and start';
+  String get eraseAndStart => 'Start fresh';
 
   // ------------------------------------------------ notifications
   @override
@@ -1124,4 +1124,8 @@ class StrEn extends Str {
   // ------------------------------------------------ 0.2.1 version
   @override
   String aboutVersion(String version, String build) => 'Kukira Asset $version (build $build) · test build';
+
+  // ------------------------------------------------ unreadable database
+  @override
+  String get secureStorageError => "The phone's secure storage couldn't be read, so nothing was changed. Restart the phone and try again.";
 }
