@@ -2,7 +2,17 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.1 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.2 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.2
+
+Keluaran keselamatan data, tiada ciri baharu:
+
+- APK ditandatangani dengan kunci keluaran Kukira. **Dari 0.2.1: sandarkan, nyahpasang, pasang 0.2.2, pulihkan** (sekali sahaja, lihat Kunci tandatangan di bawah).
+- Rekod yang tidak dapat dibuka diketepikan, bukan dipadam.
+- Pemulihan sandaran selamat walaupun app terhenti di tengah jalan.
+- Sandaran merekod versi pangkalan data; sandaran dari versi lebih baharu ditolak.
+- Tempoh menunggu selepas PIN salah kekal walaupun app ditutup.
 
 ## Baharu dalam 0.2.1
 
