@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../data/db.dart';
 import '../data/vault.dart';
+import '../domain/pin_throttle.dart';
 import '../l10n/strings.dart';
 import 'common.dart';
 
@@ -80,13 +81,23 @@ class _LockScreenState extends State<LockScreen> {
   String? _error;
   bool _busy = false;
   bool _bio = false;
-  int _fails = 0;
-  DateTime? _waitUntil;
+  // The keypad stays hidden until the saved wrong-PIN count is loaded, so reopening the
+  // app never gives free tries during a wait.
+  bool _loaded = false;
+  PinThrottle _throttle = PinThrottle.none;
   Timer? _tick;
 
   @override
   void initState() {
     super.initState();
+    Vault.pinThrottle().then((t) {
+      if (!mounted) return;
+      setState(() {
+        _throttle = t;
+        _loaded = true;
+      });
+      _startWait();
+    });
     Vault.lockMode().then((m) {
       if (!mounted) return;
       setState(() => _bio = m == 'pin_bio');
@@ -100,13 +111,32 @@ class _LockScreenState extends State<LockScreen> {
     super.dispose();
   }
 
+  /// Refreshes the countdown every second while a wait is on.
+  void _startWait() {
+    _tick?.cancel();
+    if (!_throttle.waiting(DateTime.now())) return;
+    _tick = Timer.periodic(const Duration(seconds: 1), (_) {
+      if (!mounted) return;
+      if (!_throttle.waiting(DateTime.now())) _tick?.cancel();
+      setState(() {});
+    });
+  }
+
+  Future<void> _unlocked() => Vault.savePinThrottle(PinThrottle.none);
+
   Future<void> _tryBio() async {
     final s = widget.s;
     if (widget.onOpened != null) {
       final db = await Vault.unlockWithBio(s.unlockTitle, s.usePin);
-      if (db != null) widget.onOpened!(db);
+      if (db != null) {
+        await _unlocked();
+        widget.onOpened!(db);
+      }
     } else {
-      if (await Vault.checkBio(s.unlockTitle, s.usePin)) widget.onChecked?.call();
+      if (await Vault.checkBio(s.unlockTitle, s.usePin)) {
+        await _unlocked();
+        widget.onChecked?.call();
+      }
     }
   }
 
@@ -117,31 +147,23 @@ class _LockScreenState extends State<LockScreen> {
       if (widget.onOpened != null) {
         final db = await Vault.unlockWithPin(pin);
         if (db != null) {
+          await _unlocked();
           widget.onOpened!(db);
           return;
         }
         setState(() => _error = s.couldNotOpen);
       } else if (await Vault.checkPin(pin)) {
+        await _unlocked();
         widget.onChecked?.call();
         return;
       } else {
         throw WrongPin();
       }
     } on WrongPin {
-      _fails++;
+      _throttle = _throttle.failed(DateTime.now());
       _error = s.wrongPin;
-      if (_fails >= 5) {
-        _waitUntil = DateTime.now().add(Duration(seconds: 30 * (_fails - 4)));
-        _tick?.cancel();
-        _tick = Timer.periodic(const Duration(seconds: 1), (_) {
-          if (!mounted) return;
-          if (DateTime.now().isAfter(_waitUntil!)) {
-            _tick?.cancel();
-            _waitUntil = null;
-          }
-          setState(() {});
-        });
-      }
+      await Vault.savePinThrottle(_throttle);
+      _startWait();
     } finally {
       if (mounted) {
         setState(() {
@@ -156,7 +178,8 @@ class _LockScreenState extends State<LockScreen> {
   Widget build(BuildContext context) {
     final s = widget.s;
     final theme = Theme.of(context);
-    final waiting = _waitUntil != null && DateTime.now().isBefore(_waitUntil!);
+    final now = DateTime.now();
+    final waiting = _throttle.waiting(now);
     return PopScope(
       canPop: widget.cancellable,
       child: SafeScaffold(
@@ -172,12 +195,12 @@ class _LockScreenState extends State<LockScreen> {
                 const SizedBox(height: 6),
                 Text(s.enterPin),
                 const SizedBox(height: 20),
-                if (_busy)
+                if (_busy || !_loaded)
                   const Padding(padding: EdgeInsets.all(40), child: CircularProgressIndicator())
                 else if (waiting)
                   Padding(
                     padding: const EdgeInsets.all(32),
-                    child: Text(s.tooManyTries(_waitUntil!.difference(DateTime.now()).inSeconds + 1), textAlign: TextAlign.center),
+                    child: Text(s.tooManyTries(_throttle.waitUntil!.difference(now).inSeconds + 1), textAlign: TextAlign.center),
                   )
                 else
                   PinPad(

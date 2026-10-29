@@ -13,6 +13,7 @@ import 'package:sqlcipher_flutter_libs/sqlcipher_flutter_libs.dart';
 import 'package:sqlite3/open.dart' as sqlite_open;
 import 'package:sqlite3/sqlite3.dart';
 
+import '../domain/pin_throttle.dart';
 import 'db.dart';
 
 enum BootState { ready, locked, unreadable }
@@ -37,6 +38,7 @@ class Vault {
   static const _wrappedName = 'kukira_db_key_wrapped_v1';
   static const _modeName = 'kukira_lock_mode';
   static const _bioName = 'kukira_bio_key_v1';
+  static const _failsName = 'kukira_pin_fails';
   static const _pinIterations = 120000;
   static bool _ready = false;
   static String? _currentKey;
@@ -171,6 +173,21 @@ class Vault {
     }
   }
 
+  /// Wrong PIN attempts, kept in secure storage so closing the app does not reset the wait.
+  static Future<PinThrottle> pinThrottle() async => PinThrottle.decode(await _read(_failsName));
+
+  static Future<void> savePinThrottle(PinThrottle t) async {
+    try {
+      if (t.fails == 0) {
+        await _storage.delete(key: _failsName);
+      } else {
+        await _storage.write(key: _failsName, value: t.encode());
+      }
+    } catch (_) {
+      // Unlocking must never fail because the counter could not be saved.
+    }
+  }
+
   // ---------------------------------------------------------------- fingerprint
 
   static Future<bool> bioAvailable() async {
@@ -258,6 +275,7 @@ class Vault {
     } catch (_) {}
     await _storage.delete(key: _wrappedName);
     await _storage.delete(key: _modeName);
+    await _storage.delete(key: _failsName);
   }
 
   /// Starts a new, empty database with a new key. The unreadable database, its files and
