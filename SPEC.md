@@ -9,7 +9,9 @@ The full product brief is in `docs/handoff-brief.md`. This file holds the rules 
 3. **Every new or changed screen has a widget test and respects SafeArea.** Page bodies use `SafeScaffold` (in `lib/ui/common.dart`) or an explicit `SafeArea`, so the primary button and the last field always sit above the Android navigation bar. `test/safe_area_test.dart` renders the form and list screens with a simulated bottom inset.
 4. **One feature or fix per commit, and GitHub Actions green after each.** Work on a branch until CI is green, then squash it onto `main` as one commit.
 5. **Tax and legal dates are editable "estimated, confirm" presets.** Cukai tanah, cukai petak, cukai taksiran and DLP dates are never presented as fact; each shows who to confirm with, and the user can change every date.
-6. **Destructive quick actions can be undone.** Any swipe action (there are none yet) that completes or snoozes a reminder must show an Undo snackbar. Do not add swipe actions without this.
+6. **APKs are signed with the Kukira release key only.** The key is never committed: CI takes it from the `KUKIRA_KEYSTORE_B64` and `KUKIRA_KEYSTORE_PASSWORD` secrets and checks every APK's certificate digest. The owner keeps the offline copy. Changing the key forces users to uninstall, which deletes their data, so it must never change.
+7. **Data is set aside, never silently destroyed.** An unreadable database is moved aside (see `Vault.resetAndOpen`), restores only remove files after the new records are committed, and backups record their schema so a newer one is refused.
+8. **Destructive quick actions can be undone.** Any swipe action (there are none yet) that completes or snoozes a reminder must show an Undo snackbar. Do not add swipe actions without this.
 
 Also kept from the brief: offline-first, local-only data, no account, no analytics or ad SDKs, Bahasa Melayu first with English (every string in both `lib/l10n/strings_ms.dart` and `strings_en.dart`).
 

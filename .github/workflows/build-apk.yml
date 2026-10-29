@@ -46,8 +46,22 @@ jobs:
           sudo apt-get install -y -qq libsqlite3-dev > /dev/null
           flutter test
 
+      # The release key lives only in GitHub secrets and the owner's offline copy.
+      - name: Kunci tandatangan
+        env:
+          KEYSTORE_B64: ${{ secrets.KUKIRA_KEYSTORE_B64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KUKIRA_KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_B64" ] || [ -z "$KEYSTORE_PASSWORD" ]; then
+            echo "::error::Secret KUKIRA_KEYSTORE_B64 atau KUKIRA_KEYSTORE_PASSWORD tiada. Lihat README, bahagian Kunci tandatangan."
+            exit 1
+          fi
+          echo "$KEYSTORE_B64" | base64 -d > android/app/kukira-release.p12
+
       # One APK per processor type keeps each file small. Most phones need arm64-v8a.
       - name: Bina APK
+        env:
+          KUKIRA_KEYSTORE_PASSWORD: ${{ secrets.KUKIRA_KEYSTORE_PASSWORD }}
         run: flutter build apk --release --split-per-abi
 
       - name: Namakan APK dan semak kebenaran
@@ -67,6 +81,15 @@ jobs:
               exit 1
             fi
           done
+          # Every APK must carry the Kukira release certificate, or it cannot update an installed copy.
+          RELEASE_CERT=da88ed128e672ee6ceb9df3bc3174bad12ebcbdc245556735429afdf5e546754
+          for apk in kukira-asset-*.apk; do
+            if ! "$BT/apksigner" verify --print-certs "$apk" | grep -q "SHA-256 digest: $RELEASE_CERT"; then
+              echo "::error::$apk tidak ditandatangani dengan kunci keluaran Kukira."
+              exit 1
+            fi
+          done
+          rm -f android/app/kukira-release.p12
           ls -la kukira-asset-*.apk
 
       - uses: actions/upload-artifact@v5

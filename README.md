@@ -49,7 +49,13 @@ APK dibina oleh GitHub Actions setiap kali kod ditolak ke `main` (tiada perisian
 3. Buka zip. Kebanyakan telefon perlukan fail **`arm64-v8a`**. Guna `armeabi-v7a` hanya untuk telefon lama 32-bit. Hantar fail `.apk` itu ke telefon (WhatsApp kepada diri sendiri, kabel USB, atau Google Drive).
 4. Di telefon, buka fail itu. Benarkan **Pasang apl tidak diketahui** untuk app yang anda guna untuk membukanya.
 
-Semua binaan ditandatangani dengan kunci ujian yang sama (`android_overrides/app/kukira-test.p12`), jadi versi baharu boleh dipasang di atas versi lama tanpa kehilangan data. **Kunci ini hanya untuk ujian.** Sebelum terbit di Google Play, buat kunci muat naik baharu dan simpan secara rahsia.
+### Kunci tandatangan
+
+Mulai 0.2.2 setiap APK ditandatangani dengan kunci keluaran Kukira. Kunci itu tidak ada dalam repo: CI mengambilnya daripada dua GitHub secret, `KUKIRA_KEYSTORE_B64` (fail `.p12` dalam base64) dan `KUKIRA_KEYSTORE_PASSWORD`. CI juga menyemak bahawa setiap APK membawa sijil keluaran (SHA-256 `da88ed12…5e546754`), dan gagal jika tidak.
+
+Pemilik menyimpan salinan luar talian (`kukira-release.p12` dan kata laluannya). **Jika kunci ini hilang, kemas kini tidak boleh dipasang di atas app sedia ada lagi**, dan pengguna terpaksa nyahpasang, yang memadam data mereka.
+
+**Dari 0.2.1 atau lebih awal ke 0.2.2:** versi lama ditandatangani dengan kunci ujian, jadi Android tidak benarkan 0.2.2 dipasang di atasnya. Buat sandaran dahulu (Lagi → Sandaran), nyahpasang versi lama, pasang 0.2.2, kemudian pulihkan sandaran. Ini hanya perlu sekali.
 
 ## Senarai semak ujian (sekurang-kurangnya dua telefon Android)
 
@@ -80,11 +86,11 @@ lib/
   l10n/                   semua teks: strings_ms.dart, strings_en.dart
   ui/                     skrin
 test/rules_test.dart      ujian logik peringatan
-android_overrides/        manifest, peraturan sandaran, ikon, kunci ujian
+android_overrides/        manifest, peraturan sandaran, ikon
 tool/patch_android.py     tampal folder android yang dijana oleh `flutter create` dalam CI
 ```
 
-Folder `android/` tidak disimpan dalam repo. CI menjananya dari templat Flutter 3.27.4, kemudian menyalin `android_overrides/` dan menampal `build.gradle` (minSdk 23, desugaring, kunci ujian).
+Folder `android/` tidak disimpan dalam repo. CI menjananya dari templat Flutter 3.27.4, kemudian menyalin `android_overrides/` dan menampal `build.gradle` (minSdk 23, desugaring, kunci keluaran daripada secret).
 
 ## Nota undang-undang
 

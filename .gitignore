@@ -18,6 +18,11 @@ pubspec.lock
 .vscode/
 *.iml
 
+# Signing keys never go in the repo (the release key is a GitHub secret).
+*.p12
+*.jks
+*.keystore
+
 # APKs downloaded for testing
 *.apk
 *.zip

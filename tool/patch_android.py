@@ -2,8 +2,12 @@
 
 1. Copy everything from android_overrides/ over android/.
 2. Edit app/build.gradle(.kts): minSdk 23, core library desugaring
-   (needed by flutter_local_notifications), the Kukira test signing key,
+   (needed by flutter_local_notifications), the Kukira release signing key,
    and no code shrinking for test builds.
+
+The key is never in the repo. CI writes it to android/app/kukira-release.p12
+from the KUKIRA_KEYSTORE_B64 secret, and Gradle reads its password from the
+KUKIRA_KEYSTORE_PASSWORD environment variable.
 
 Works with both the Groovy and the Kotlin DSL templates.
 """
@@ -46,10 +50,10 @@ if kts:
     sub(r"compileOptions\s*\{", "compileOptions {\n        isCoreLibraryDesugaringEnabled = true", "desugaring")
     signing = """    signingConfigs {
         create("kukira") {
-            storeFile = file("kukira-test.p12")
-            storePassword = "kukira-test"
+            storeFile = file("kukira-release.p12")
+            storePassword = System.getenv("KUKIRA_KEYSTORE_PASSWORD")
             keyAlias = "kukira"
-            keyPassword = "kukira-test"
+            keyPassword = System.getenv("KUKIRA_KEYSTORE_PASSWORD")
             storeType = "pkcs12"
         }
     }
@@ -66,10 +70,10 @@ else:
     sub(r"compileOptions\s*\{", "compileOptions {\n        coreLibraryDesugaringEnabled true", "desugaring")
     signing = """    signingConfigs {
         kukira {
-            storeFile file("kukira-test.p12")
-            storePassword "kukira-test"
+            storeFile file("kukira-release.p12")
+            storePassword System.getenv("KUKIRA_KEYSTORE_PASSWORD")
             keyAlias "kukira"
-            keyPassword "kukira-test"
+            keyPassword System.getenv("KUKIRA_KEYSTORE_PASSWORD")
             storeType "pkcs12"
         }
     }
