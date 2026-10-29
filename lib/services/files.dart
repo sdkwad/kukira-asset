@@ -69,8 +69,12 @@ class SecureFiles {
       final box = await AesGcm.with256bits().encrypt(bytes, secretKey: SecretKey(key));
       return box.concatenation();
     });
-    final f = File(p.join((await _dir()).path, '$name.enc'));
-    await f.writeAsBytes(sealed, flush: true);
+    // Written next to the final name and then renamed, so a stopped app never leaves a
+    // half-written file under a name the database points to.
+    final dir = (await _dir()).path;
+    final tmp = File(p.join(dir, '$name.enc.tmp'));
+    await tmp.writeAsBytes(sealed, flush: true);
+    await tmp.rename(p.join(dir, '$name.enc'));
   }
 
   static Future<Uint8List> read(AppDb db, String name) async {
@@ -96,11 +100,15 @@ class SecureFiles {
     if (await f.exists()) await f.delete();
   }
 
-  static Future<void> deleteAll() async {
-    _cache.clear();
+  /// Deletes every stored file whose name is not in [inUse], and any leftover partial writes.
+  static Future<void> removeUnused(Set<String> inUse) async {
+    _cache.removeWhere((name, _) => !inUse.contains(name));
     final d = await _dir();
     await for (final e in d.list()) {
-      if (e is File) await e.delete();
+      if (e is! File) continue;
+      final base = p.basename(e.path);
+      final keep = base.endsWith('.enc') && inUse.contains(base.substring(0, base.length - 4));
+      if (!keep) await e.delete();
     }
   }
 

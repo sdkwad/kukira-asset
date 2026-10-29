@@ -1134,4 +1134,8 @@ class StrMs extends Str {
   String backupSavedMissing(String name, int n) => 'Sandaran disimpan: $name. Tetapi $n dokumen atau gambar tidak dapat dibaca dan tiada dalam sandaran ini. Semak tab Dokumen.';
   @override
   String get backupTooNew => 'Sandaran ini dibuat oleh versi Kukira yang lebih baharu. Kemas kini app ini dahulu, kemudian pulihkan semula. Tiada apa yang diubah.';
+
+  // ------------------------------------------------ restore
+  @override
+  String get restoreFailed => 'Sandaran tidak dapat dipulihkan, jadi tiada apa daripadanya yang digunakan. Rekod di telefon ini kekal seperti sebelumnya.';
 }

@@ -467,8 +467,17 @@ class AppDb extends _$AppDb {
         'vendors': (await select(vendors).get()).map((e) => e.toJson()).toList(),
       };
 
-  /// Replaces all records with the contents of a backup. Settings (language) are kept.
-  Future<void> replaceAll(Map<String, dynamic> t) {
+  /// Names of the encrypted files that documents, photos and asset pictures point to.
+  Future<Set<String>> fileNamesInUse() async => {
+        for (final d in await select(documents).get()) d.filePath,
+        for (final a in await select(assets).get())
+          if (a.photoPath != null) a.photoPath!,
+      };
+
+  /// Replaces all records with the contents of a backup, in one transaction. Settings
+  /// (language, file key) are kept. [linkOldReminders] links road tax and insurance
+  /// reminders from backups made before schema 3, inside the same transaction.
+  Future<void> replaceAll(Map<String, dynamic> t, {bool linkOldReminders = false}) {
     List<Map<String, dynamic>> rows(String k) =>
         ((t[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
     return transaction(() async {
@@ -492,6 +501,7 @@ class AppDb extends _$AppDb {
         b.insertAll(costItems, rows('costItems').map(CostItem.fromJson));
         b.insertAll(documents, rows('documents').map(AssetDocument.fromJson));
       });
+      if (linkOldReminders) await linkExistingAutoReminders();
     });
   }
 }

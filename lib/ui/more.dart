@@ -429,7 +429,13 @@ class BackupScreen extends StatelessWidget {
     final db = context.db;
     final c = await pickAndOpenBackup(context, s);
     if (c == null || !context.mounted) return;
-    await withProgress(context, s.restoring, () => Backup.restore(db, c));
+    try {
+      await withProgress(context, s.restoring, () => Backup.restore(db, c));
+    } catch (_) {
+      // Backup.restore leaves the current records and files as they were.
+      if (context.mounted) snack(context, s.restoreFailed);
+      return;
+    }
     if (context.mounted) snack(context, s.restoredFrom(s.dLong(c.created)));
   }
 
@@ -524,15 +530,27 @@ class _UnreadableState extends State<UnreadableScreen> {
     final s = widget.s;
     final c = await pickAndOpenBackup(context, s);
     if (c == null || !mounted) return;
-    final AppDb db;
-    try {
-      db = await withProgress(context, s.restoring, () async {
-        final db = await Vault.resetAndOpen();
+    var error = '';
+    final db = await withProgress<AppDb?>(context, s.restoring, () async {
+      final AppDb db;
+      try {
+        db = await Vault.resetAndOpen();
+      } catch (_) {
+        error = s.secureStorageError;
+        return null;
+      }
+      try {
         await Backup.restore(db, c);
         return db;
-      });
-    } catch (_) {
-      if (mounted) snack(context, s.secureStorageError);
+      } catch (_) {
+        await db.close();
+        error = s.restoreFailed;
+        return null;
+      }
+    });
+    if (!mounted) return;
+    if (db == null) {
+      snack(context, error);
       return;
     }
     widget.onReady(db);

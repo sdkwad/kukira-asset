@@ -569,4 +569,7 @@ abstract class Str {
   // ------------------------------------------------ backup schema
   String backupSavedMissing(String name, int n);
   String get backupTooNew;
+
+  // ------------------------------------------------ restore
+  String get restoreFailed;
 }

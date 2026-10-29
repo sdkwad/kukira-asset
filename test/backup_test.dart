@@ -44,9 +44,64 @@ Future<List<Reminder>> linked(AppDb db, String source) =>
 
 void main() {
   setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
+  late Directory storage;
   setUp(() async {
-    await useTempStorage();
+    storage = await useTempStorage();
     SecureFiles.reset();
+  });
+
+  /// File names currently in the encrypted files folder.
+  List<String> stored() {
+    final d = Directory('${storage.path}/support/files');
+    return d.existsSync() ? (d.listSync().map((e) => e.uri.pathSegments.last).toList()..sort()) : [];
+  }
+
+  Future<String> attach(AppDb db, String title, List<int> bytes) async {
+    final car = (await db.select(db.assets).get()).first.id;
+    final name = await SecureFiles.save(db, Uint8List.fromList(bytes), 'pdf');
+    await db.addDocument(DocumentsCompanion.insert(assetId: car, filePath: name, title: title, docType: 'other'));
+    return name;
+  }
+
+  group('restore on a phone that already has data', () {
+    test('brings back the backup files and removes files nothing uses any more', () async {
+      final phone = await sampleDb();
+      final geran = await attach(phone, 'Geran', [1, 1, 1]);
+      final backup = await Backup.open((await Backup.create(phone, pass)).bytes, pass);
+
+      // After the backup: a new document, and a leftover from an interrupted write.
+      final later = await attach(phone, 'Later receipt', [2, 2, 2]);
+      File('${storage.path}/support/files/stale.pdf.enc.tmp').writeAsBytesSync([9]);
+
+      await Backup.restore(phone, backup);
+
+      expect((await phone.select(phone.documents).get()).map((d) => d.title), ['Geran']);
+      expect(await SecureFiles.read(phone, geran), [1, 1, 1]);
+      expect(stored(), ['$geran.enc']);
+      expect(stored().contains('$later.enc'), isFalse);
+      await phone.close();
+    });
+
+    test('a backup that cannot be applied changes nothing', () async {
+      final phone = await sampleDb();
+      final geran = await attach(phone, 'Geran', [1, 1, 1]);
+      final before = await phone.exportTables();
+
+      // A record without a title cannot be inserted, so the transaction fails part way.
+      final broken = Map<String, dynamic>.from(before)
+        ..['records'] = [
+          {'id': 9, 'assetId': 1, 'kind': 'maintenance', 'date': 0},
+        ];
+      final body = {'created': DateTime(2026, 10, 1).toIso8601String(), 'schema': AppDb.latestSchema, 'tables': broken};
+      final c = await Backup.open(await Backup.pack(body, {'incoming.pdf': Uint8List.fromList([7])}, pass), pass);
+
+      await expectLater(Backup.restore(phone, c), throwsA(anything));
+
+      expect(await phone.exportTables(), before);
+      expect(await SecureFiles.read(phone, geran), [1, 1, 1]);
+      expect(stored(), ['$geran.enc']);
+      await phone.close();
+    });
   });
 
   test('format 2: a backup restores to exactly the same records', () async {

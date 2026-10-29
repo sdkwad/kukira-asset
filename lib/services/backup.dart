@@ -212,15 +212,24 @@ class Backup {
   }
 
   /// Replaces everything on the phone with the backup, files included.
+  ///
+  /// Safe if the app is stopped part way or the backup cannot be applied: the backup's
+  /// files are written first, next to the current ones, then the records are swapped in
+  /// one transaction, and only then are files no record uses any more removed. Until that
+  /// transaction commits, the phone keeps its current records and every file they use.
+  /// (File names are random and a stored file never changes, so a backup file with the
+  /// same name as a current one holds the same content.)
   static Future<void> restore(AppDb db, BackupContents c) async {
-    await db.replaceAll(c.tables);
-    // Backups from before schema 3 (and from 0.2.1, which did not record it) may hold
-    // road tax and insurance reminders without their link to the date field.
-    if ((c.schema ?? 0) < 3) await db.linkExistingAutoReminders();
     SecureFiles.reset();
-    await SecureFiles.deleteAll();
-    for (final e in c.files.entries) {
-      await SecureFiles.saveNamed(db, e.key, e.value);
+    try {
+      for (final e in c.files.entries) {
+        await SecureFiles.saveNamed(db, e.key, e.value);
+      }
+      // Backups from before schema 3 (and from 0.2.1, which did not record it) may hold
+      // road tax and insurance reminders without their link to the date field.
+      await db.replaceAll(c.tables, linkOldReminders: (c.schema ?? 0) < 3);
+    } finally {
+      await SecureFiles.removeUnused(await db.fileNamesInUse());
     }
   }
 
