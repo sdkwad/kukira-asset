@@ -349,6 +349,9 @@ Future<BackupContents?> pickAndOpenBackup(BuildContext context, Str s) async {
     } on NotABackup {
       if (context.mounted) snack(context, s.notABackup);
       return null;
+    } on NewerBackup {
+      if (context.mounted) snack(context, s.backupTooNew);
+      return null;
     } catch (_) {
       if (context.mounted) snack(context, s.couldNotRead);
       return null;
@@ -389,7 +392,8 @@ class BackupScreen extends StatelessWidget {
     final db = context.db;
     final pass = await _askNewPassphrase(context);
     if (pass == null || !context.mounted) return;
-    final bytes = await withProgress(context, s.encrypting, () => Backup.create(db, pass));
+    final backup = await withProgress(context, s.encrypting, () => Backup.create(db, pass));
+    final bytes = backup.bytes;
     if (!context.mounted) return;
     final name = Backup.fileName(DateTime.now());
     final where = await showModalBottomSheet<String>(
@@ -414,7 +418,7 @@ class BackupScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (saved) {
       await db.setSetting('lastBackup', DateTime.now().toIso8601String());
-      if (context.mounted) snack(context, s.backupSaved(name));
+      if (context.mounted) snack(context, backup.missing > 0 ? s.backupSavedMissing(name, backup.missing) : s.backupSaved(name));
     } else {
       snack(context, s.backupNotSaved);
     }

@@ -19,10 +19,25 @@ class WrongPassphrase implements Exception {}
 /// Thrown when the file is not a Kukira backup.
 class NotABackup implements Exception {}
 
+/// Thrown when the backup was made by a newer version of Kukira (a newer database schema).
+/// Restoring it here would silently drop the fields this version doesn't know.
+class NewerBackup implements Exception {}
+
+/// A finished backup file. [missing] counts documents and photos that could not be read
+/// and are therefore not in it.
+class BackupFile {
+  BackupFile(this.bytes, this.missing);
+  final Uint8List bytes;
+  final int missing;
+}
+
 class BackupContents {
-  BackupContents(this.created, this.tables, this.files);
+  BackupContents(this.created, this.tables, this.files, {this.schema});
   final DateTime created;
   final Map<String, dynamic> tables;
+
+  /// Database schema of the app that made the backup. Null for backups made before 0.2.2.
+  final int? schema;
 
   /// Decrypted documents and photos by file name.
   final Map<String, Uint8List> files;
@@ -36,7 +51,9 @@ class BackupContents {
 /// passphrase the user chooses (PBKDF2-HMAC-SHA256), and everything is sealed with AES-256-GCM.
 ///
 /// Format 2 (binary): "KUKIRA2\n" + header JSON + "\n" + ciphertext.
-/// The plaintext is: uint32 length + gzip(JSON tables) + repeated (uint16 name length, name, uint32 length, bytes).
+/// The plaintext is: uint32 length + gzip(JSON body) + repeated (uint16 name length, name, uint32 length, bytes).
+/// The JSON body is {created, schema, tables}; `schema` was added in 0.2.2 and sits inside
+/// the encrypted part so it cannot be altered.
 /// Format 1 (0.1.0, JSON envelope, no files) can still be restored.
 class Backup {
   static const format = 'kukira-backup';
@@ -52,7 +69,7 @@ class Backup {
         return k.extractBytes();
       });
 
-  static Future<Uint8List> create(AppDb db, String pass) async {
+  static Future<BackupFile> create(AppDb db, String pass) async {
     final tables = await db.exportTables();
     final files = <String, Uint8List>{};
     final names = <String>{
@@ -60,14 +77,22 @@ class Backup {
       for (final a in tables['assets']!)
         if (a['photoPath'] != null) a['photoPath'] as String,
     };
+    var missing = 0;
     for (final n in names) {
       try {
         files[n] = await SecureFiles.read(db, n);
       } catch (_) {
-        // A missing file should not stop the backup of everything else.
+        // A missing file should not stop the backup of everything else, but the user is told.
+        missing++;
       }
     }
-    final json = gzip.encode(utf8.encode(jsonEncode({'created': DateTime.now().toIso8601String(), 'tables': tables})));
+    final body = {'created': DateTime.now().toIso8601String(), 'schema': AppDb.latestSchema, 'tables': tables};
+    return BackupFile(await pack(body, files, pass), missing);
+  }
+
+  /// Seals a backup body and its files into the format 2 layout.
+  static Future<Uint8List> pack(Map<String, dynamic> body, Map<String, Uint8List> files, String pass) async {
+    final json = gzip.encode(utf8.encode(jsonEncode(body)));
     final b = BytesBuilder(copy: false);
     void u32(int v) => b.add((ByteData(4)..setUint32(0, v)).buffer.asUint8List());
     void u16(int v) => b.add((ByteData(2)..setUint16(0, v)).buffer.asUint8List());
@@ -157,7 +182,9 @@ class Backup {
       files[name] = Uint8List.sublistView(data, o, o + len);
       o += len;
     }
-    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>, files);
+    final schema = body['schema'] as int?;
+    if (schema != null && schema > AppDb.latestSchema) throw NewerBackup();
+    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>, files, schema: schema);
   }
 
   static Future<BackupContents> _openV1(Uint8List bytes, String pass) async {
@@ -187,6 +214,9 @@ class Backup {
   /// Replaces everything on the phone with the backup, files included.
   static Future<void> restore(AppDb db, BackupContents c) async {
     await db.replaceAll(c.tables);
+    // Backups from before schema 3 (and from 0.2.1, which did not record it) may hold
+    // road tax and insurance reminders without their link to the date field.
+    if ((c.schema ?? 0) < 3) await db.linkExistingAutoReminders();
     SecureFiles.reset();
     await SecureFiles.deleteAll();
     for (final e in c.files.entries) {

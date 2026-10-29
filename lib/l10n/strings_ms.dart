@@ -1128,4 +1128,10 @@ class StrMs extends Str {
   // ------------------------------------------------ unreadable database
   @override
   String get secureStorageError => 'Storan selamat telefon tidak dapat dibaca, jadi tiada apa yang diubah. Mulakan semula telefon dan cuba lagi.';
+
+  // ------------------------------------------------ backup schema
+  @override
+  String backupSavedMissing(String name, int n) => 'Sandaran disimpan: $name. Tetapi $n dokumen atau gambar tidak dapat dibaca dan tiada dalam sandaran ini. Semak tab Dokumen.';
+  @override
+  String get backupTooNew => 'Sandaran ini dibuat oleh versi Kukira yang lebih baharu. Kemas kini app ini dahulu, kemudian pulihkan semula. Tiada apa yang diubah.';
 }

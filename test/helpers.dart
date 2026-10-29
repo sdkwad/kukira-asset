@@ -1,6 +1,8 @@
 // Shared test harness: a fake World and an AppScope, so screens can be pumped
 // without a real database, notifications or secure storage.
 
+import 'dart:io';
+
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -8,6 +10,28 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/data/db.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/ui/common.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:plugin_platform_interface/plugin_platform_interface.dart';
+
+class _FakePaths extends Fake with MockPlatformInterfaceMixin implements PathProviderPlatform {
+  _FakePaths(this.root);
+  final Directory root;
+
+  @override
+  Future<String?> getApplicationSupportPath() async => (await Directory('${root.path}/support').create(recursive: true)).path;
+
+  @override
+  Future<String?> getTemporaryPath() async => (await Directory('${root.path}/tmp').create(recursive: true)).path;
+}
+
+/// Points app storage (database folder, encrypted files, temp) at a fresh temporary folder.
+/// Returns that folder; it is deleted after the test.
+Future<Directory> useTempStorage() async {
+  final root = await Directory.systemTemp.createTemp('kukira_test_');
+  PathProviderPlatform.instance = _FakePaths(root);
+  addTearDown(() => root.delete(recursive: true));
+  return root;
+}
 
 final _t = DateTime(2026, 10, 20);
 

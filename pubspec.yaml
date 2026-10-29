@@ -40,6 +40,9 @@ dev_dependencies:
   drift_dev: ^2.22.1
   build_runner: ^2.4.13
   flutter_lints: ^5.0.0
+  # Tests point app storage at a temporary folder.
+  path_provider_platform_interface: ^2.1.2
+  plugin_platform_interface: ^2.1.8
 
 flutter:
   uses-material-design: true

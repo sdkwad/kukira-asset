@@ -282,8 +282,12 @@ extension ReminderInfo on Reminder {
 class AppDb extends _$AppDb {
   AppDb(super.e);
 
+  /// Bump together with a migration step below. Backups record it, and a backup made by a
+  /// newer schema is refused instead of silently losing the fields this app doesn't know.
+  static const latestSchema = 3;
+
   @override
-  int get schemaVersion => 3;
+  int get schemaVersion => latestSchema;
 
   @override
   MigrationStrategy get migration => MigrationStrategy(
@@ -295,7 +299,7 @@ class AppDb extends _$AppDb {
           }
           if (from < 3) {
             await m.addColumn(reminders, reminders.autoSource);
-            await _linkExistingAutoReminders();
+            await linkExistingAutoReminders();
           }
         },
         beforeOpen: (details) async {
@@ -305,9 +309,13 @@ class AppDb extends _$AppDb {
 
   /// 0.2 created road tax and insurance reminders during onboarding without a link.
   /// Link the best match per vehicle so editing the date later does not make a duplicate.
-  Future<void> _linkExistingAutoReminders() async {
+  /// Runs on upgrade to schema 3 and after restoring an older backup. A vehicle that
+  /// already has a linked reminder for a field is left alone, so running it twice is safe.
+  Future<void> linkExistingAutoReminders() async {
     for (final v in await select(vehicleProfiles).get()) {
       for (final (source, category) in const [('roadTax', 'road_tax'), ('insurance', 'insurance_premium')]) {
+        final linked = await (select(reminders)..where((t) => t.assetId.equals(v.assetId) & t.autoSource.equals(source))).get();
+        if (linked.isNotEmpty) continue;
         final candidates = await (select(reminders)
               ..where((t) => t.assetId.equals(v.assetId) & t.category.equals(category) & t.ruleType.equals('fixed')))
             .get();

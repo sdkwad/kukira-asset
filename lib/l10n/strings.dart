@@ -565,4 +565,8 @@ abstract class Str {
 
   // ------------------------------------------------ unreadable database
   String get secureStorageError;
+
+  // ------------------------------------------------ backup schema
+  String backupSavedMissing(String name, int n);
+  String get backupTooNew;
 }

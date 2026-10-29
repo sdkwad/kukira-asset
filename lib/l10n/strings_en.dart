@@ -1128,4 +1128,10 @@ class StrEn extends Str {
   // ------------------------------------------------ unreadable database
   @override
   String get secureStorageError => "The phone's secure storage couldn't be read, so nothing was changed. Restart the phone and try again.";
+
+  // ------------------------------------------------ backup schema
+  @override
+  String backupSavedMissing(String name, int n) => 'Backup saved: $name. But some documents or photos ($n) could not be read and are not in this backup. Check the Documents tab.';
+  @override
+  String get backupTooNew => 'This backup was made by a newer version of Kukira. Update this app first, then restore it again. Nothing was changed.';
 }
