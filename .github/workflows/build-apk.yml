@@ -30,6 +30,14 @@ jobs:
           cp -r /tmp/gen/android ./android
           python3 tool/patch_android.py
 
+      # SPIKE only: a separate app id and name, so it installs next to Kukira Asset.
+      - name: SPIKE nama app berasingan
+        run: |
+          sed -i 's/applicationId = "app.kukira.kukira_asset"/applicationId = "app.kukira.safspike"/; s/applicationId "app.kukira.kukira_asset"/applicationId "app.kukira.safspike"/' android/app/build.gradle*
+          grep -q safspike android/app/build.gradle* || { echo "::error::applicationId not changed"; exit 1; }
+          sed -i 's/android:label="Kukira Asset"/android:label="Kukira SAF test"/' android/app/src/main/AndroidManifest.xml
+          grep -q 'Kukira SAF test' android/app/src/main/AndroidManifest.xml || { echo "::error::label not changed"; exit 1; }
+
       - name: Pakej
         run: flutter pub get
 
