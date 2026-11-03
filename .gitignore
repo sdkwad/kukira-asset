@@ -26,3 +26,6 @@ build/
 *.apk
 *.zip
 apk/
+
+# Screenshot pictures are made in CI (see test/screenshots_test.dart).
+/test/goldens/

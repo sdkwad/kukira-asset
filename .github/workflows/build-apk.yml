@@ -48,6 +48,24 @@ jobs:
           sudo apt-get install -y -qq libsqlite3-dev > /dev/null
           flutter test
 
+      # Pictures of the main screens with the real fonts, for reviewing the UI (not a gate).
+      - name: Tangkapan skrin
+        continue-on-error: true
+        run: |
+          ls "$FLUTTER_ROOT/bin/cache/artifacts/material_fonts"
+          flutter test --update-goldens --dart-define=SHOTS=true test/screenshots_test.dart
+          cat build/screenshots/problems.txt
+
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: kukira-screenshots
+          path: |
+            test/goldens/
+            build/screenshots/problems.txt
+          retention-days: 14
+          if-no-files-found: ignore
+
       # The release key lives only in GitHub secrets and the owner's offline copy.
       - name: Kunci tandatangan
         env:
