@@ -2,7 +2,19 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.3 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.4 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.4
+
+Pemberitahuan yang boleh dipercayai, hasil audit kedua:
+
+- Membuka Kukira tidak lagi memadam pemberitahuan di tray.
+- Peringatan yang ditunda dan masih lewat diingatkan setiap minggu selepas tunda tamat.
+- Notis "Buka Kukira" jika jadual pemberitahuan penuh.
+- Ubah rumah/kenderaan dan cadangan peringatan disimpan sekali gus.
+- Sandaran yang dikongsi tidak tertinggal dalam cache; log ralat tanpa nama fail.
+
+Pasang terus di atas 0.2.3.
 
 ## Baharu dalam 0.2.3
 

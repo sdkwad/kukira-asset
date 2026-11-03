@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.4
+
+Notifications you can rely on, from the second audit.
+
+- **Fixed:** opening Kukira (or changing anything) no longer wipes your reminder notifications from the notification tray. Each notification now keeps the same id, only scheduled ones that are no longer needed are cancelled, and a notification in the tray is removed only once its reminder is done, snoozed, deleted or no longer due soon.
+- **Fixed:** a snoozed reminder that is still overdue when the snooze ends is now followed up weekly (3 more times), instead of going silent.
+- **New:** if more reminders are due than fit in the schedule (48), an "Open Kukira" notice is scheduled the day after the last one, so the schedule is refreshed before it runs out.
+- **Fixed:** editing a house or vehicle now saves the dates and their linked reminders together, and suggested reminders in Add asset are added all at once or not at all. A failed save says so.
+- **Fixed:** a backup shared through the share sheet no longer stays in the app cache; it is cleared like viewed documents.
+- **Privacy:** the error log now removes file names, paths and quoted text from error messages.
+- **Code:** saving a record moved from the form into `lib/services/record_save.dart` and is tested on its own.
+- **Tests:** screenshots of 22 screens are made in CI with the real fonts (`test/screenshots_test.dart`), for reviewing the UI. Plus tests for notification ids and the tray, snooze follow-ups, the refresh notice, asset transactions, the record service and error-message scrubbing.
+
 ## 0.2.3
 
 Daily-use reliability, from a full audit of the app.
