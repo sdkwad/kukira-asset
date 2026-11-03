@@ -1,5 +1,4 @@
 import 'package:drift/drift.dart' show driftRuntimeOptions;
-import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/domain/presets.dart';
 import 'package:kukira_asset/l10n/strings.dart';

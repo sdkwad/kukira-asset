@@ -30,15 +30,17 @@ jobs:
           cp -r /tmp/gen/android ./android
           python3 tool/patch_android.py
 
+      # pubspec.lock is committed: every build uses exactly the package versions that were
+      # tested, and a build fails rather than silently picking up a newer plugin.
       - name: Pakej
-        run: flutter pub get
+        run: flutter pub get --enforce-lockfile
 
       - name: Jana kod pangkalan data (drift)
         timeout-minutes: 10
         run: dart run build_runner build --delete-conflicting-outputs
 
       - name: Semak kod
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: flutter analyze
 
       - name: Ujian
         run: |
