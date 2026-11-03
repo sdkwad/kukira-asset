@@ -50,11 +50,21 @@ void main() {
       expect(n.due, DateTime(2027, 4, 20));
     });
 
-    test('tax presets count from the previous due date and keep the anchor day', () {
+    test('tax presets count from the previous due date and stay at month end', () {
       final r = RemInfo(rule: 'repeat', due: DateTime(2026, 8, 31), repeatMonths: 6, repeatFrom: 'due');
       expect(nextAfterDone(r, today: today).due, DateTime(2027, 2, 28));
+      // End of February leads back to 31 August, not the 28th (before 0.2.6 it drifted).
       final r2 = RemInfo(rule: 'repeat', due: DateTime(2027, 2, 28), repeatMonths: 6, repeatFrom: 'due');
-      expect(nextAfterDone(r2, today: DateTime(2027, 3, 1)).due, DateTime(2027, 8, 28));
+      expect(nextAfterDone(r2, today: DateTime(2027, 3, 1)).due, DateTime(2027, 8, 31));
+      // Leap years: end of February is the 29th.
+      final r3 = RemInfo(rule: 'repeat', due: DateTime(2027, 8, 31), repeatMonths: 6, repeatFrom: 'due');
+      expect(nextAfterDone(r3, today: DateTime(2027, 9, 1)).due, DateTime(2028, 2, 29));
+      // Cukai tanah on 31 May stays on 31 May.
+      final tanah = RemInfo(rule: 'repeat', due: DateTime(2026, 5, 31), repeatMonths: 12, repeatFrom: 'due');
+      expect(nextAfterDone(tanah, today: DateTime(2026, 6, 2)).due, DateTime(2027, 5, 31));
+      // A date that is not a month end is not moved.
+      final mid = RemInfo(rule: 'repeat', due: DateTime(2026, 8, 15), repeatMonths: 6, repeatFrom: 'due');
+      expect(nextAfterDone(mid, today: DateTime(2026, 8, 16)).due, DateTime(2027, 2, 15));
     });
 
     test('repeat every N days counts from completion', () {

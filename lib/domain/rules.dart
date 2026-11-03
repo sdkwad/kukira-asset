@@ -111,11 +111,19 @@ NextDue nextAfterDone(RemInfo r, {required DateTime today, int? odometer}) {
     repeats = true;
   } else if (r.usesDate && months > 0) {
     final base = (r.repeatFrom == 'due' && r.due != null) ? dayOnly(r.due!) : t;
+    // A due date at the end of a month stays at month end (cukai taksiran: 31 Aug, then end of
+    // February, then 31 Aug again), instead of drifting to the 28th after February.
+    final monthEnd = r.repeatFrom == 'due' && base.day == DateTime(base.year, base.month + 1, 0).day;
+    DateTime step(int k) {
+      final d = addMonths(base, months * k);
+      return monthEnd ? DateTime(d.year, d.month + 1, 0) : d;
+    }
+
     var k = 1;
-    var next = addMonths(base, months * k);
+    var next = step(k);
     while (!next.isAfter(t)) {
       k++;
-      next = addMonths(base, months * k);
+      next = step(k);
     }
     due = next;
     repeats = true;
