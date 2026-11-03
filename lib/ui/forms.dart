@@ -447,7 +447,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
             Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
           ],
           const SizedBox(height: 20),
-          FilledButton(onPressed: () => _save(w), child: Text(widget.editId == null ? s.saveReminder : s.saveChanges)),
+          SaveButton(onPressed: () => _save(w), child: Text(widget.editId == null ? s.saveReminder : s.saveChanges)),
         ]),
       );
     });

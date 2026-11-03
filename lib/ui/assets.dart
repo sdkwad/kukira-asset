@@ -1008,7 +1008,7 @@ class _HouseEditState extends State<HouseEditScreen> {
           const SizedBox(height: 12),
           TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(labelText: s.notes, border: const OutlineInputBorder())),
           const SizedBox(height: 20),
-          FilledButton(
+          SaveButton(
             onPressed: () async {
               if (_name.text.trim().isEmpty) return;
               final db = context.db;
@@ -1145,7 +1145,7 @@ class _VehicleEditState extends State<VehicleEditScreen> {
           ),
           tf(_notes, s.notes),
           const SizedBox(height: 8),
-          FilledButton(
+          SaveButton(
             onPressed: () async {
               if (_name.text.trim().isEmpty || _plate.text.trim().isEmpty) return;
               final db = context.db;

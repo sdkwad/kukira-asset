@@ -78,9 +78,10 @@ World fakeWorld({String ptype = 'landed', String? source, DateTime? vp, DateTime
       costItems: const {},
     );
 
-Widget harness(Widget home, World w, {String lang = 'en'}) => AppScope(
-      // Never opened: the screens under test only read from [world].
-      db: AppDb(NativeDatabase.memory()),
+/// Pass [db] when the test checks what a screen writes; otherwise an unused in-memory one.
+Widget harness(Widget home, World w, {String lang = 'en', AppDb? db}) => AppScope(
+      // Screens read from [world]; writes go to [db].
+      db: db ?? AppDb(NativeDatabase.memory()),
       s: strFor(lang),
       lang: lang,
       world: ValueNotifier<World?>(w),

@@ -376,6 +376,38 @@ class InfoBanner extends StatelessWidget {
   }
 }
 
+/// A filled button for saving. While [onPressed] runs it is disabled and shows a spinner,
+/// so a quick double tap can never save twice.
+class SaveButton extends StatefulWidget {
+  const SaveButton({super.key, required this.onPressed, required this.child});
+  final Future<void> Function()? onPressed;
+  final Widget child;
+
+  @override
+  State<SaveButton> createState() => _SaveButtonState();
+}
+
+class _SaveButtonState extends State<SaveButton> {
+  bool _busy = false;
+
+  Future<void> _run() async {
+    // A second tap can arrive before the button rebuilds as disabled.
+    if (_busy) return;
+    setState(() => _busy = true);
+    try {
+      await widget.onPressed!();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) => FilledButton(
+        onPressed: widget.onPressed == null || _busy ? null : _run,
+        child: _busy ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)) : widget.child,
+      );
+}
+
 class NoteBox extends StatelessWidget {
   const NoteBox(this.text, {super.key, this.warn = false, this.icon});
   final String text;

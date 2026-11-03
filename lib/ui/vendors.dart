@@ -127,7 +127,7 @@ class _VendorFormState extends State<VendorFormScreen> {
           const SizedBox(height: 14),
           TextField(controller: _note, maxLines: 3, decoration: InputDecoration(labelText: s.notes, border: const OutlineInputBorder())),
           const SizedBox(height: 20),
-          FilledButton(
+          SaveButton(
             onPressed: () async {
               if (_name.text.trim().isEmpty) return;
               final c = VendorsCompanion(name: Value(_name.text.trim()), phone: Value(nn(_phone.text)), trade: Value(_trade), note: Value(nn(_note.text)));

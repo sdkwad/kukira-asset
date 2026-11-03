@@ -177,7 +177,7 @@ class _AddAssetState extends State<AddAssetScreen> {
           Row(children: [
             Expanded(child: OutlinedButton(onPressed: () => setState(() => _step = 1), child: Text(s.back))),
             const SizedBox(width: 10),
-            Expanded(child: FilledButton(onPressed: _create, child: Text(s.done))),
+            Expanded(child: SaveButton(onPressed: _create, child: Text(s.done))),
           ]),
         ]);
       default:
@@ -221,7 +221,7 @@ class _AddAssetState extends State<AddAssetScreen> {
           Row(children: [
             Expanded(child: OutlinedButton(onPressed: () => _finish(false), child: Text(s.skip))),
             const SizedBox(width: 10),
-            Expanded(child: FilledButton(onPressed: _picks.isEmpty ? () => _finish(false) : _savePicks, child: Text(s.saveN(_picks.length)))),
+            Expanded(child: SaveButton(onPressed: _picks.isEmpty ? () async => _finish(false) : _savePicks, child: Text(s.saveN(_picks.length)))),
           ]),
         ]);
     }
