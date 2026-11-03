@@ -586,7 +586,8 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
                     if (!ok || !c.mounted) return;
                     final photos = w.photosOf(r.id);
                     final db = c.db;
-                    // The record and its photo rows go together; the photo files after.
+                    // The record, its photo rows and its warranty reminder go together; the
+                    // photo files after.
                     final files = FileChanges(db);
                     await files.commit(() async {
                       for (final p in photos) {
@@ -594,6 +595,7 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
                         files.remove(p.filePath);
                       }
                       await db.deleteRecord(r.id);
+                      if (r.warrantyReminderId != null) await db.deleteReminder(r.warrantyReminderId!);
                     });
                     if (sheet.mounted) Navigator.pop(sheet);
                   },

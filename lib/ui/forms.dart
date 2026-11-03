@@ -5,6 +5,7 @@ import '../data/db.dart';
 import '../domain/presets.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
+import '../services/auto_reminders.dart';
 import '../services/files.dart';
 import 'assets.dart';
 import 'common.dart';
@@ -611,6 +612,16 @@ class _RecordFormState extends State<RecordFormScreen> {
         ? (_status == 'done' ? 'done' : (_reported ? 'in_progress' : (_status ?? 'open')))
         : (_kind == 'incident' ? (_status ?? 'open') : null);
 
+    // The warranty reminder follows the warranty date. As for road tax, ask before
+    // reopening a reminder that was marked done or clearing a snooze.
+    final old = widget.editId == null ? null : w.records.where((r) => r.id == widget.editId).firstOrNull;
+    final warranty = planWarranty(w.reminders, reminderId: old?.warrantyReminderId, oldDate: old?.warrantyEnd, newDate: _warranty, today: today());
+    final overwrite = await askAutoConflicts(context, [warranty]);
+    if (overwrite == null || !mounted) {
+      if (mounted) setState(() => _saving = false);
+      return;
+    }
+
     // New photos are written first; the record, its cost items, photos, odometer reading and
     // reminder changes are then saved in one transaction, so a failed or interrupted save
     // leaves nothing half-done.
@@ -633,7 +644,7 @@ class _RecordFormState extends State<RecordFormScreen> {
           }
         }
         final recordId = await _write(db, s, a, w, files, match: match, odo: odo, cost: cost, vendorId: vendorId, vName: vName,
-            status: status, reportedOn: reportedOn, photoNames: photoNames, msgs: msgs);
+            status: status, reportedOn: reportedOn, photoNames: photoNames, warranty: warranty, overwrite: overwrite, msgs: msgs);
         return recordId;
       });
     } catch (_) {
@@ -645,7 +656,7 @@ class _RecordFormState extends State<RecordFormScreen> {
     }
     if (!mounted) return;
     Navigator.pop(context);
-    snack(context, widget.editId == null ? msgs.join(' ') : s.changesSaved);
+    snack(context, widget.editId == null ? msgs.join(' ') : [s.changesSaved, ...msgs.skip(1)].join(' '));
   }
 
   /// The database writes of [_save], run inside its transaction.
@@ -658,7 +669,11 @@ class _RecordFormState extends State<RecordFormScreen> {
       required String? status,
       required DateTime? reportedOn,
       required List<String> photoNames,
+      required AutoChange warranty,
+      required bool overwrite,
       required List<String> msgs}) async {
+    final warrantyId =
+        await applyWarranty(db, s, warranty, assetId: a.id, recordTitle: _title.text.trim(), overwriteManual: overwrite, msgs: msgs);
     final c = RecordsCompanion(
       assetId: Value(a.id),
       kind: Value(_kind),
@@ -676,6 +691,7 @@ class _RecordFormState extends State<RecordFormScreen> {
       reportedToDeveloper: Value(reportedOn),
       insuranceClaim: Value(_kind == 'incident' ? _claim : null),
       linkedReminderId: Value(widget.editId != null ? _linkedId : match?.id),
+      warrantyReminderId: Value(warrantyId),
     );
     int recordId;
     if (widget.editId == null) {
@@ -701,16 +717,6 @@ class _RecordFormState extends State<RecordFormScreen> {
     if (match != null && widget.linkedReminderId == null && _markDone) {
       final n = await db.completeReminder(match, today: today(), odometer: newOdo);
       msgs.add(s.alsoMarkedDone(match.title, n.done ? null : (n.due != null ? s.dLong(n.due!) : s.km(n.dueKm ?? 0))));
-    }
-    if (_warranty != null && widget.editId == null) {
-      await db.addReminder(RemindersCompanion(
-        assetId: Value(a.id),
-        title: Value(s.warrantyEnds(_title.text.trim())),
-        ruleType: const Value('fixed'),
-        dueDate: Value(_warranty),
-        leadDays: const Value(30),
-      ));
-      msgs.add(s.warrantyReminderAdded);
     }
     return recordId;
   }

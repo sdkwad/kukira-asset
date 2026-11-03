@@ -1,4 +1,5 @@
-// Upgrades databases made by 0.1.0 (schema 1) and 0.2.0 (schema 2) and checks that they
+// Upgrades databases made by 0.1.0 (schema 1), 0.2.0 (schema 2) and 0.2.1/0.2.2 (schema 3)
+// and checks that they
 // end up with the same columns as a new install, with every row kept.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -52,8 +53,13 @@ const schema2Additions = [
   'ALTER TABLE reminders ADD COLUMN repeat_days INTEGER NULL',
 ];
 
+/// What 0.2.1 added.
+const schema3Additions = [
+  'ALTER TABLE reminders ADD COLUMN auto_source TEXT NULL',
+];
+
 /// One car with a road tax and an insurance reminder made by onboarding (no link yet),
-/// a house, a record and a setting.
+/// a house, a record, a record with a warranty and its reminder (no link yet) and a setting.
 const sampleRows = [
   "INSERT INTO assets (id, nickname, category) VALUES (1, 'Rumah Setia Alam', 'house'), (2, 'Myvi', 'car')",
   "INSERT INTO house_profiles (asset_id, property_type, vp_date) VALUES (1, 'landed', 1700000000)",
@@ -61,8 +67,11 @@ const sampleRows = [
   "INSERT INTO reminders (id, asset_id, title, category, rule_type, due_date) VALUES "
       "(1, 2, 'Road tax renewal', 'road_tax', 'fixed', 1793750400), "
       "(2, 2, 'Insurance renewal', 'insurance_premium', 'fixed', 1793750400), "
-      "(3, 2, 'Engine oil', 'engine_oil', 'repeat', 1780000000)",
+      "(3, 2, 'Engine oil', 'engine_oil', 'repeat', 1780000000), "
+      "(4, 1, 'Warranty ends: Aircond servicing', NULL, 'fixed', 1800000000), "
+      "(5, 1, 'Warranty ends: Water heater', NULL, 'fixed', 1800000000)",
   "INSERT INTO records (id, asset_id, kind, title, date, cost) VALUES (1, 2, 'maintenance', 'Service', 1760000000, 180.5)",
+  "INSERT INTO records (id, asset_id, kind, title, date, warranty_end) VALUES (2, 1, 'maintenance', 'Aircond servicing', 1770000000, 1800000000)",
   "INSERT INTO settings (\"key\", value) VALUES ('lang', 'ms')",
 ];
 
@@ -75,6 +84,11 @@ AppDb openAt(int version, {bool withRows = true}) => AppDb(NativeDatabase.memory
       }
       if (version >= 2) {
         for (final s in schema2Additions) {
+          db.execute(s);
+        }
+      }
+      if (version >= 3) {
+        for (final s in schema3Additions) {
           db.execute(s);
         }
       }
@@ -99,7 +113,7 @@ Future<Map<String, Set<String>>> columns(AppDb db) async {
 void main() {
   setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
 
-  for (final from in [1, 2]) {
+  for (final from in [1, 2, 3]) {
     group('upgrade from schema $from', () {
       test('ends with the same tables and columns as a new install', () async {
         final fresh = AppDb(NativeDatabase.memory());
@@ -115,13 +129,17 @@ void main() {
         final w = await db.loadWorld();
         expect(w.assets.map((a) => a.nickname), ['Rumah Setia Alam', 'Myvi']);
         expect(w.houses[1]!.vpDate, DateTime.fromMillisecondsSinceEpoch(1700000000 * 1000));
-        expect(w.records.single.cost, 180.5);
+        expect(w.records.firstWhere((r) => r.id == 1).cost, 180.5);
         expect(w.settings['lang'], 'ms');
         final byId = {for (final r in w.reminders) r.id: r};
         expect(byId[1]!.autoSource, 'roadTax');
         expect(byId[2]!.autoSource, 'insurance');
         expect(byId[3]!.autoSource, isNull);
         expect(byId[3]!.repeatDays, isNull);
+        // The warranty reminder whose title matches is linked; the other one is not.
+        final records = {for (final r in w.records) r.id: r};
+        expect(records[2]!.warrantyReminderId, 4);
+        expect(records[1]!.warrantyReminderId, isNull);
         await db.close();
       });
     });

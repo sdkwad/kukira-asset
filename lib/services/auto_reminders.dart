@@ -84,3 +84,55 @@ Future<List<String>> applyAuto(AppDb db, Str s, int assetId, List<AutoChange> ch
   }
   return msgs;
 }
+
+// ---------------------------------------------------------------- warranty
+
+/// The reminder that follows a record's warranty end date, linked by
+/// Records.warrantyReminderId. Uses the same rules as road tax and insurance (planAuto).
+AutoChange planWarranty(Iterable<Reminder> reminders,
+    {required int? reminderId, required DateTime? oldDate, required DateTime? newDate, required DateTime today}) {
+  final r = reminderId == null ? null : reminders.where((x) => x.id == reminderId).firstOrNull;
+  return AutoChange('warranty', planAuto(oldDate: oldDate, newDate: newDate, existing: linkedState(r), today: today), r);
+}
+
+/// Applies a [planWarranty] change for a record titled [recordTitle] and returns the
+/// reminder id to store on the record (null when there is none). Adds a message to [msgs].
+Future<int?> applyWarranty(AppDb db, Str s, AutoChange c,
+    {required int assetId, required String recordTitle, required bool overwriteManual, required List<String> msgs}) async {
+  final p = c.plan;
+  final existing = c.existing;
+  final title = s.warrantyEnds(recordTitle);
+  switch (p.kind) {
+    case AutoKind.none:
+      // The reminder's title follows the record's even when the date stays the same.
+      if (existing != null && existing.title != title) {
+        await db.updateReminder(existing.id, RemindersCompanion(title: Value(title)));
+      }
+      return existing?.id;
+    case AutoKind.create:
+      final id = await db.addReminder(RemindersCompanion(
+        assetId: Value(assetId),
+        title: Value(title),
+        ruleType: const Value('fixed'),
+        dueDate: Value(p.due),
+        leadDays: const Value(30),
+      ));
+      msgs.add(s.warrantyReminderAdded);
+      return id;
+    case AutoKind.update:
+      if (p.needsConfirm && !overwriteManual) {
+        msgs.add(s.autoKept(existing!.title));
+        return existing.id;
+      }
+      await db.updateReminder(
+        existing!.id,
+        RemindersCompanion(title: Value(title), dueDate: Value(p.due), done: const Value(false), snoozedUntil: const Value(null)),
+      );
+      msgs.add(s.autoUpdated(title, s.dLong(p.due!)));
+      return existing.id;
+    case AutoKind.delete:
+      await db.deleteReminder(existing!.id);
+      msgs.add(s.autoRemoved(existing.title));
+      return null;
+  }
+}

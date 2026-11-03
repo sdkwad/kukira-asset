@@ -225,9 +225,9 @@ class Backup {
       for (final e in c.files.entries) {
         await SecureFiles.saveNamed(db, e.key, e.value);
       }
-      // Backups from before schema 3 (and from 0.2.1, which did not record it) may hold
-      // road tax and insurance reminders without their link to the date field.
-      await db.replaceAll(c.tables, linkOldReminders: (c.schema ?? 0) < 3);
+      // Older backups (and those from 0.2.1, which did not record a schema) may hold
+      // reminders without their link to a date field. See linkExistingAutoReminders.
+      await db.replaceAll(c.tables, linkOldReminders: (c.schema ?? 0) < AppDb.latestSchema);
     } finally {
       await SecureFiles.removeUnused(await db.fileNamesInUse());
     }

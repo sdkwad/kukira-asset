@@ -147,6 +147,10 @@ class Records extends Table {
   TextColumn get claimStatus => text().nullable()();
   DateTimeColumn get reportedToDeveloper => dateTime().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+
+  /// Added in schema 4: the reminder that follows [warrantyEnd]. Cleared if that reminder
+  /// is deleted. See planWarranty in lib/services/auto_reminders.dart.
+  IntColumn get warrantyReminderId => integer().nullable().references(Reminders, #id, onDelete: KeyAction.setNull)();
 }
 
 /// Optional cost breakdown for a record (added in schema 2).
@@ -284,7 +288,7 @@ class AppDb extends _$AppDb {
 
   /// Bump together with a migration step below. Backups record it, and a backup made by a
   /// newer schema is refused instead of silently losing the fields this app doesn't know.
-  static const latestSchema = 3;
+  static const latestSchema = 4;
 
   @override
   int get schemaVersion => latestSchema;
@@ -297,20 +301,25 @@ class AppDb extends _$AppDb {
             await m.createTable(costItems);
             await m.addColumn(reminders, reminders.repeatDays);
           }
-          if (from < 3) {
-            await m.addColumn(reminders, reminders.autoSource);
-            await linkExistingAutoReminders();
-          }
+          if (from < 3) await m.addColumn(reminders, reminders.autoSource);
+          if (from < 4) await m.addColumn(records, records.warrantyReminderId);
+          // Linking reads the columns added above, so it runs after all of them.
+          if (from < 4) await linkExistingAutoReminders();
         },
         beforeOpen: (details) async {
           await customStatement('PRAGMA foreign_keys = ON');
         },
       );
 
-  /// 0.2 created road tax and insurance reminders during onboarding without a link.
-  /// Link the best match per vehicle so editing the date later does not make a duplicate.
-  /// Runs on upgrade to schema 3 and after restoring an older backup. A vehicle that
-  /// already has a linked reminder for a field is left alone, so running it twice is safe.
+  /// Links reminders made before they were tracked, so editing a date later updates the
+  /// same reminder instead of making a duplicate:
+  /// - 0.2 created road tax and insurance reminders during onboarding without a link
+  ///   (schema 3); the best match per vehicle is linked.
+  /// - Before 0.2.3 a record's warranty reminder was not linked to the record (schema 4);
+  ///   a reminder on the same asset, due on the warranty end, whose title ends with the
+  ///   record's title is linked.
+  /// Runs on upgrade and after restoring an older backup. Anything already linked is left
+  /// alone, so running it twice is safe.
   Future<void> linkExistingAutoReminders() async {
     for (final v in await select(vehicleProfiles).get()) {
       for (final (source, category) in const [('roadTax', 'road_tax'), ('insurance', 'insurance_premium')]) {
@@ -323,6 +332,26 @@ class AppDb extends _$AppDb {
         candidates.sort((a, b) => a.done == b.done ? b.id.compareTo(a.id) : (a.done ? 1 : -1));
         await (update(reminders)..where((t) => t.id.equals(candidates.first.id))).write(RemindersCompanion(autoSource: Value(source)));
       }
+    }
+
+    final rems = await select(reminders).get();
+    final taken = {for (final r in await select(records).get()) r.warrantyReminderId};
+    final unlinked = await (select(records)..where((t) => t.warrantyEnd.isNotNull() & t.warrantyReminderId.isNull())).get();
+    for (final rec in unlinked) {
+      final end = dayOnly(rec.warrantyEnd!);
+      final match = rems
+          .where((r) =>
+              r.assetId == rec.assetId &&
+              r.ruleType == 'fixed' &&
+              r.dueDate != null &&
+              dayOnly(r.dueDate!) == end &&
+              r.title.endsWith(rec.title) &&
+              !taken.contains(r.id))
+          .toList()
+        ..sort((a, b) => b.id.compareTo(a.id));
+      if (match.isEmpty) continue;
+      taken.add(match.first.id);
+      await (update(records)..where((t) => t.id.equals(rec.id))).write(RecordsCompanion(warrantyReminderId: Value(match.first.id)));
     }
   }
 
@@ -475,8 +504,8 @@ class AppDb extends _$AppDb {
       };
 
   /// Replaces all records with the contents of a backup, in one transaction. Settings
-  /// (language, file key) are kept. [linkOldReminders] links road tax and insurance
-  /// reminders from backups made before schema 3, inside the same transaction.
+  /// (language, file key) are kept. [linkOldReminders] links reminders from backups made
+  /// before the latest schema, inside the same transaction.
   Future<void> replaceAll(Map<String, dynamic> t, {bool linkOldReminders = false}) {
     List<Map<String, dynamic>> rows(String k) =>
         ((t[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
