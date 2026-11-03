@@ -40,7 +40,12 @@ class Plate extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: EdgeInsets.symmetric(horizontal: big ? 12 : 7, vertical: big ? 4 : 1),
-        decoration: BoxDecoration(color: const Color(0xFF111111), borderRadius: BorderRadius.circular(big ? 7 : 5)),
+        decoration: BoxDecoration(
+          color: const Color(0xFF111111),
+          borderRadius: BorderRadius.circular(big ? 7 : 5),
+          // A black plate on a dark background needs an edge to be seen.
+          border: Theme.of(context).brightness == Brightness.dark ? Border.all(color: const Color(0xFF6B6B6B)) : null,
+        ),
         child: Text(
           text,
           style: TextStyle(color: const Color(0xFFF4F4F4), fontWeight: FontWeight.w700, letterSpacing: 1.2, fontSize: big ? 20 : 12, fontFamily: 'monospace'),

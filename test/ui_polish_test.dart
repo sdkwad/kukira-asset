@@ -106,4 +106,17 @@ void main() {
     expect(button.top, greaterThanOrEqualTo(text.bottom), reason: 'the button sits under the text');
     expect(text.width, greaterThan(220), reason: 'the text is not squeezed beside the button');
   });
+
+  testWidgets('the number plate has an edge in dark mode only', (tester) async {
+    Future<BoxBorder?> edge(Brightness b) async {
+      await tester.pumpWidget(MaterialApp(theme: ThemeData(brightness: b), home: const Scaffold(body: Plate('WXY 4821'))));
+      // MaterialApp animates a theme change; let it finish.
+      await tester.pumpAndSettle();
+      final box = tester.widget<Container>(find.descendant(of: find.byType(Plate), matching: find.byType(Container)));
+      return (box.decoration! as BoxDecoration).border;
+    }
+
+    expect(await edge(Brightness.light), isNull);
+    expect(await edge(Brightness.dark), isNotNull);
+  });
 }
