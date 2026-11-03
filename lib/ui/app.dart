@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../data/db.dart';
 import '../data/vault.dart';
 import '../l10n/strings.dart';
+import '../services/files.dart';
 import '../services/notifications.dart';
 import 'add_asset.dart';
 import 'assets.dart';
@@ -47,6 +48,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
   final _rebuild = ValueNotifier<RebuildInfo?>(null);
   StreamSubscription<World>? _sub;
   Timer? _debounce;
+  Timer? _tempSweep;
   String _lockMode = 'none';
   bool _locked = false;
   bool _forgotPin = false;
@@ -71,6 +73,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
     WidgetsBinding.instance.removeObserver(this);
     _sub?.cancel();
     _debounce?.cancel();
+    _tempSweep?.cancel();
     super.dispose();
   }
 
@@ -112,7 +115,16 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       if (_lockMode != 'none' && away > const Duration(minutes: 2)) setState(() => _locked = true);
       _refreshNotif();
       _scheduleRebuild();
+      _sweepTemp();
     }
+  }
+
+  // Back from the phone's viewer or a share target: delete decrypted copies older than
+  // SecureFiles.tempLifetime now, and the fresh ones once they reach that age.
+  void _sweepTemp() {
+    SecureFiles.clearTemp(olderThan: SecureFiles.tempLifetime);
+    _tempSweep?.cancel();
+    _tempSweep = Timer(SecureFiles.tempLifetime + const Duration(seconds: 5), () => SecureFiles.clearTemp(olderThan: SecureFiles.tempLifetime));
   }
 
   void _setLang(String l) {

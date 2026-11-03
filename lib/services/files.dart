@@ -135,11 +135,24 @@ class SecureFiles {
     await Share.shareXFiles([XFile(f.path)], subject: title);
   }
 
-  /// Removes decrypted copies left from viewing or sharing. Called at start-up.
-  static Future<void> clearTemp() async {
+  /// How long a decrypted copy may stay for the phone's viewer or a share target to read it.
+  static const tempLifetime = Duration(minutes: 5);
+
+  /// Removes decrypted copies left from viewing or sharing: all of them at start-up, and
+  /// with [olderThan] only those at least that old, so a viewer or share target that is
+  /// still reading a fresh copy is not cut off.
+  static Future<void> clearTemp({Duration? olderThan}) async {
     try {
       final dir = Directory(p.join((await getTemporaryDirectory()).path, 'view'));
-      if (await dir.exists()) await dir.delete(recursive: true);
+      if (!await dir.exists()) return;
+      if (olderThan == null) {
+        await dir.delete(recursive: true);
+        return;
+      }
+      final cutoff = DateTime.now().subtract(olderThan);
+      await for (final e in dir.list()) {
+        if (e is File && (await e.lastModified()).isBefore(cutoff)) await e.delete();
+      }
     } catch (_) {}
   }
 }
