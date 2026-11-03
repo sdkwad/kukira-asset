@@ -205,14 +205,18 @@ class HealthScreen extends StatelessWidget {
                   await db.setSetting('notifyMinute', '${t.minute}');
                 },
               ),
+              // The advice is long, so the button goes under it instead of squeezing it.
               ListTile(
                 leading: const Icon(Icons.battery_alert_outlined),
                 title: Text(s.batteryTitle),
-                subtitle: Text(s.batteryBody),
-                trailing: FilledButton.tonal(
-                  onPressed: () => AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization),
-                  child: Text(s.open),
-                ),
+                subtitle: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(s.batteryBody),
+                  const SizedBox(height: 8),
+                  FilledButton.tonal(
+                    onPressed: () => AppSettings.openAppSettings(type: AppSettingsType.batteryOptimization),
+                    child: Text(s.open),
+                  ),
+                ]),
               ),
               ListTile(
                 leading: const Icon(Icons.event_repeat_outlined),

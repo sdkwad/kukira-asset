@@ -96,4 +96,14 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text(s.lockStatusPinBio), findsOneWidget);
   });
+
+  testWidgets('the battery advice in Reminder health check uses the full width', (tester) async {
+    setPhone(tester, height: 1800);
+    await tester.pumpWidget(harness(const HealthScreen(), fakeWorld()));
+    await tester.pumpAndSettle();
+    final text = tester.getRect(find.text(s.batteryBody));
+    final button = tester.getRect(find.widgetWithText(FilledButton, s.open));
+    expect(button.top, greaterThanOrEqualTo(text.bottom), reason: 'the button sits under the text');
+    expect(text.width, greaterThan(220), reason: 'the text is not squeezed beside the button');
+  });
 }
