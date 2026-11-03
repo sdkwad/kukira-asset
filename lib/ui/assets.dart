@@ -48,31 +48,15 @@ class Plate extends StatelessWidget {
       );
 }
 
-/// Coloured header of an asset card: the asset photo, or the category colour with a large icon.
+/// The asset photo across the top of a card or page. Only used when the asset has a photo;
+/// without one, screens show the small category avatar instead of a decorative placeholder.
 class AssetBanner extends StatelessWidget {
   const AssetBanner(this.a, {super.key, this.height = 96});
   final Asset a;
   final double height;
 
   @override
-  Widget build(BuildContext context) {
-    final (bg, fg) = catColors(context, a.category);
-    return SizedBox(
-      height: height,
-      width: double.infinity,
-      child: a.photoPath != null
-          ? SecureImage(a.photoPath!, cacheWidth: 900)
-          : DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [bg, Color.lerp(bg, fg, 0.18)!], begin: Alignment.topLeft, end: Alignment.bottomRight),
-              ),
-              child: Stack(children: [
-                Positioned(right: -10, bottom: -18, child: Icon(catIcon(a.category), size: height * 1.15, color: fg.withValues(alpha: 0.16))),
-                Positioned(left: 16, bottom: 14, child: Icon(catIcon(a.category), size: 30, color: fg)),
-              ]),
-            ),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(height: height, width: double.infinity, child: SecureImage(a.photoPath!, cacheWidth: 900));
 }
 
 /// Days left in the DLP as a ring.
@@ -199,32 +183,35 @@ class _AssetCard extends StatelessWidget {
     final end = dlpEnd(w, a.id);
     final left = end == null ? null : daysBetween(today(), end);
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    final photo = a.photoPath != null;
+    final badge = Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(99)),
+      child: Text(s.overdueCount(over), style: TextStyle(color: Theme.of(context).colorScheme.onError, fontWeight: FontWeight.w700, fontSize: 12)),
+    );
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Stack(children: [
-            AssetBanner(a),
-            if (over > 0)
-              Positioned(
-                right: 12,
-                top: 12,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(99)),
-                  child: Text(s.overdueCount(over), style: TextStyle(color: Theme.of(context).colorScheme.onError, fontWeight: FontWeight.w700, fontSize: 12)),
-                ),
-              ),
-          ]),
+          if (photo)
+            Stack(children: [
+              AssetBanner(a),
+              if (over > 0) Positioned(right: 12, top: 12, child: badge),
+            ]),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
               Row(children: [
+                if (!photo) ...[AssetAvatar(a.category, size: 44), const SizedBox(width: 12)],
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    Text(a.nickname, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
+                    // The overdue badge sits by the name, so the plate line keeps its full width.
+                    Row(children: [
+                      Flexible(child: Text(a.nickname, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700))),
+                      if (!photo && over > 0) ...[const SizedBox(width: 8), badge],
+                    ]),
                     const SizedBox(height: 2),
                     Row(children: [
                       if (w.vehicles[a.id] != null) ...[Plate(w.vehicles[a.id]!.plate), const SizedBox(width: 6)],
@@ -337,8 +324,10 @@ class _Overview extends StatelessWidget {
     final s = context.s;
     final theme = Theme.of(context);
     final children = <Widget>[
-      ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
-      const SizedBox(height: 12),
+      if (a.photoPath != null) ...[
+        ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
+        const SizedBox(height: 12),
+      ],
     ];
     void edit() => Navigator.push(context, MaterialPageRoute(builder: (_) => a.category == 'house' ? HouseEditScreen(assetId: a.id) : VehicleEditScreen(assetId: a.id)));
     if (a.category == 'house') {
@@ -872,8 +861,11 @@ class AssetPhotoField extends StatelessWidget {
     }
 
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
-      const SizedBox(height: 8),
+      if (a.photoPath != null) ...[
+        ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
+        const SizedBox(height: 8),
+      ] else
+        FieldLabel(s.assetPhoto),
       Wrap(spacing: 8, children: [
         OutlinedButton.icon(icon: const Icon(Icons.photo_camera_outlined), label: Text(s.camera), onPressed: () => set('camera')),
         OutlinedButton.icon(icon: const Icon(Icons.photo_library_outlined), label: Text(s.gallery), onPressed: () => set('gallery')),

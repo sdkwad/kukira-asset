@@ -47,4 +47,26 @@ void main() {
     expect(find.text(s.neverShort), findsOneWidget);
     expect(find.text('–'), findsNothing);
   });
+
+  group('no decorative banner without a photo', () {
+    testWidgets('asset cards show the small category avatar instead', (tester) async {
+      setPhone(tester, height: 1600);
+      await tester.pumpWidget(harness(const AssetsScreen(), fakeWorld()));
+      await tester.pumpAndSettle();
+      expect(find.byType(AssetBanner), findsNothing);
+      expect(find.byType(AssetAvatar), findsNWidgets(2));
+    });
+
+    testWidgets('the overview starts with the facts, and the edit screen labels the photo buttons', (tester) async {
+      setPhone(tester, height: 1600);
+      await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 2), fakeWorld()));
+      await tester.pumpAndSettle();
+      expect(find.byType(AssetBanner), findsNothing);
+
+      await tester.pumpWidget(harness(const VehicleEditScreen(assetId: 2), fakeWorld()));
+      await tester.pumpAndSettle();
+      expect(find.byType(AssetBanner), findsNothing);
+      expect(find.text(s.assetPhoto), findsOneWidget);
+    });
+  });
 }

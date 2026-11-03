@@ -587,4 +587,7 @@ abstract class Str {
 
   // ------------------------------------------------ backup tile
   String get neverShort;
+
+  // ------------------------------------------------ asset photo
+  String get assetPhoto;
 }

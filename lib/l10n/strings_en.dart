@@ -1162,4 +1162,8 @@ class StrEn extends Str {
   // ------------------------------------------------ backup tile
   @override
   String get neverShort => 'Never';
+
+  // ------------------------------------------------ asset photo
+  @override
+  String get assetPhoto => 'Asset photo (optional)';
 }

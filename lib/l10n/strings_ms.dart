@@ -1162,4 +1162,8 @@ class StrMs extends Str {
   // ------------------------------------------------ backup tile
   @override
   String get neverShort => 'Belum';
+
+  // ------------------------------------------------ asset photo
+  @override
+  String get assetPhoto => 'Gambar aset (pilihan)';
 }
