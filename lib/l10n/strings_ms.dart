@@ -1149,7 +1149,7 @@ class StrMs extends Str {
   @override
   String get errorLogNone => 'Tiada ralat direkodkan.';
   @override
-  String get errorLogNote => 'Ralat yang Kukira tangkap tanpa memberitahu anda, contohnya pemberitahuan yang gagal dijadualkan. Hanya tempat dan mesej ralat disimpan, bukan isi rekod anda. Log ini disulitkan dan kekal di telefon ini sehingga anda menyalinnya.';
+  String get errorLogNote => 'Ralat yang Kukira tangkap tanpa memberitahu anda, contohnya pemberitahuan yang gagal dijadualkan. Hanya tempat dan mesej ralat disimpan, tanpa nama fail atau laluan, bukan isi rekod anda. Log ini disulitkan dan kekal di telefon ini sehingga anda menyalinnya.';
   @override
   String get errorLogTitle => 'Log ralat';
 

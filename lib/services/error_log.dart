@@ -60,7 +60,7 @@ class ErrorLog {
 
   /// Never throws. The same error from the same place within a minute is kept once.
   static void record(String where, Object error) {
-    var what = error.toString().replaceAll(RegExp(r'\s+'), ' ').trim();
+    var what = scrub(error.toString());
     if (what.length > 300) what = '${what.substring(0, 300)}…';
     final e = LoggedError(DateTime.now(), where, what);
     final last = _pending.isNotEmpty ? _pending.last : (_saved?.lastOrNull);
@@ -68,6 +68,18 @@ class ErrorLog {
     _pending.add(e);
     if (_db != null) _queue();
   }
+
+  /// The error message without anything that could be the user's own words: quoted text
+  /// (except short code names such as 'Null' or 'String'), file paths and content URIs.
+  static String scrub(String message) => message
+      .replaceAllMapped(RegExp(r"""'([^']*)'|"([^"]*)"|“([^”]*)”"""), (m) {
+        final inner = m[1] ?? m[2] ?? m[3] ?? '';
+        return RegExp(r'^[A-Za-z_$][\w$<>?,\[\]]{0,40}$').hasMatch(inner) ? m[0]! : '…';
+      })
+      .replaceAll(RegExp(r'\b[a-z][a-z0-9+.-]*://[^\s)]*'), '<uri>')
+      .replaceAll(RegExp(r'(?:[A-Za-z]:)?[\\/][^\\/\s(]*[\\/][^(]*'), '<path> ')
+      .replaceAll(RegExp(r'\s+'), ' ')
+      .trim();
 
   static void _queue() => _chain = _chain.then((_) => _flush()).catchError((Object _) {});
 

@@ -88,6 +88,19 @@ void main() {
     });
   });
 
+  test('messages lose file names, paths and quoted text, but keep code names', () {
+    expect(ErrorLog.scrub("type 'Null' is not a subtype of type 'String' in type cast"), "type 'Null' is not a subtype of type 'String' in type cast");
+    expect(ErrorLog.scrub("PathNotFoundException: Cannot open file, path = '/data/user/0/app.kukira.kukira_asset/files/ab12.pdf.enc' (OS Error: No such file or directory, errno = 2)"),
+        'PathNotFoundException: Cannot open file, path = … (OS Error: No such file or directory, errno = 2)');
+    expect(ErrorLog.scrub('Could not open "Geran rumah Setia Alam.pdf"'), 'Could not open …');
+    final unquoted = ErrorLog.scrub('FileSystemException: Cannot open file /storage/emulated/0/Download/SPA Ali bin Abu.pdf (OS Error: Permission denied)');
+    expect(unquoted, isNot(contains('Ali')));
+    expect(unquoted, contains('<path>'));
+    expect(unquoted, contains('Permission denied'));
+    expect(ErrorLog.scrub('PlatformException(error, content://com.google.android.apps.docs.storage/document/acc%3D1%3Bdoc%3D9 not found, null, null)'),
+        isNot(contains('content://')));
+  });
+
   testWidgets('Reminder health check shows caught errors and copies them', (tester) async {
     ErrorLog.detach();
     addTearDown(ErrorLog.detach);
