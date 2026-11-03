@@ -1152,4 +1152,10 @@ class StrEn extends Str {
   String get errorLogNote => "Errors Kukira caught without telling you, such as a notification that couldn't be scheduled. Only where it happened and the error message are kept, not what your records say. The log is encrypted and stays on this phone unless you copy it.";
   @override
   String get errorLogTitle => 'Error log';
+
+  // ------------------------------------------------ refresh notice
+  @override
+  String get refreshNoteBody => 'Open Kukira once so your next reminders get scheduled.';
+  @override
+  String get refreshNoteTitle => 'Open Kukira';
 }

@@ -60,18 +60,39 @@ class Notifier {
         ),
       );
 
-  /// Cancels everything and schedules the next (at most) 50 notifications from the database.
+  /// Reminder notifications scheduled at a time; the refresh notice and the backup nudge
+  /// make 50.
+  static const windowSize = 48;
+  static const _refreshId = 8100;
+  static const _noteBase = 1000000;
+
+  /// The notification id for slot [slot] (see PlannedNote.slot) of reminder [reminderId].
+  /// The same notification keeps the same id when the schedule is rebuilt.
+  static int noteId(int reminderId, int slot) => _noteBase + reminderId * 10 + slot;
+
+  /// The reminder a notification id belongs to, or null for other notifications.
+  static int? reminderOfNote(int id) => id >= _noteBase ? (id - _noteBase) ~/ 10 : null;
+
+  /// Whether a notification already in the tray should stay there: its reminder still
+  /// exists, is not done or snoozed, and is overdue or due soon.
+  static bool keepShown(Reminder? r, {required DateTime today, int? odometer}) {
+    if (r == null || r.done) return false;
+    if (r.snoozedUntil != null && dayOnly(r.snoozedUntil!).isAfter(dayOnly(today))) return false;
+    final st = statusOf(r.info, today: today, odometer: odometer);
+    return st == RStatus.overdue || st == RStatus.dueSoon;
+  }
+
+  /// Schedules the next notifications from the database, then cancels scheduled ones that
+  /// are no longer wanted. Notifications already in the tray stay, unless [keepShown] says
+  /// their reminder has been dealt with.
   static Future<RebuildInfo> rebuild(World w, Str s) async {
     final now = DateTime.now();
     final live = w.reminders.where((r) => !r.done).toList();
-    final plan = planNotes(live.map((r) => r.info).toList(), now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: 49);
-    try {
-      await plugin.cancelAll();
-    } catch (e) {
-      ErrorLog.record('notifications.cancel', e);
-    }
+    final infos = live.map((r) => r.info).toList();
+    final plan = planNotes(infos, now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: windowSize);
+    final refreshAt = refreshNoticeAt(infos, now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: windowSize);
     final details = _details(s);
-    var id = 0;
+    final wanted = <int>{};
     for (final n in plan) {
       final r = live[n.index];
       final name = w.asset(r.assetId)?.nickname ?? '';
@@ -81,25 +102,56 @@ class Notifier {
         'overdue' => s.noteOverdue(name),
         _ => s.noteSnooze(name),
       };
-      await _schedule(id++, r.title, body, n.at, details);
+      final id = noteId(r.id, n.slot);
+      wanted.add(id);
+      await _schedule(id, r.title, body, n.at, details);
+    }
+    var scheduled = plan.length;
+    // More reminders than fit: ask to open the app the day after the last one.
+    if (refreshAt != null) {
+      wanted.add(_refreshId);
+      await _schedule(_refreshId, s.refreshNoteTitle, s.refreshNoteBody, refreshAt, details);
+      scheduled++;
     }
     // Backup nudge 30 days after the last backup (or after the first asset was added).
-    var scheduled = plan.length;
+    var backupDue = false;
     if (w.assets.isNotEmpty) {
       final base = w.lastBackup ?? w.assets.first.createdAt;
       final d = base.add(const Duration(days: 30));
       final at = DateTime(d.year, d.month, d.day, w.notifyHour, w.notifyMinute);
       if (at.isAfter(now)) {
+        wanted.add(_backupId);
         await _schedule(_backupId, s.backupNudgeTitle, s.backupNudgeBody, at, details);
         scheduled++;
+      } else {
+        backupDue = true;
       }
     }
+    await _cancelStale(w, wanted, today: now, keepBackupNudge: backupDue);
     return RebuildInfo(
       at: now,
       count: scheduled,
       nextAt: plan.isEmpty ? null : plan.first.at,
       nextTitle: plan.isEmpty ? null : live[plan.first.index].title,
     );
+  }
+
+  static Future<void> _cancelStale(World w, Set<int> wanted, {required DateTime today, required bool keepBackupNudge}) async {
+    try {
+      for (final p in await plugin.pendingNotificationRequests()) {
+        if (!wanted.contains(p.id) && p.id != _testId && p.id != _mileageId) await plugin.cancel(p.id);
+      }
+      for (final a in await plugin.getActiveNotifications()) {
+        final id = a.id;
+        if (id == null) continue;
+        final rid = reminderOfNote(id);
+        final r = rid == null ? null : w.reminders.where((x) => x.id == rid).firstOrNull;
+        final drop = rid != null ? !keepShown(r, today: today, odometer: r == null ? null : w.odoOf(r.assetId)) : id == _backupId && !keepBackupNudge;
+        if (drop) await plugin.cancel(id);
+      }
+    } catch (e) {
+      ErrorLog.record('notifications.cancel', e);
+    }
   }
 
   static Future<void> _schedule(int id, String title, String body, DateTime at, NotificationDetails d) async {

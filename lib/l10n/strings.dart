@@ -580,4 +580,8 @@ abstract class Str {
   String get errorLogNone;
   String get errorLogNote;
   String get errorLogTitle;
+
+  // ------------------------------------------------ refresh notice
+  String get refreshNoteBody;
+  String get refreshNoteTitle;
 }

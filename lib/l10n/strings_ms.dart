@@ -1152,4 +1152,10 @@ class StrMs extends Str {
   String get errorLogNote => 'Ralat yang Kukira tangkap tanpa memberitahu anda, contohnya pemberitahuan yang gagal dijadualkan. Hanya tempat dan mesej ralat disimpan, bukan isi rekod anda. Log ini disulitkan dan kekal di telefon ini sehingga anda menyalinnya.';
   @override
   String get errorLogTitle => 'Log ralat';
+
+  // ------------------------------------------------ refresh notice
+  @override
+  String get refreshNoteBody => 'Buka Kukira sekali supaya peringatan anda yang seterusnya dijadualkan.';
+  @override
+  String get refreshNoteTitle => 'Buka Kukira';
 }
