@@ -8,6 +8,7 @@ import '../data/vault.dart';
 import '../l10n/strings.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
+import '../services/privacy.dart';
 import 'add_asset.dart';
 import 'assets.dart';
 import 'common.dart';
@@ -65,6 +66,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
 
   Future<void> _readLock() async {
     final m = await Vault.lockMode();
+    await Privacy.applyLockMode(m);
     if (mounted) setState(() => _lockMode = m);
   }
 
@@ -156,6 +158,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
             _db = db;
             _lockMode = 'none';
           });
+          Privacy.applyLockMode('none');
           _attach();
         },
       );
