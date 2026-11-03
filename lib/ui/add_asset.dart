@@ -50,6 +50,7 @@ class _AddAssetState extends State<AddAssetScreen> {
       propertyType: _ptype,
       plate: _plate.text.trim().toUpperCase(),
     );
+    if (!mounted) return;
     setState(() {
       _newId = id;
       _step = 3;
