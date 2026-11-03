@@ -677,7 +677,7 @@ class StrMs extends Str {
   @override
   String get language => 'Bahasa';
   @override
-  String get appLock => 'Kunci app (PIN atau cap jari)';
+  String get appLock => 'Kunci app';
   @override
   String get privacyAbout => 'Privasi & maklumat';
   @override
@@ -856,8 +856,6 @@ class StrMs extends Str {
   String get alsoFingerprintBody => 'Anda boleh buka Kukira dengan cap jari. PIN masih boleh digunakan jika cap jari gagal.';
   @override
   String get alsoFingerprintQ => 'Guna cap jari juga?';
-  @override
-  String get appLockSub => 'PIN atau cap jari';
   @override
   String get attach => 'Lampir';
   @override
@@ -1166,4 +1164,12 @@ class StrMs extends Str {
   // ------------------------------------------------ asset photo
   @override
   String get assetPhoto => 'Gambar aset (pilihan)';
+
+  // ------------------------------------------------ app lock status
+  @override
+  String get lockStatusOff => 'Mati';
+  @override
+  String get lockStatusPin => 'Hidup, dengan PIN';
+  @override
+  String get lockStatusPinBio => 'Hidup, dengan PIN dan cap jari';
 }

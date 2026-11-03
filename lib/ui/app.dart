@@ -198,6 +198,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       rebuildNow: _rebuildNow,
       lockChanged: _readLock,
       lockNow: () => setState(() => _locked = true),
+      lockMode: _lockMode,
       child: app,
     );
   }

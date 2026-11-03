@@ -677,7 +677,7 @@ class StrEn extends Str {
   @override
   String get language => 'Language';
   @override
-  String get appLock => 'App lock (PIN or fingerprint)';
+  String get appLock => 'App lock';
   @override
   String get privacyAbout => 'Privacy and about';
   @override
@@ -856,8 +856,6 @@ class StrEn extends Str {
   String get alsoFingerprintBody => 'You can open Kukira with your fingerprint. The PIN still works if the fingerprint fails.';
   @override
   String get alsoFingerprintQ => 'Use fingerprint too?';
-  @override
-  String get appLockSub => 'PIN or fingerprint';
   @override
   String get attach => 'Attach';
   @override
@@ -1166,4 +1164,12 @@ class StrEn extends Str {
   // ------------------------------------------------ asset photo
   @override
   String get assetPhoto => 'Asset photo (optional)';
+
+  // ------------------------------------------------ app lock status
+  @override
+  String get lockStatusOff => 'Off';
+  @override
+  String get lockStatusPin => 'On, with PIN';
+  @override
+  String get lockStatusPinBio => 'On, with PIN and fingerprint';
 }

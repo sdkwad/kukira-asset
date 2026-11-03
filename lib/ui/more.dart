@@ -81,7 +81,11 @@ class MoreScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.lock_outline),
                 title: Text(s.appLock),
-                subtitle: Text(s.appLockSub),
+                subtitle: Text(switch (context.app.lockMode) {
+                  'pin' => s.lockStatusPin,
+                  'pin_bio' => s.lockStatusPinBio,
+                  _ => s.lockStatusOff,
+                }),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => go(const SecurityScreen()),
               ),

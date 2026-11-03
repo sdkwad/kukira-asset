@@ -20,6 +20,7 @@ class AppScope extends InheritedWidget {
     required this.rebuildNow,
     required this.lockChanged,
     required this.lockNow,
+    this.lockMode = 'none',
     required super.child,
   });
 
@@ -40,10 +41,13 @@ class AppScope extends InheritedWidget {
   /// Shows the lock screen now.
   final VoidCallback lockNow;
 
+  /// none | pin | pin_bio (Vault.lockMode).
+  final String lockMode;
+
   static AppScope of(BuildContext c) => c.dependOnInheritedWidgetOfExactType<AppScope>()!;
 
   @override
-  bool updateShouldNotify(AppScope old) => old.s != s || old.db != db || old.lang != lang;
+  bool updateShouldNotify(AppScope old) => old.s != s || old.db != db || old.lang != lang || old.lockMode != lockMode;
 }
 
 extension AppContext on BuildContext {

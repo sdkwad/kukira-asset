@@ -425,7 +425,6 @@ abstract class Str {
   String get added;
   String get alsoFingerprintBody;
   String get alsoFingerprintQ;
-  String get appLockSub;
   String get attach;
   String get attachDocument;
   String get camera;
@@ -590,4 +589,9 @@ abstract class Str {
 
   // ------------------------------------------------ asset photo
   String get assetPhoto;
+
+  // ------------------------------------------------ app lock status
+  String get lockStatusOff;
+  String get lockStatusPin;
+  String get lockStatusPinBio;
 }

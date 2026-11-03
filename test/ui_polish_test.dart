@@ -84,4 +84,16 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.widgetWithText(TextField, s.odometerKm), findsNothing, reason: 'a house has no odometer');
   });
+
+  testWidgets('More says whether the app lock is on, instead of repeating its title', (tester) async {
+    setPhone(tester, height: 1600);
+    await tester.pumpWidget(harness(const MoreScreen(), fakeWorld()));
+    await tester.pumpAndSettle();
+    expect(find.text(s.appLock), findsOneWidget);
+    expect(find.text(s.lockStatusOff), findsOneWidget);
+
+    await tester.pumpWidget(harness(const MoreScreen(), fakeWorld(), lockMode: 'pin_bio'));
+    await tester.pumpAndSettle();
+    expect(find.text(s.lockStatusPinBio), findsOneWidget);
+  });
 }

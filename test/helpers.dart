@@ -79,7 +79,7 @@ World fakeWorld({String ptype = 'landed', String? source, DateTime? vp, DateTime
     );
 
 /// Pass [db] when the test checks what a screen writes; otherwise an unused in-memory one.
-Widget harness(Widget home, World w, {String lang = 'en', AppDb? db}) => AppScope(
+Widget harness(Widget home, World w, {String lang = 'en', AppDb? db, String lockMode = 'none'}) => AppScope(
       // Screens read from [world]; writes go to [db].
       db: db ?? AppDb(NativeDatabase.memory()),
       s: strFor(lang),
@@ -91,6 +91,7 @@ Widget harness(Widget home, World w, {String lang = 'en', AppDb? db}) => AppScop
       rebuildNow: () async {},
       lockChanged: () {},
       lockNow: () {},
+      lockMode: lockMode,
       child: MaterialApp(
         locale: Locale(lang),
         supportedLocales: const [Locale('ms'), Locale('en')],
