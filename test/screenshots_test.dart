@@ -64,6 +64,8 @@ Future<void> _loadFonts() async {
 }
 
 /// A house, a car and a motorcycle with reminders in every state, records and a vendor.
+/// Categories are the real record category keys (lib/domain/presets.dart), so screens that
+/// match records to reminders behave as on the phone.
 World demoWorld() {
   final now = DateTime.now();
   final t = DateTime(now.year, now.month, now.day);
@@ -105,17 +107,17 @@ World demoWorld() {
     reminders: [
       rem(1, 2, 'Pembaharuan cukai jalan', d(9), category: 'road_tax', auto: 'roadTax'),
       rem(2, 2, 'Pembaharuan insurans', d(9), category: 'insurance_premium', lead: 30, auto: 'insurance'),
-      rem(3, 2, 'Tukar minyak enjin', d(-6), rule: 'either', category: 'engine_oil', dueKm: 48000, everyMonths: 6, everyKm: 10000),
-      rem(4, 1, 'Cukai tanah', d(45), rule: 'repeat', category: 'quit_rent', everyMonths: 12, lead: 30, estimated: true),
-      rem(5, 1, 'Cukai taksiran (penggal 1)', d(120), rule: 'repeat', category: 'assessment', everyMonths: 6, estimated: true),
+      rem(3, 2, 'Tukar minyak enjin', d(-6), rule: 'either', category: 'oil', dueKm: 48000, everyMonths: 6, everyKm: 10000),
+      rem(4, 1, 'Cukai tanah', d(45), rule: 'repeat', category: 'cukai_tanah', everyMonths: 12, lead: 30, estimated: true),
+      rem(5, 1, 'Cukai taksiran (penggal 1)', d(120), rule: 'repeat', category: 'cukai_taksiran', everyMonths: 6, estimated: true),
       rem(6, 1, 'Servis penghawa dingin', d(-2), rule: 'repeat', category: 'aircond', everyMonths: 6),
       rem(7, 1, 'Tamat tempoh DLP', d(430), category: 'dlp', lead: 60, estimated: true, auto: 'dlp'),
       rem(8, 3, 'Pembaharuan cukai jalan', d(140), category: 'road_tax', auto: 'roadTax'),
-      rem(9, 2, 'Putar tayar', d(20), rule: 'repeat', everyMonths: 6),
+      rem(9, 2, 'Putar tayar', d(20), rule: 'repeat', category: 'tyre', everyMonths: 6),
       rem(10, 1, 'Cuci tangki air', null, done: true, completed: d(-3)),
     ],
     records: [
-      UpkeepRecord(id: 1, assetId: 2, kind: 'maintenance', category: 'engine_oil', title: 'Servis 40,000 km', date: d(-170), cost: 245.5, vendorName: 'Bengkel Ah Seng', vendorId: 1, odometer: 40120, createdAt: d(-170)),
+      UpkeepRecord(id: 1, assetId: 2, kind: 'maintenance', category: 'oil', title: 'Servis 40,000 km', date: d(-170), cost: 245.5, vendorName: 'Bengkel Ah Seng', vendorId: 1, odometer: 40120, createdAt: d(-170)),
       UpkeepRecord(id: 2, assetId: 1, kind: 'defect', title: 'Retak dinding bilik utama', date: d(-20), area: 'Bilik utama', status: 'in_progress', reportedToDeveloper: d(-18), createdAt: d(-20)),
       UpkeepRecord(id: 3, assetId: 1, kind: 'maintenance', category: 'aircond', title: 'Servis aircond 3 unit', date: d(-180), cost: 270, createdAt: d(-180)),
     ],
@@ -167,7 +169,8 @@ void main() {
     File('${_out.path}/problems.txt').writeAsStringSync('$report\n');
   });
 
-  void shot(String name, Widget Function() screen, {World? world, String lang = 'ms', Brightness brightness = Brightness.light, double height = phoneHeight}) {
+  void shot(String name, Widget Function() screen,
+      {World? world, String lang = 'ms', Brightness brightness = Brightness.light, double height = phoneHeight, Future<void> Function(WidgetTester t)? act}) {
     testWidgets(name, skip: !_enabled, (tester) async {
       setPhone(tester, height: height);
       debugDisableShadows = false;
@@ -176,6 +179,11 @@ void main() {
       try {
         await tester.pumpWidget(RepaintBoundary(key: _boundary, child: _app(screen(), world ?? demoWorld(), lang: lang, brightness: brightness)));
         await tester.pumpAndSettle();
+        // For tabs and sheets: tap through to the state to picture.
+        if (act != null) {
+          await act(tester);
+          await tester.pumpAndSettle();
+        }
         await expectLater(find.byKey(_boundary), matchesGoldenFile('goldens/$name.png'));
       } finally {
         FlutterError.onError = previous;
@@ -205,6 +213,25 @@ void main() {
   shot('14-vendor', () => const VendorsScreen());
   shot('15-ubah-rumah', () => const HouseEditScreen(assetId: 1), height: 2200);
   shot('16-ubah-kenderaan', () => const VehicleEditScreen(assetId: 2), height: 2200);
+  final ms = strFor('ms');
+  Future<void> Function(WidgetTester) tap(String text) => (t) async {
+        await t.ensureVisible(find.text(text).first);
+        await t.pumpAndSettle();
+        await t.tap(find.text(text).first);
+      };
+  shot('17-kereta-rekod', () => const AssetDetailScreen(assetId: 2), act: tap(ms.upkeepTab));
+  shot('18-kereta-peringatan', () => const AssetDetailScreen(assetId: 2), act: tap(ms.remindersTab), height: 1100);
+  shot('19-rumah-kecacatan', () => const AssetDetailScreen(assetId: 1), act: tap(ms.defectsTab));
+  shot('23-lembaran-peringatan', () => const Shell(), act: tap('Tukar minyak enjin'));
+  shot('24-lembaran-rekod', () => const AssetDetailScreen(assetId: 2), act: (t) async {
+    await tap(ms.upkeepTab)(t);
+    await t.pumpAndSettle();
+    await tap('Servis 40,000 km')(t);
+  });
+  shot('25-semua-peringatan', () => const AllRemindersScreen(), height: 1400);
+  shot('26-kunci-app', () => const SecurityScreen());
+  shot('27-privasi', () => const AboutScreen());
+  shot('28-dokumen-baharu', () => const DocumentFormScreen(assetId: 2), height: 1100);
   shot('20-gelap-hari-ini', () => const Shell(), brightness: Brightness.dark);
   shot('21-gelap-kereta', () => const AssetDetailScreen(assetId: 2), brightness: Brightness.dark);
   shot('22-gelap-peringatan-baharu', () => const ReminderFormScreen(), brightness: Brightness.dark);
