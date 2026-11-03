@@ -541,9 +541,8 @@ class BackupScreen extends StatelessWidget {
           const SizedBox(height: 16),
           NoteBox(s.passphraseWarning, warn: true, icon: Icons.key_outlined),
           const SizedBox(height: 8),
-          NoteBox(s.phoneBackupNote, icon: Icons.phone_android_outlined),
-          const SizedBox(height: 8),
-          NoteBox(s.backupNudgeNote, icon: Icons.notifications_none),
+          // One note for how backups work on the phone, instead of two stacked boxes.
+          NoteBox('${s.phoneBackupNote}\n\n${s.backupNudgeNote}', icon: Icons.phone_android_outlined),
         ]),
       );
     });

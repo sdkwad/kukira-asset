@@ -119,4 +119,13 @@ void main() {
     expect(await edge(Brightness.light), isNull);
     expect(await edge(Brightness.dark), isNotNull);
   });
+
+  testWidgets('Backup and restore has one note about phone backups, not two stacked boxes', (tester) async {
+    setPhone(tester, height: 1600);
+    await tester.pumpWidget(harness(const BackupScreen(), fakeWorld()));
+    await tester.pumpAndSettle();
+    expect(find.byType(NoteBox), findsNWidgets(2));
+    expect(find.textContaining(s.phoneBackupNote), findsOneWidget);
+    expect(find.textContaining(s.backupNudgeNote), findsOneWidget);
+  });
 }
