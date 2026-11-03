@@ -50,6 +50,12 @@ Future<void> _loadFonts() async {
     roboto.addFont(bytes(f));
   }
   await roboto.load();
+  // The number plate asks for the phone's 'monospace' font, which tests don't have.
+  final mono = FontLoader('monospace');
+  for (final f in files.where((f) => f.path.endsWith('Roboto-Bold.ttf'))) {
+    mono.addFont(bytes(f));
+  }
+  await mono.load();
   final icons = FontLoader('MaterialIcons');
   for (final f in files.where((f) => f.path.contains('MaterialIcons'))) {
     icons.addFont(bytes(f));
