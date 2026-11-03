@@ -1176,4 +1176,10 @@ class StrMs extends Str {
   // ------------------------------------------------ reminder sheet
   @override
   String get noMoreNotifications => 'Tiada lagi dijadualkan. Ia kekal di Hari ini.';
+
+  // ------------------------------------------------ open failed
+  @override
+  String get openFailedBody => 'Ini biasanya sementara. Tutup Kukira dan buka semula; jika masih berlaku, mulakan semula telefon. Rekod anda tidak diubah.\n\nJika ia terus berlaku, anda boleh memulihkan dari fail sandaran Kukira.';
+  @override
+  String get openFailedTitle => 'Kukira tidak dapat membuka rekod anda sebentar tadi';
 }

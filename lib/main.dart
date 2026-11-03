@@ -17,8 +17,23 @@ Future<void> main() async {
     ErrorLog.record('uncaught', e);
     return true;
   };
-  await Notifier.init();
+  runApp(KukiraApp(boot: await boot()));
+}
+
+/// Gets the app ready to show something, whatever fails: without notifications the app
+/// still works (Today shows everything), and a database that cannot be opened leads to the
+/// "records can't be opened" screen, which sets data aside safely, never to a blank screen.
+Future<BootResult> boot() async {
+  try {
+    await Notifier.init();
+  } catch (e) {
+    ErrorLog.record('boot.notifications', e);
+  }
   await SecureFiles.clearTemp();
-  final boot = await Vault.open();
-  runApp(KukiraApp(boot: boot));
+  try {
+    return await Vault.open();
+  } catch (e) {
+    ErrorLog.record('boot.vault', e);
+    return const BootResult(BootState.failed);
+  }
 }

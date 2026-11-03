@@ -76,4 +76,19 @@ void main() {
     expect(find.text(s.keepIt), findsOneWidget);
     expect(strFor('ms').startFreshWarning, contains('bukan memadamnya'));
   });
+
+  testWidgets('when opening failed with an error, the screen says to try again first', (tester) async {
+    setPhone(tester);
+    final s = strFor('en');
+    await tester.pumpWidget(MaterialApp(
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('ms'), Locale('en')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
+      home: UnreadableScreen(s: s, onReady: (_) {}, openFailed: true),
+    ));
+    expect(find.text(s.openFailedTitle), findsOneWidget);
+    expect(find.text(s.openFailedBody), findsOneWidget);
+    expect(find.text(s.unreadableTitle), findsNothing);
+    expect(s.openFailedBody.split(String.fromCharCode(10)).where((l) => l.isEmpty), hasLength(1), reason: 'two paragraphs, not a broken string');
+  });
 }

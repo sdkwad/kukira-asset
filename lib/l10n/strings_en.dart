@@ -1176,4 +1176,10 @@ class StrEn extends Str {
   // ------------------------------------------------ reminder sheet
   @override
   String get noMoreNotifications => 'None left to send. It stays on Today.';
+
+  // ------------------------------------------------ open failed
+  @override
+  String get openFailedBody => "This is usually temporary. Close Kukira and open it again; if it still happens, restart the phone. Your records have not been changed.\n\nIf it keeps happening, you can restore from a Kukira backup file.";
+  @override
+  String get openFailedTitle => "Kukira couldn't open your records just now";
 }

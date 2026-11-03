@@ -586,9 +586,12 @@ class AboutScreen extends StatelessWidget {
 
 /// Shown instead of the app when the database cannot be opened on this phone.
 class UnreadableScreen extends StatefulWidget {
-  const UnreadableScreen({super.key, required this.s, required this.onReady, this.forgotPin = false});
+  const UnreadableScreen({super.key, required this.s, required this.onReady, this.forgotPin = false, this.openFailed = false});
   final Str s;
   final bool forgotPin;
+
+  /// Opening failed with an error rather than a missing key: try again first.
+  final bool openFailed;
   final void Function(AppDb db) onReady;
 
   @override
@@ -654,9 +657,9 @@ class _UnreadableState extends State<UnreadableScreen> {
           const SizedBox(height: 40),
           Icon(Icons.key_off_outlined, size: 56, color: theme.colorScheme.primary),
           const SizedBox(height: 16),
-          Text(widget.forgotPin ? s.forgotPinTitle : s.unreadableTitle, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
+          Text(widget.forgotPin ? s.forgotPinTitle : (widget.openFailed ? s.openFailedTitle : s.unreadableTitle), style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 10),
-          Text(widget.forgotPin ? s.forgotPinBody : s.unreadableBody),
+          Text(widget.forgotPin ? s.forgotPinBody : (widget.openFailed ? s.openFailedBody : s.unreadableBody)),
           const SizedBox(height: 24),
           FilledButton.icon(icon: const Icon(Icons.restore), label: Text(s.restoreFromFile), onPressed: _restore),
           const SizedBox(height: 10),

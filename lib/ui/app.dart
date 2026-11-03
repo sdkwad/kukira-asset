@@ -155,6 +155,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       home = UnreadableScreen(
         s: s,
         forgotPin: _forgotPin,
+        openFailed: widget.boot.state == BootState.failed,
         onReady: (db) {
           setState(() {
             _db = db;

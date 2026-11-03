@@ -17,7 +17,8 @@ import '../domain/pin_throttle.dart';
 import '../services/error_log.dart';
 import 'db.dart';
 
-enum BootState { ready, locked, unreadable }
+/// failed: opening threw (for example a secure storage hiccup); trying again may work.
+enum BootState { ready, locked, unreadable, failed }
 
 /// Result of trying to open the encrypted database at start-up.
 class BootResult {

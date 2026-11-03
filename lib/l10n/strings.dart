@@ -597,4 +597,8 @@ abstract class Str {
 
   // ------------------------------------------------ reminder sheet
   String get noMoreNotifications;
+
+  // ------------------------------------------------ open failed
+  String get openFailedBody;
+  String get openFailedTitle;
 }
