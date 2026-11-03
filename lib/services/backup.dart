@@ -6,8 +6,6 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../data/db.dart';
@@ -236,10 +234,9 @@ class Backup {
   }
 
   /// Opens the phone's share sheet so the user picks where the file goes.
+  /// The copy for the share target is cleared with the other temporary files.
   static Future<bool> share(Uint8List bytes, String name) async {
-    final dir = await getTemporaryDirectory();
-    final f = File(p.join(dir.path, name));
-    await f.writeAsBytes(bytes, flush: true);
+    final f = await SecureFiles.writeTemp(name, bytes);
     final res = await Share.shareXFiles(
       [XFile(f.path, mimeType: 'application/octet-stream', name: name)],
       subject: name,

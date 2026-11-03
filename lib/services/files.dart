@@ -156,10 +156,16 @@ class SecureFiles {
   /// Decrypts to a temporary file so the phone's own viewer can open it.
   static Future<File> _temp(AppDb db, String name, String title) async {
     final bytes = await read(db, name);
+    final safe = title.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
+    return writeTemp('${safe.isEmpty ? 'kukira' : safe}.${extOf(name)}', bytes);
+  }
+
+  /// Writes a file for another app to read (a viewer, or a share target) into the folder
+  /// that [clearTemp] empties, so it never stays behind.
+  static Future<File> writeTemp(String fileName, Uint8List bytes) async {
     final dir = Directory(p.join((await getTemporaryDirectory()).path, 'view'));
     if (!await dir.exists()) await dir.create(recursive: true);
-    final safe = title.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
-    final f = File(p.join(dir.path, '${safe.isEmpty ? 'kukira' : safe}.${extOf(name)}'));
+    final f = File(p.join(dir.path, fileName));
     await f.writeAsBytes(bytes, flush: true);
     return f;
   }
