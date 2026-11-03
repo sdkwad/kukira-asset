@@ -5,6 +5,7 @@ import '../data/db.dart';
 import '../domain/auto_sync.dart';
 import '../domain/presets.dart';
 import '../services/auto_reminders.dart';
+import '../services/error_log.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'more.dart';
@@ -66,34 +67,43 @@ class _AddAssetState extends State<AddAssetScreen> {
     final db = context.db;
     final sug = suggestionsFor(_cat, _ptype);
     if (_picks.values.any((d) => d == null)) return setState(() => _error = s.errPickDates);
-    for (final p in sug.where((p) => _picks.containsKey(p.key))) {
-      final due = _picks[p.key]!;
-      if (p.profileField != null) {
-        // Road tax and insurance: set the vehicle date; its linked reminder follows.
-        final source = p.profileField == 'roadTax' ? autoRoadTax : autoInsurance;
-        await db.updateVehicle(
-          _newId!,
-          source == autoRoadTax ? VehicleProfilesCompanion(roadTaxExpiry: Value(due)) : VehicleProfilesCompanion(insuranceExpiry: Value(due)),
-        );
-        await applyAuto(db, s, _newId!, [AutoChange(source, planAuto(oldDate: null, newDate: due, existing: null, today: today()), null)]);
-        continue;
-      }
-      await db.addReminder(RemindersCompanion(
-        assetId: Value(_newId!),
-        title: Value(p.title(s)),
-        category: Value(p.category),
-        ruleType: Value(p.rule),
-        dueDate: Value(due),
-        repeatMonths: Value(p.repeatMonths),
-        repeatFrom: Value(p.repeatFrom),
-        leadDays: Value(p.leadDays),
-        source: Value(p.estimated ? 'preset' : 'template'),
-        estimated: Value(p.estimated),
-        note: Value(p.note(s)),
-        confirmWith: Value(p.confirm(s)),
-      ));
+    // All the picked reminders are added together, or none if something fails.
+    try {
+      await db.transaction(() async {
+        for (final p in sug.where((p) => _picks.containsKey(p.key))) {
+          final due = _picks[p.key]!;
+          if (p.profileField != null) {
+            // Road tax and insurance: set the vehicle date; its linked reminder follows.
+            final source = p.profileField == 'roadTax' ? autoRoadTax : autoInsurance;
+            await db.updateVehicle(
+              _newId!,
+              source == autoRoadTax ? VehicleProfilesCompanion(roadTaxExpiry: Value(due)) : VehicleProfilesCompanion(insuranceExpiry: Value(due)),
+            );
+            await applyAuto(db, s, _newId!, [AutoChange(source, planAuto(oldDate: null, newDate: due, existing: null, today: today()), null)]);
+            continue;
+          }
+          await db.addReminder(RemindersCompanion(
+            assetId: Value(_newId!),
+            title: Value(p.title(s)),
+            category: Value(p.category),
+            ruleType: Value(p.rule),
+            dueDate: Value(due),
+            repeatMonths: Value(p.repeatMonths),
+            repeatFrom: Value(p.repeatFrom),
+            leadDays: Value(p.leadDays),
+            source: Value(p.estimated ? 'preset' : 'template'),
+            estimated: Value(p.estimated),
+            note: Value(p.note(s)),
+            confirmWith: Value(p.confirm(s)),
+          ));
+        }
+      });
+    } catch (e) {
+      ErrorLog.record('asset.reminders', e);
+      if (mounted) snack(context, s.couldNotSave);
+      return;
     }
-    _finish(_picks.isNotEmpty);
+    if (mounted) _finish(_picks.isNotEmpty);
   }
 
   void _finish(bool savedReminders) {

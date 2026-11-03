@@ -6,6 +6,7 @@ import '../domain/auto_sync.dart';
 import '../domain/presets.dart';
 import '../domain/rules.dart';
 import '../services/auto_reminders.dart';
+import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import 'add_asset.dart';
@@ -838,14 +839,20 @@ Future<bool?> askAutoConflicts(BuildContext context, List<AutoChange> changes) {
   );
 }
 
-/// Saves the fields, applies the linked-reminder changes, then closes the screen with a summary.
+/// Saves the fields and the linked-reminder changes together, then closes the screen with a summary.
 Future<void> saveWithAutoReminders(BuildContext context, int assetId, List<AutoChange> changes, Future<void> Function() saveFields) async {
   final s = context.s;
   final db = context.db;
   final overwrite = await askAutoConflicts(context, changes);
   if (overwrite == null || !context.mounted) return;
-  await saveFields();
-  final msgs = await applyAuto(db, s, assetId, changes, overwriteManual: overwrite);
+  final List<String> msgs;
+  try {
+    msgs = await saveFieldsWithAuto(db, s, assetId, changes, overwriteManual: overwrite, saveFields: saveFields);
+  } catch (e) {
+    ErrorLog.record('asset.save', e);
+    if (context.mounted) snack(context, s.couldNotSave);
+    return;
+  }
   if (!context.mounted) return;
   Navigator.pop(context);
   snack(context, msgs.isEmpty ? s.changesSaved : msgs.join(' '));

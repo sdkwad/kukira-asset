@@ -85,6 +85,15 @@ Future<List<String>> applyAuto(AppDb db, Str s, int assetId, List<AutoChange> ch
   return msgs;
 }
 
+/// Saves an asset's fields ([saveFields]) and the changes to their linked reminders in one
+/// transaction, so a failure never leaves a date saved without its reminder following it.
+Future<List<String>> saveFieldsWithAuto(AppDb db, Str s, int assetId, List<AutoChange> changes,
+        {required bool overwriteManual, required Future<void> Function() saveFields}) =>
+    db.transaction(() async {
+      await saveFields();
+      return applyAuto(db, s, assetId, changes, overwriteManual: overwriteManual);
+    });
+
 // ---------------------------------------------------------------- warranty
 
 /// The reminder that follows a record's warranty end date, linked by
