@@ -165,14 +165,15 @@ class PhotoEditor extends StatelessWidget {
   }
 }
 
-/// Saves new photos and deletes removed ones for a record.
-Future<void> syncPhotos(AppDb db, {required int assetId, required int recordId, required List<AssetDocument> before, required List<AssetDocument> kept, required List<Picked> added}) async {
+/// Photo rows for a record, inside [FileChanges.commit]. [added] are file names already
+/// written with [FileChanges.add]; files of removed photos are deleted after the commit.
+Future<void> syncPhotos(AppDb db, FileChanges files,
+    {required int assetId, required int recordId, required List<AssetDocument> before, required List<AssetDocument> kept, required List<String> added}) async {
   for (final d in before.where((b) => !kept.any((k) => k.id == b.id))) {
     await db.deleteDocument(d.id);
-    await SecureFiles.delete(d.filePath);
+    files.remove(d.filePath);
   }
-  for (final p in added) {
-    final name = await SecureFiles.save(db, p.bytes, p.ext);
+  for (final name in added) {
     await db.addDocument(DocumentsCompanion(
       assetId: Value(assetId),
       filePath: Value(name),
@@ -373,9 +374,11 @@ Future<void> showDocSheet(BuildContext context, int docId) {
                     final ok = await confirm(c, title: s.deleteDocQ, body: s.deleteDocBody, ok: s.delete, danger: true);
                     if (!ok || !c.mounted) return;
                     final db = c.db;
-                    if (d.linkedReminderId != null) await db.deleteReminder(d.linkedReminderId!);
-                    await db.deleteDocument(d.id);
-                    await SecureFiles.delete(d.filePath);
+                    final files = FileChanges(db)..remove(d.filePath);
+                    await files.commit(() async {
+                      if (d.linkedReminderId != null) await db.deleteReminder(d.linkedReminderId!);
+                      await db.deleteDocument(d.id);
+                    });
                     if (sheet.mounted) Navigator.pop(sheet);
                   },
                 ),
@@ -450,54 +453,58 @@ class _DocumentFormState extends State<DocumentFormScreen> {
     setState(() => _saving = true);
     final db = context.db;
     final title = _title.text.trim();
+    final files = FileChanges(db);
     try {
-      if (widget.editId == null) {
-        final name = await SecureFiles.save(db, _file!.bytes, _file!.ext);
-        int? remId;
-        if (_expiry != null && _remind) {
-          remId = await db.addReminder(RemindersCompanion(
+      // A new document's file is written first; its reminder and row are saved together.
+      final name = widget.editId == null ? await files.add(_file!.bytes, _file!.ext) : null;
+      await files.commit(() async {
+        if (widget.editId == null) {
+          int? remId;
+          if (_expiry != null && _remind) {
+            remId = await db.addReminder(RemindersCompanion(
+              assetId: Value(_assetId!),
+              title: Value(s.docExpires(title)),
+              ruleType: const Value('fixed'),
+              dueDate: Value(_expiry),
+              leadDays: const Value(30),
+              category: const Value('document'),
+            ));
+          }
+          await db.addDocument(DocumentsCompanion(
             assetId: Value(_assetId!),
-            title: Value(s.docExpires(title)),
-            ruleType: const Value('fixed'),
-            dueDate: Value(_expiry),
-            leadDays: const Value(30),
-            category: const Value('document'),
+            filePath: Value(name!),
+            title: Value(title),
+            docType: Value(_type),
+            expiry: Value(_expiry),
+            linkedReminderId: Value(remId),
+          ));
+        } else {
+          final d = w.documents.firstWhere((x) => x.id == widget.editId);
+          int? remId = d.linkedReminderId;
+          if (remId != null && (_expiry == null || !_remind)) {
+            await db.deleteReminder(remId);
+            remId = null;
+          } else if (remId != null) {
+            await db.updateReminder(remId, RemindersCompanion(title: Value(s.docExpires(title)), dueDate: Value(_expiry), done: const Value(false)));
+          } else if (_expiry != null && _remind) {
+            remId = await db.addReminder(RemindersCompanion(
+              assetId: Value(d.assetId),
+              title: Value(s.docExpires(title)),
+              ruleType: const Value('fixed'),
+              dueDate: Value(_expiry),
+              leadDays: const Value(30),
+              category: const Value('document'),
+            ));
+          }
+          await db.updateDocument(d.id, DocumentsCompanion(
+            assetId: Value(_assetId!),
+            title: Value(title),
+            docType: Value(_type),
+            expiry: Value(_expiry),
+            linkedReminderId: Value(remId),
           ));
         }
-        await db.addDocument(DocumentsCompanion(
-          assetId: Value(_assetId!),
-          filePath: Value(name),
-          title: Value(title),
-          docType: Value(_type),
-          expiry: Value(_expiry),
-          linkedReminderId: Value(remId),
-        ));
-      } else {
-        final d = w.documents.firstWhere((x) => x.id == widget.editId);
-        int? remId = d.linkedReminderId;
-        if (remId != null && (_expiry == null || !_remind)) {
-          await db.deleteReminder(remId);
-          remId = null;
-        } else if (remId != null) {
-          await db.updateReminder(remId, RemindersCompanion(title: Value(s.docExpires(title)), dueDate: Value(_expiry), done: const Value(false)));
-        } else if (_expiry != null && _remind) {
-          remId = await db.addReminder(RemindersCompanion(
-            assetId: Value(d.assetId),
-            title: Value(s.docExpires(title)),
-            ruleType: const Value('fixed'),
-            dueDate: Value(_expiry),
-            leadDays: const Value(30),
-            category: const Value('document'),
-          ));
-        }
-        await db.updateDocument(d.id, DocumentsCompanion(
-          assetId: Value(_assetId!),
-          title: Value(title),
-          docType: Value(_type),
-          expiry: Value(_expiry),
-          linkedReminderId: Value(remId),
-        ));
-      }
+      });
     } catch (_) {
       if (mounted) {
         setState(() => _saving = false);

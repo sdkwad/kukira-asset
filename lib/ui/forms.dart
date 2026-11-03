@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import '../data/db.dart';
 import '../domain/presets.dart';
 import '../domain/rules.dart';
+import '../l10n/strings.dart';
+import '../services/files.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'documents.dart';
@@ -603,27 +605,60 @@ class _RecordFormState extends State<RecordFormScreen> {
     final defect = _kind == 'defect';
     final msgs = <String>[defect ? s.defectAdded : s.recordSaved];
     final cost = _itemised ? _itemsTotal() : double.tryParse(_cost.text.replaceAll(',', '').trim());
-
-    // Vendor: link to the vendor book, or add the new name to it.
-    var vendorId = _vendorId;
     final vName = nn(_vendor.text);
-    if (vName == null) {
-      vendorId = null;
-    } else {
-      final known = w.vendors.where((v) => v.name.toLowerCase() == vName.toLowerCase()).firstOrNull;
-      if (known != null) {
-        vendorId = known.id;
-      } else if (_saveVendor && !defect) {
-        vendorId = await db.addVendor(VendorsCompanion(name: Value(vName), trade: Value(a.category == 'house' ? null : 'workshop')));
-      } else {
-        vendorId = null;
-      }
-    }
-
     final reportedOn = defect && _reported ? (_reportedOn ?? today()) : null;
     final status = defect
         ? (_status == 'done' ? 'done' : (_reported ? 'in_progress' : (_status ?? 'open')))
         : (_kind == 'incident' ? (_status ?? 'open') : null);
+
+    // New photos are written first; the record, its cost items, photos, odometer reading and
+    // reminder changes are then saved in one transaction, so a failed or interrupted save
+    // leaves nothing half-done.
+    final files = FileChanges(db);
+    try {
+      final photoNames = [for (final p in _photosAdded) await files.add(p.bytes, p.ext)];
+      await files.commit(() async {
+        // Vendor: link to the vendor book, or add the new name to it.
+        var vendorId = _vendorId;
+        if (vName == null) {
+          vendorId = null;
+        } else {
+          final known = w.vendors.where((v) => v.name.toLowerCase() == vName.toLowerCase()).firstOrNull;
+          if (known != null) {
+            vendorId = known.id;
+          } else if (_saveVendor && !defect) {
+            vendorId = await db.addVendor(VendorsCompanion(name: Value(vName), trade: Value(a.category == 'house' ? null : 'workshop')));
+          } else {
+            vendorId = null;
+          }
+        }
+        final recordId = await _write(db, s, a, w, files, match: match, odo: odo, cost: cost, vendorId: vendorId, vName: vName,
+            status: status, reportedOn: reportedOn, photoNames: photoNames, msgs: msgs);
+        return recordId;
+      });
+    } catch (_) {
+      if (mounted) {
+        setState(() => _saving = false);
+        snack(context, s.couldNotSave);
+      }
+      return;
+    }
+    if (!mounted) return;
+    Navigator.pop(context);
+    snack(context, widget.editId == null ? msgs.join(' ') : s.changesSaved);
+  }
+
+  /// The database writes of [_save], run inside its transaction.
+  Future<int> _write(AppDb db, Str s, Asset a, World w, FileChanges files,
+      {required Reminder? match,
+      required int? odo,
+      required double? cost,
+      required int? vendorId,
+      required String? vName,
+      required String? status,
+      required DateTime? reportedOn,
+      required List<String> photoNames,
+      required List<String> msgs}) async {
     final c = RecordsCompanion(
       assetId: Value(a.id),
       kind: Value(_kind),
@@ -655,7 +690,7 @@ class _RecordFormState extends State<RecordFormScreen> {
           if (i.label.text.trim().isNotEmpty || i.amount.text.trim().isNotEmpty)
             (i.label.text.trim().isEmpty ? s.item : i.label.text.trim(), double.tryParse(i.amount.text.replaceAll(',', '').trim()) ?? 0),
     ]);
-    await syncPhotos(db, assetId: a.id, recordId: recordId, before: _photosBefore, kept: _photosKept, added: _photosAdded);
+    await syncPhotos(db, files, assetId: a.id, recordId: recordId, before: _photosBefore, kept: _photosKept, added: photoNames);
 
     final cur = w.odoOf(a.id);
     var newOdo = cur;
@@ -677,9 +712,7 @@ class _RecordFormState extends State<RecordFormScreen> {
       ));
       msgs.add(s.warrantyReminderAdded);
     }
-    if (!mounted) return;
-    Navigator.pop(context);
-    snack(context, widget.editId == null ? msgs.join(' ') : s.changesSaved);
+    return recordId;
   }
 
   @override

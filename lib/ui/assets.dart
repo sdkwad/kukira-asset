@@ -586,11 +586,15 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
                     if (!ok || !c.mounted) return;
                     final photos = w.photosOf(r.id);
                     final db = c.db;
-                    for (final p in photos) {
-                      await db.deleteDocument(p.id);
-                      await SecureFiles.delete(p.filePath);
-                    }
-                    await db.deleteRecord(r.id);
+                    // The record and its photo rows go together; the photo files after.
+                    final files = FileChanges(db);
+                    await files.commit(() async {
+                      for (final p in photos) {
+                        await db.deleteDocument(p.id);
+                        files.remove(p.filePath);
+                      }
+                      await db.deleteRecord(r.id);
+                    });
                     if (sheet.mounted) Navigator.pop(sheet);
                   },
                 ),

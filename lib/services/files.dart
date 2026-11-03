@@ -12,6 +12,44 @@ import 'package:share_plus/share_plus.dart';
 
 import '../data/db.dart';
 
+/// The file side of one save that also changes the database.
+///
+/// New files are written (with [add]) before the database change; files the change
+/// replaces are only marked (with [remove]). [commit] runs the change in one transaction,
+/// then deletes the marked files. If the change fails, the new files are deleted again
+/// and the marked ones are kept. So a failed save or a stopped app never leaves a record
+/// pointing at a missing file, and never half-saves a record.
+class FileChanges {
+  FileChanges(this.db);
+  final AppDb db;
+  final _added = <String>[];
+  final _removed = <String>[];
+
+  Future<String> add(Uint8List bytes, String ext) async {
+    final name = await SecureFiles.save(db, bytes, ext);
+    _added.add(name);
+    return name;
+  }
+
+  void remove(String name) => _removed.add(name);
+
+  Future<T> commit<T>(Future<T> Function() change) async {
+    final T result;
+    try {
+      result = await db.transaction(change);
+    } catch (_) {
+      for (final n in _added) {
+        await SecureFiles.delete(n);
+      }
+      rethrow;
+    }
+    for (final n in _removed) {
+      await SecureFiles.delete(n);
+    }
+    return result;
+  }
+}
+
 /// Documents and photos, stored encrypted (AES-256-GCM) in app-private storage.
 /// The file key lives inside the encrypted database, so it is protected by the
 /// database key (and by the app lock when that is on).
