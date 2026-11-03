@@ -148,4 +148,15 @@ void main() {
     expect(next.isAfter(now), isTrue);
     expect(find.text(s.notifyOnAt(s.dShort(next), s.hm(next.hour, next.minute))), findsOneWidget);
   });
+
+  testWidgets('the three summary tiles on Today are the same height', (tester) async {
+    setPhone(tester, height: 1600);
+    await tester.pumpWidget(harness(const TodayScreen(), fakeWorld(), lang: 'ms'));
+    await tester.pumpAndSettle();
+    final ms = strFor('ms');
+    double height(String label) => tester.getSize(find.ancestor(of: find.text(label), matching: find.byType(Material)).first).height;
+    final h = height(ms.lastBackupLabel);
+    expect(height(ms.overdue), h);
+    expect(height(ms.dueSoonShort), h);
+  });
 }

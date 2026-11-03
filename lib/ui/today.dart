@@ -173,18 +173,21 @@ class _Summary extends StatelessWidget {
         );
     final calm = (theme.colorScheme.surfaceContainerHighest, theme.colorScheme.onSurfaceVariant);
     final backupDays = lastBackup == null ? null : daysBetween(lastBackup!, today());
-    return Row(children: [
-      tile(value: '$over', label: s.overdue, colors: over > 0 ? statusColors(context, RStatus.overdue) : calm),
-      const SizedBox(width: 8),
-      tile(value: '$soon', label: s.dueSoonShort, colors: soon > 0 ? statusColors(context, RStatus.dueSoon) : calm),
-      const SizedBox(width: 8),
-      tile(
-        value: backupDays == null ? s.neverShort : s.daysShort(backupDays),
-        label: s.lastBackupLabel,
-        colors: backupDays == null || backupDays > 30 ? statusColors(context, RStatus.dueSoon) : statusColors(context, RStatus.done),
-        onTap: onBackup,
-      ),
-    ]);
+    // Equal heights even when one label wraps to two lines ("Sandaran terakhir").
+    return IntrinsicHeight(
+      child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+        tile(value: '$over', label: s.overdue, colors: over > 0 ? statusColors(context, RStatus.overdue) : calm),
+        const SizedBox(width: 8),
+        tile(value: '$soon', label: s.dueSoonShort, colors: soon > 0 ? statusColors(context, RStatus.dueSoon) : calm),
+        const SizedBox(width: 8),
+        tile(
+          value: backupDays == null ? s.neverShort : s.daysShort(backupDays),
+          label: s.lastBackupLabel,
+          colors: backupDays == null || backupDays > 30 ? statusColors(context, RStatus.dueSoon) : statusColors(context, RStatus.done),
+          onTap: onBackup,
+        ),
+      ]),
+    );
   }
 }
 
