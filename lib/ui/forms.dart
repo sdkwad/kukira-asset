@@ -4,10 +4,9 @@ import 'package:flutter/material.dart';
 import '../data/db.dart';
 import '../domain/presets.dart';
 import '../domain/rules.dart';
-import '../l10n/strings.dart';
 import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
-import '../services/files.dart';
+import '../services/record_save.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'documents.dart';
@@ -501,7 +500,6 @@ class _RecordFormState extends State<RecordFormScreen> {
   bool _markDone = true;
   bool _itemised = false;
   final List<_ItemRow> _items = [];
-  int? _vendorId;
   bool _saveVendor = true;
   List<AssetDocument> _photosBefore = [];
   final List<AssetDocument> _photosKept = [];
@@ -537,7 +535,6 @@ class _RecordFormState extends State<RecordFormScreen> {
       _date = e.date;
       _cost.text = e.cost == null ? '' : _num(e.cost!);
       _vendor.text = e.vendorName ?? '';
-      _vendorId = e.vendorId;
       _area.text = e.area ?? '';
       _odo.text = e.odometer?.toString() ?? '';
       _notes.text = e.notes ?? '';
@@ -600,18 +597,9 @@ class _RecordFormState extends State<RecordFormScreen> {
     final s = context.s;
     if (_title.text.trim().isEmpty) return setState(() => _error = s.errDescription);
     setState(() => _saving = true);
-    final a = w.asset(_assetId!)!;
     final db = context.db;
-    final match = _match(w);
-    final odo = parseInt(_odo.text);
     final defect = _kind == 'defect';
-    final msgs = <String>[defect ? s.defectAdded : s.recordSaved];
-    final cost = _itemised ? _itemsTotal() : double.tryParse(_cost.text.replaceAll(',', '').trim());
-    final vName = nn(_vendor.text);
-    final reportedOn = defect && _reported ? (_reportedOn ?? today()) : null;
-    final status = defect
-        ? (_status == 'done' ? 'done' : (_reported ? 'in_progress' : (_status ?? 'open')))
-        : (_kind == 'incident' ? (_status ?? 'open') : null);
+    final match = _match(w);
 
     // The warranty reminder follows the warranty date. As for road tax, ask before
     // reopening a reminder that was marked done or clearing a snooze.
@@ -623,31 +611,39 @@ class _RecordFormState extends State<RecordFormScreen> {
       return;
     }
 
-    // New photos are written first; the record, its cost items, photos, odometer reading and
-    // reminder changes are then saved in one transaction, so a failed or interrupted save
-    // leaves nothing half-done.
-    final files = FileChanges(db);
+    final input = RecordInput(
+      assetId: _assetId!,
+      editId: widget.editId,
+      kind: _kind,
+      category: _cat,
+      title: _title.text.trim(),
+      date: _date,
+      cost: _itemised ? _itemsTotal() : double.tryParse(_cost.text.replaceAll(',', '').trim()),
+      costItems: [
+        if (_itemised)
+          for (final i in _items)
+            if (i.label.text.trim().isNotEmpty || i.amount.text.trim().isNotEmpty)
+              (i.label.text.trim().isEmpty ? s.item : i.label.text.trim(), double.tryParse(i.amount.text.replaceAll(',', '').trim()) ?? 0),
+      ],
+      vendorName: nn(_vendor.text),
+      addVendor: _saveVendor && !defect,
+      area: nn(_area.text),
+      notes: nn(_notes.text),
+      odometer: parseInt(_odo.text),
+      warrantyEnd: _warranty,
+      status: defect
+          ? (_status == 'done' ? 'done' : (_reported ? 'in_progress' : (_status ?? 'open')))
+          : (_kind == 'incident' ? (_status ?? 'open') : null),
+      reportedOn: defect && _reported ? (_reportedOn ?? today()) : null,
+      insuranceClaim: _kind == 'incident' ? _claim : null,
+      linkedReminderId: widget.editId != null ? _linkedId : match?.id,
+      photosRemoved: _photosBefore.where((b) => !_photosKept.any((k) => k.id == b.id)).toList(),
+      photosAdded: [for (final p in _photosAdded) (p.bytes, p.ext)],
+      completes: match != null && widget.linkedReminderId == null && _markDone ? match : null,
+    );
+    final msgs = <String>[defect ? s.defectAdded : s.recordSaved];
     try {
-      final photoNames = [for (final p in _photosAdded) await files.add(p.bytes, p.ext)];
-      await files.commit(() async {
-        // Vendor: link to the vendor book, or add the new name to it.
-        var vendorId = _vendorId;
-        if (vName == null) {
-          vendorId = null;
-        } else {
-          final known = w.vendors.where((v) => v.name.toLowerCase() == vName.toLowerCase()).firstOrNull;
-          if (known != null) {
-            vendorId = known.id;
-          } else if (_saveVendor && !defect) {
-            vendorId = await db.addVendor(VendorsCompanion(name: Value(vName), trade: Value(a.category == 'house' ? null : 'workshop')));
-          } else {
-            vendorId = null;
-          }
-        }
-        final recordId = await _write(db, s, a, w, files, match: match, odo: odo, cost: cost, vendorId: vendorId, vName: vName,
-            status: status, reportedOn: reportedOn, photoNames: photoNames, warranty: warranty, overwrite: overwrite, msgs: msgs);
-        return recordId;
-      });
+      await saveRecord(db, s, w, input, warranty: warranty, overwriteWarranty: overwrite, today: today(), msgs: msgs);
     } catch (e) {
       ErrorLog.record('record.save', e);
       if (mounted) {
@@ -659,68 +655,6 @@ class _RecordFormState extends State<RecordFormScreen> {
     if (!mounted) return;
     Navigator.pop(context);
     snack(context, widget.editId == null ? msgs.join(' ') : [s.changesSaved, ...msgs.skip(1)].join(' '));
-  }
-
-  /// The database writes of [_save], run inside its transaction.
-  Future<int> _write(AppDb db, Str s, Asset a, World w, FileChanges files,
-      {required Reminder? match,
-      required int? odo,
-      required double? cost,
-      required int? vendorId,
-      required String? vName,
-      required String? status,
-      required DateTime? reportedOn,
-      required List<String> photoNames,
-      required AutoChange warranty,
-      required bool overwrite,
-      required List<String> msgs}) async {
-    final warrantyId =
-        await applyWarranty(db, s, warranty, assetId: a.id, recordTitle: _title.text.trim(), overwriteManual: overwrite, msgs: msgs);
-    final c = RecordsCompanion(
-      assetId: Value(a.id),
-      kind: Value(_kind),
-      category: Value(_cat),
-      title: Value(_title.text.trim()),
-      date: Value(_date),
-      cost: Value(cost),
-      vendorId: Value(vendorId),
-      vendorName: Value(vName),
-      area: Value(nn(_area.text)),
-      notes: Value(nn(_notes.text)),
-      odometer: Value(odo),
-      warrantyEnd: Value(_warranty),
-      status: Value(status),
-      reportedToDeveloper: Value(reportedOn),
-      insuranceClaim: Value(_kind == 'incident' ? _claim : null),
-      linkedReminderId: Value(widget.editId != null ? _linkedId : match?.id),
-      warrantyReminderId: Value(warrantyId),
-    );
-    int recordId;
-    if (widget.editId == null) {
-      recordId = await db.addRecord(c);
-    } else {
-      recordId = widget.editId!;
-      await db.updateRecord(recordId, c);
-    }
-    await db.setCostItems(recordId, [
-      if (_itemised)
-        for (final i in _items)
-          if (i.label.text.trim().isNotEmpty || i.amount.text.trim().isNotEmpty)
-            (i.label.text.trim().isEmpty ? s.item : i.label.text.trim(), double.tryParse(i.amount.text.replaceAll(',', '').trim()) ?? 0),
-    ]);
-    await syncPhotos(db, files, assetId: a.id, recordId: recordId, before: _photosBefore, kept: _photosKept, added: photoNames);
-
-    final cur = w.odoOf(a.id);
-    var newOdo = cur;
-    if (a.category != 'house' && odo != null && (cur == null || odo > cur)) {
-      await db.addOdometer(a.id, odo, _date);
-      newOdo = odo;
-    }
-    if (match != null && widget.linkedReminderId == null && _markDone) {
-      final n = await db.completeReminder(match, today: today(), odometer: newOdo);
-      msgs.add(s.alsoMarkedDone(match.title, n.done ? null : (n.due != null ? s.dLong(n.due!) : s.km(n.dueKm ?? 0))));
-    }
-    return recordId;
   }
 
   @override
@@ -851,18 +785,12 @@ class _RecordFormState extends State<RecordFormScreen> {
                     if (q.isEmpty) return w.vendors;
                     return w.vendors.where((v) => v.name.toLowerCase().contains(q) || (v.trade ?? '').contains(q));
                   },
-                  onSelected: (v) => setState(() {
-                    _vendor.text = v.name;
-                    _vendorId = v.id;
-                  }),
+                  onSelected: (v) => setState(() => _vendor.text = v.name),
                   fieldViewBuilder: (c, ctrl, focus, onSubmit) => TextField(
                     controller: ctrl,
                     focusNode: focus,
                     textCapitalization: TextCapitalization.words,
-                    onChanged: (t) => setState(() {
-                      _vendor.text = t;
-                      _vendorId = null;
-                    }),
+                    onChanged: (t) => setState(() => _vendor.text = t),
                     decoration: InputDecoration(labelText: vehicle ? s.workshop : s.vendor, hintText: s.vendorPickHint, border: const OutlineInputBorder()),
                   ),
                 ),

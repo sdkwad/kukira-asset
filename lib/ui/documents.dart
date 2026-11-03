@@ -167,25 +167,6 @@ class PhotoEditor extends StatelessWidget {
   }
 }
 
-/// Photo rows for a record, inside [FileChanges.commit]. [added] are file names already
-/// written with [FileChanges.add]; files of removed photos are deleted after the commit.
-Future<void> syncPhotos(AppDb db, FileChanges files,
-    {required int assetId, required int recordId, required List<AssetDocument> before, required List<AssetDocument> kept, required List<String> added}) async {
-  for (final d in before.where((b) => !kept.any((k) => k.id == b.id))) {
-    await db.deleteDocument(d.id);
-    files.remove(d.filePath);
-  }
-  for (final name in added) {
-    await db.addDocument(DocumentsCompanion(
-      assetId: Value(assetId),
-      filePath: Value(name),
-      title: const Value('photo'),
-      docType: const Value('photo'),
-      linkedRecordId: Value(recordId),
-    ));
-  }
-}
-
 // ================================================================ list
 
 class DocumentsScreen extends StatefulWidget {
