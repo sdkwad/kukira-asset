@@ -106,6 +106,40 @@ void main() {
       expect(planNotes([r], now: DateTime(2026, 11, 2, 10)), isEmpty);
     });
 
+    test('a snoozed overdue reminder is followed up weekly after the snooze', () {
+      // Overdue since 10 Oct, snoozed until 23 Oct.
+      final r = RemInfo(rule: 'fixed', due: DateTime(2026, 10, 10), snoozedUntil: DateTime(2026, 10, 23));
+      final plan = planNotes([r], now: DateTime(2026, 10, 20, 10));
+      expect(plan.map((p) => p.at).toList(), [
+        DateTime(2026, 10, 23, 9),
+        DateTime(2026, 10, 30, 9),
+        DateTime(2026, 11, 6, 9),
+        DateTime(2026, 11, 13, 9),
+      ]);
+      expect(plan.map((p) => p.kind).toList(), ['snooze', 'overdue', 'overdue', 'overdue']);
+      expect(plan.map((p) => p.slot).toList(), [0, 7, 8, 9]);
+    });
+
+    test('a snooze before the due date keeps the due day and its follow-ups', () {
+      final r = RemInfo(rule: 'fixed', due: DateTime(2026, 11, 3), leadDays: 14, snoozedUntil: DateTime(2026, 10, 25));
+      final plan = planNotes([r], now: DateTime(2026, 10, 20, 10));
+      expect(plan.map((p) => p.kind).toList(), ['snooze', 'due', 'overdue', 'overdue', 'overdue', 'overdue']);
+      expect(plan[1].at, DateTime(2026, 11, 3, 9));
+    });
+
+    test('every notification of a reminder has its own slot', () {
+      final plan = planNotes([RemInfo(rule: 'fixed', due: DateTime(2026, 11, 3), leadDays: 7)], now: DateTime(2026, 10, 20, 10));
+      expect(plan.map((p) => p.slot).toList(), [1, 2, 3, 4, 5, 6]);
+    });
+
+    test('a full window ends with an open-Kukira notice the day after the last one', () {
+      final now = DateTime(2026, 10, 20, 10);
+      final many = List.generate(20, (i) => RemInfo(rule: 'fixed', due: DateTime(2026, 11, 1 + i), leadDays: 0));
+      final plan = planNotes(many, now: now, limit: 5);
+      expect(refreshNoticeAt(many, now: now, limit: 5), DateTime(plan.last.at.year, plan.last.at.month, plan.last.at.day + 1, 9));
+      expect(refreshNoticeAt(many.take(1).toList(), now: now, limit: 5), isNull);
+    });
+
     test('mileage-only reminders are not time-scheduled', () {
       final plan = planNotes([const RemInfo(rule: 'mileage', dueKm: 1000)], now: DateTime(2026, 10, 20));
       expect(plan, isEmpty);

@@ -144,8 +144,12 @@ DateTime? firstNotice(RemInfo r) =>
 /// After about four weeks the reminder stays on Today without more notifications.
 const overdueNudgeDays = [1, 8, 15, 22];
 
+/// Follow-ups after a snooze ends on a reminder that is overdue by then: the snooze
+/// notification itself, then weekly, four in all, like [overdueNudgeDays].
+const snoozeNudgeDays = [7, 14, 21];
+
 class PlannedNote {
-  const PlannedNote(this.at, this.kind, this.index);
+  const PlannedNote(this.at, this.kind, this.index, [this.slot = 0]);
   final DateTime at;
 
   /// lead | due | overdue | snooze
@@ -153,33 +157,59 @@ class PlannedNote {
 
   /// Index into the list passed to [planNotes].
   final int index;
+
+  /// Which of the reminder's notifications this is, 0 to 9, so each one keeps the same
+  /// notification id when the schedule is rebuilt: 0 snooze, 1 lead, 2 due,
+  /// 3 to 6 overdue follow-ups, 7 to 9 follow-ups after a snooze.
+  final int slot;
 }
 
 /// The rolling notification window. The OS schedule is disposable: it is rebuilt
 /// from the database on app open and after every change. Mileage reminders cannot be
 /// scheduled by time; they are checked when the odometer is updated.
 List<PlannedNote> planNotes(List<RemInfo> rs, {required DateTime now, int hour = 9, int minute = 0, int limit = 50}) {
+  final all = _allNotes(rs, now: now, hour: hour, minute: minute);
+  return all.length > limit ? all.sublist(0, limit) : all;
+}
+
+/// When the window of [limit] notifications is full and more are due later, the time for
+/// one "open Kukira" notice: the day after the last scheduled one. Opening the app then
+/// schedules the rest. Null when everything fits.
+DateTime? refreshNoticeAt(List<RemInfo> rs, {required DateTime now, int hour = 9, int minute = 0, required int limit}) {
+  final all = _allNotes(rs, now: now, hour: hour, minute: minute);
+  if (all.length <= limit) return null;
+  final last = all[limit - 1].at;
+  return DateTime(last.year, last.month, last.day + 1, hour, minute);
+}
+
+List<PlannedNote> _allNotes(List<RemInfo> rs, {required DateTime now, required int hour, required int minute}) {
   DateTime at(DateTime d) => DateTime(d.year, d.month, d.day, hour, minute);
   final out = <PlannedNote>[];
   for (var i = 0; i < rs.length; i++) {
     final r = rs[i];
     if (r.done || !r.usesDate || r.due == null) continue;
-    if (r.snoozedUntil != null && at(r.snoozedUntil!).isAfter(now)) {
-      out.add(PlannedNote(at(r.snoozedUntil!), 'snooze', i));
-      continue;
-    }
     final due = at(r.due!);
+    final snooze = r.snoozedUntil != null && at(r.snoozedUntil!).isAfter(now) ? at(r.snoozedUntil!) : null;
+    // Nothing is sent before a snooze ends.
+    final from = snooze ?? now;
+    if (snooze != null) out.add(PlannedNote(snooze, 'snooze', i, 0));
     final lead = due.subtract(Duration(days: r.leadDays));
-    if (r.leadDays > 0 && lead.isAfter(now)) out.add(PlannedNote(lead, 'lead', i));
-    if (due.isAfter(now)) out.add(PlannedNote(due, 'due', i));
-    // A missed or swiped-away notification must not leave an overdue reminder silent.
-    for (final d in overdueNudgeDays) {
-      final follow = due.add(Duration(days: d));
-      if (follow.isAfter(now)) out.add(PlannedNote(follow, 'overdue', i));
+    if (r.leadDays > 0 && lead.isAfter(from)) out.add(PlannedNote(lead, 'lead', i, 1));
+    if (due.isAfter(from)) out.add(PlannedNote(due, 'due', i, 2));
+    // A missed, swiped-away or snoozed notification must not leave an overdue reminder silent.
+    if (snooze != null && !snooze.isBefore(due)) {
+      for (var k = 0; k < snoozeNudgeDays.length; k++) {
+        out.add(PlannedNote(snooze.add(Duration(days: snoozeNudgeDays[k])), 'overdue', i, 7 + k));
+      }
+    } else {
+      for (var k = 0; k < overdueNudgeDays.length; k++) {
+        final follow = due.add(Duration(days: overdueNudgeDays[k]));
+        if (follow.isAfter(from)) out.add(PlannedNote(follow, 'overdue', i, 3 + k));
+      }
     }
   }
   out.sort((a, b) => a.at.compareTo(b.at));
-  return out.length > limit ? out.sublist(0, limit) : out;
+  return out;
 }
 
 /// Defect liability period: 24 months from vacant possession (Schedule G/H SPAs). An estimate.
