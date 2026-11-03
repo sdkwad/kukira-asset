@@ -15,6 +15,10 @@ The full product brief is in `docs/handoff-brief.md`. This file holds the rules 
 
 Also kept from the brief: offline-first, local-only data, no account, no analytics or ad SDKs, Bahasa Melayu first with English (every string in both `lib/l10n/strings_ms.dart` and `strings_en.dart`).
 
+## Overdue notifications
+
+Decided by the owner (2026-11-02), replacing the brief's single follow-up: an overdue reminder is notified the day after its due date and then weekly, four times in all (`overdueNudgeDays` in `lib/domain/rules.dart`). After that it stays under Overdue on Today until it is done or snoozed.
+
 ## Reminders that follow a date field
 
 Road tax expiry, insurance expiry (vehicles) and the DLP end (house, from the VP date or the owner's correction) each keep one linked reminder, marked by `Reminders.autoSource` (`roadTax`, `insurance`, `dlp`).

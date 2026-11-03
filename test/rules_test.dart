@@ -78,17 +78,32 @@ void main() {
   });
 
   group('notification plan', () {
-    test('lead, due day and one overdue follow-up, sorted and capped', () {
+    test('lead, due day and weekly overdue follow-ups, sorted and capped', () {
       final now = DateTime(2026, 10, 20, 10);
       final rs = [
-        RemInfo(rule: 'fixed', due: DateTime(2026, 11, 3), leadDays: 14),
+        RemInfo(rule: 'fixed', due: DateTime(2026, 11, 3), leadDays: 14), // lead day already passed
         RemInfo(rule: 'fixed', due: DateTime(2026, 11, 10), leadDays: 5),
       ];
       final plan = planNotes(rs, now: now);
-      expect(plan.map((p) => p.kind).toList(), ['due', 'overdue', 'lead', 'due', 'overdue']);
+      expect(plan.map((p) => p.kind).toList(), ['due', 'overdue', 'lead', 'due', ...List.filled(7, 'overdue')]);
       expect(plan.first.at, DateTime(2026, 11, 3, 9));
+      expect(plan.where((p) => p.index == 0 && p.kind == 'overdue').map((p) => p.at).toList(), [
+        DateTime(2026, 11, 4, 9),
+        DateTime(2026, 11, 11, 9),
+        DateTime(2026, 11, 18, 9),
+        DateTime(2026, 11, 25, 9),
+      ]);
       final many = List.generate(40, (i) => RemInfo(rule: 'fixed', due: DateTime(2027, 1, 1 + i), leadDays: 3));
       expect(planNotes(many, now: now).length, 50);
+    });
+
+    test('a reminder that is already overdue keeps its remaining weekly nudges, then goes quiet', () {
+      final r = RemInfo(rule: 'fixed', due: DateTime(2026, 10, 10));
+      expect(planNotes([r], now: DateTime(2026, 10, 20, 10)).map((p) => p.at).toList(), [
+        DateTime(2026, 10, 25, 9),
+        DateTime(2026, 11, 1, 9),
+      ]);
+      expect(planNotes([r], now: DateTime(2026, 11, 2, 10)), isEmpty);
     });
 
     test('mileage-only reminders are not time-scheduled', () {

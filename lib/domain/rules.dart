@@ -140,6 +140,10 @@ NextDue nextAfterDone(RemInfo r, {required DateTime today, int? odometer}) {
 DateTime? firstNotice(RemInfo r) =>
     r.usesDate && r.due != null ? dayOnly(r.due!).subtract(Duration(days: r.leadDays)) : null;
 
+/// Overdue follow-ups, in days after the due date: the next day, then weekly, four in all.
+/// After about four weeks the reminder stays on Today without more notifications.
+const overdueNudgeDays = [1, 8, 15, 22];
+
 class PlannedNote {
   const PlannedNote(this.at, this.kind, this.index);
   final DateTime at;
@@ -168,9 +172,11 @@ List<PlannedNote> planNotes(List<RemInfo> rs, {required DateTime now, int hour =
     final lead = due.subtract(Duration(days: r.leadDays));
     if (r.leadDays > 0 && lead.isAfter(now)) out.add(PlannedNote(lead, 'lead', i));
     if (due.isAfter(now)) out.add(PlannedNote(due, 'due', i));
-    // One follow-up the day after it becomes overdue; after that it stays on Today.
-    final follow = due.add(const Duration(days: 1));
-    if (follow.isAfter(now)) out.add(PlannedNote(follow, 'overdue', i));
+    // A missed or swiped-away notification must not leave an overdue reminder silent.
+    for (final d in overdueNudgeDays) {
+      final follow = due.add(Duration(days: d));
+      if (follow.isAfter(now)) out.add(PlannedNote(follow, 'overdue', i));
+    }
   }
   out.sort((a, b) => a.at.compareTo(b.at));
   return out.length > limit ? out.sublist(0, limit) : out;
