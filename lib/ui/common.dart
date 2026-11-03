@@ -300,11 +300,15 @@ class CardList extends StatelessWidget {
 }
 
 class ReminderTile extends StatelessWidget {
-  const ReminderTile(this.r, this.w, {super.key, required this.onTap, this.showAsset = true});
+  const ReminderTile(this.r, this.w, {super.key, required this.onTap, this.showAsset = true, this.showStatus = true});
   final Reminder r;
   final World w;
   final VoidCallback onTap;
   final bool showAsset;
+
+  /// False in a list that is already grouped by status (Today's Overdue and Due soon),
+  /// where the section title and the due text say it.
+  final bool showStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -333,8 +337,10 @@ class ReminderTile extends StatelessWidget {
               ),
             ]),
           ),
-          const SizedBox(width: 8),
-          StatusPill(st),
+          if (showStatus) ...[
+            const SizedBox(width: 8),
+            StatusPill(st),
+          ],
         ]),
       ),
     );

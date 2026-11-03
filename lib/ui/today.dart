@@ -101,10 +101,10 @@ class TodayScreen extends StatelessWidget {
                 onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupScreen())),
               ),
             SectionTitle(s.overdue, count: over.length),
-            CardList([for (final r in over) ReminderTile(r, w, onTap: () => showReminderSheet(context, r.id))], empty: s.nothingOverdue),
+            CardList([for (final r in over) ReminderTile(r, w, showStatus: false, onTap: () => showReminderSheet(context, r.id))], empty: s.nothingOverdue),
             SectionTitle(s.dueSoonTitle, count: soon.length),
             CardList([
-              for (final r in soon) ReminderTile(r, w, onTap: () => showReminderSheet(context, r.id)),
+              for (final r in soon) ReminderTile(r, w, showStatus: false, onTap: () => showReminderSheet(context, r.id)),
               for (final a in stale)
                 ListTile(
                   leading: const Icon(Icons.speed_outlined),

@@ -238,16 +238,11 @@ class _AssetCard extends StatelessWidget {
               if (next == null)
                 Text(s.noRemindersYet, style: TextStyle(color: muted))
               else
-                Row(children: [
-                  Expanded(
-                    child: Text.rich(TextSpan(children: [
-                      TextSpan(text: '${s.nextLabel}: '),
-                      TextSpan(text: next.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                      TextSpan(text: '\n${dueText(s, next, w)}', style: TextStyle(color: muted, fontSize: 13)),
-                    ])),
-                  ),
-                  StatusPill(remStatus(next, w)),
-                ]),
+                Text.rich(TextSpan(children: [
+                  TextSpan(text: '${s.nextLabel}: '),
+                  TextSpan(text: next.title, style: const TextStyle(fontWeight: FontWeight.w600)),
+                  TextSpan(text: '\n${dueText(s, next, w)}', style: TextStyle(color: muted, fontSize: 13)),
+                ])),
               if (left != null && left > 0) ...[
                 const SizedBox(height: 8),
                 Row(children: [
