@@ -63,6 +63,22 @@ class PinPad extends StatelessWidget {
   }
 }
 
+/// Puts [lock] over the app while [locked]. What is underneath is also hidden from screen
+/// readers and keyboard focus, so the records cannot be read or typed into behind the lock.
+/// The child stays mounted, so unlocking returns to exactly where the user was.
+class LockCover extends StatelessWidget {
+  const LockCover({super.key, required this.locked, required this.lock, required this.child});
+  final bool locked;
+  final Widget lock;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Stack(children: [
+        ExcludeFocus(excluding: locked, child: ExcludeSemantics(excluding: locked, child: child)),
+        if (locked) Positioned.fill(child: lock),
+      ]);
+}
+
 /// Unlock screen. At start-up it opens the database ([onOpened]); on resume it only checks ([onChecked]).
 class LockScreen extends StatefulWidget {
   const LockScreen({super.key, required this.s, this.onOpened, this.onChecked, this.onForgot, this.cancellable = false});

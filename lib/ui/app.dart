@@ -174,17 +174,15 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       supportedLocales: const [Locale('ms'), Locale('en')],
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       home: home,
-      builder: (context, child) => Stack(children: [
-        child ?? const SizedBox.shrink(),
-        if (_locked && _db != null)
-          Positioned.fill(
-            child: Navigator(
-              onGenerateRoute: (_) => MaterialPageRoute(
-                builder: (_) => LockScreen(s: s, onChecked: () => setState(() => _locked = false)),
-              ),
-            ),
+      builder: (context, child) => LockCover(
+        locked: _locked && _db != null,
+        lock: Navigator(
+          onGenerateRoute: (_) => MaterialPageRoute(
+            builder: (_) => LockScreen(s: s, onChecked: () => setState(() => _locked = false)),
           ),
-      ]),
+        ),
+        child: child ?? const SizedBox.shrink(),
+      ),
     );
     if (_db == null) return app;
     return AppScope(
