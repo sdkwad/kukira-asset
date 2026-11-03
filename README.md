@@ -2,7 +2,21 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.4 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.5 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.5
+
+Kemasan UI daripada semakan tangkapan skrin sebenar (rupa sahaja, logik tidak berubah):
+
+- Status disebut sekali sahaja di Hari ini, kad aset dan lembaran peringatan.
+- Lembaran peringatan menunjukkan pemberitahuan seterusnya, bukan yang sudah berlalu.
+- Amaran tiada sandaran berwarna amaran (bukan hijau); petak menyatakan "Belum".
+- Tiada banner hiasan untuk aset tanpa gambar; semua aset muat dalam satu skrin.
+- Medan odometer terus kelihatan pada rekod kenderaan.
+- Lagi menunjukkan sama ada kunci app hidup.
+- Plat nombor kelihatan dalam mod gelap; nasihat bateri dan nota sandaran lebih kemas.
+
+Pasang terus di atas 0.2.4.
 
 ## Baharu dalam 0.2.4
 

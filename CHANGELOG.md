@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.2.5
+
+UI polish from the first review of real screenshots (31 screens, made in CI). Looks and layout only; no change to how reminders, records or backups work.
+
+- **Changed:** status is said once. Today's Overdue and Due soon lists no longer add a "Lewat" pill to every row (the section and the due text already say it), and asset cards drop the pill on their "Next" line. Mixed lists (All reminders, an asset's Reminders tab) keep it.
+- **Changed:** the reminder sheet says "6 days overdue" once (it said "Overdue · 6 days overdue"), and shows the next notification it will get, instead of the first one, which could be weeks in the past. When none are left: "None left to send. It stays on Today."
+- **Fixed:** the "no backup yet" banner on Today was green, the colour for "all good"; it is now a warning. The Last backup tile says "Never" instead of "–", and the three summary tiles are the same height.
+- **Changed:** assets without a photo no longer start with a large decorative gradient and faded icon. Cards show a small category icon by the name (all three demo assets now fit on one screen), the Overview starts with the facts, and Edit details labels the photo buttons "Asset photo (optional)". Assets with a photo still show it.
+- **Changed:** on a vehicle record the odometer field is shown straight away instead of under More details, since it keeps mileage reminders right.
+- **Changed:** More shows whether the app lock is on ("Off", "On, with PIN", "On, with PIN and fingerprint") instead of repeating "PIN or fingerprint"; the title is now just "App lock".
+- **Fixed:** the battery advice in Reminder health check was squeezed into six lines beside its button; the button now sits under the text.
+- **Fixed:** the black number plate is visible in dark mode (thin grey edge).
+- **Changed:** Backup and restore has one note about phone backups instead of two stacked boxes.
+- **Tests:** 13 checks pin these changes (`test/ui_polish_test.dart`); screenshots now also cover asset tabs, the reminder and record sheets, All reminders, App lock, Privacy and Attach document. A layout overflow introduced during this work was caught by the tests before release.
+
 ## 0.2.4
 
 Notifications you can rely on, from the second audit.
