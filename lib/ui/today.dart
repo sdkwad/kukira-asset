@@ -96,6 +96,8 @@ class TodayScreen extends StatelessWidget {
             if (live.isNotEmpty && (lastBackup == null || daysBetween(lastBackup, t) > 30))
               InfoBanner(
                 icon: Icons.save_alt_outlined,
+                // A warning: without a backup, a lost phone means lost records.
+                warn: true,
                 text: lastBackup == null ? s.noBackupBanner : s.oldBackupBanner(s.ago(lastBackup)),
                 action: s.backUpNow,
                 onAction: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupScreen())),
@@ -177,7 +179,7 @@ class _Summary extends StatelessWidget {
       tile(value: '$soon', label: s.dueSoonShort, colors: soon > 0 ? statusColors(context, RStatus.dueSoon) : calm),
       const SizedBox(width: 8),
       tile(
-        value: backupDays == null ? '–' : s.daysShort(backupDays),
+        value: backupDays == null ? s.neverShort : s.daysShort(backupDays),
         label: s.lastBackupLabel,
         colors: backupDays == null || backupDays > 30 ? statusColors(context, RStatus.dueSoon) : statusColors(context, RStatus.done),
         onTap: onBackup,

@@ -584,4 +584,7 @@ abstract class Str {
   // ------------------------------------------------ refresh notice
   String get refreshNoteBody;
   String get refreshNoteTitle;
+
+  // ------------------------------------------------ backup tile
+  String get neverShort;
 }

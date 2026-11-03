@@ -1158,4 +1158,8 @@ class StrMs extends Str {
   String get refreshNoteBody => 'Buka Kukira sekali supaya peringatan anda yang seterusnya dijadualkan.';
   @override
   String get refreshNoteTitle => 'Buka Kukira';
+
+  // ------------------------------------------------ backup tile
+  @override
+  String get neverShort => 'Belum';
 }

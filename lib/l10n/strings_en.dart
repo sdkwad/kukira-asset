@@ -1158,4 +1158,8 @@ class StrEn extends Str {
   String get refreshNoteBody => 'Open Kukira once so your next reminders get scheduled.';
   @override
   String get refreshNoteTitle => 'Open Kukira';
+
+  // ------------------------------------------------ backup tile
+  @override
+  String get neverShort => 'Never';
 }

@@ -37,4 +37,14 @@ void main() {
       expect(find.byType(StatusPill), findsNothing);
     });
   });
+
+  testWidgets('no backup yet is a warning, not a green note, and the tile says Never', (tester) async {
+    setPhone(tester, height: 1600);
+    await tester.pumpWidget(harness(const TodayScreen(), fakeWorld()));
+    await tester.pumpAndSettle();
+    final banner = tester.widget<InfoBanner>(find.ancestor(of: find.text(s.noBackupBanner), matching: find.byType(InfoBanner)));
+    expect(banner.warn, isTrue);
+    expect(find.text(s.neverShort), findsOneWidget);
+    expect(find.text('–'), findsNothing);
+  });
 }
