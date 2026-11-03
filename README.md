@@ -2,7 +2,18 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.5 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.6 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.6
+
+Audit ralat:
+
+- Kandungan di sebalik kunci app kini tersembunyi juga daripada pembaca skrin dan papan kekunci.
+- App tidak lagi terhenti pada skrin putih jika permulaan gagal; ia menerangkan apa yang perlu dicuba.
+- Cukai taksiran kekal pada 31 Ogos, tidak beralih ke 28 Ogos selepas Februari.
+- Hari ini meminta bacaan odometer sekali sahaja.
+
+Pasang terus di atas 0.2.5.
 
 ## Baharu dalam 0.2.5
 

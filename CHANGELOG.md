@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.6
+
+Error audit: static checks, test coverage per file, and a line-by-line review of the least tested code.
+
+- **Security:** when the app locks itself again after two minutes away, what is under the lock screen is now also hidden from screen readers (TalkBack) and keyboard focus. Before, the lock covered the records but a screen reader or automation tool could still read them, or a hardware keyboard type into a form, without the PIN. Unlocking still returns to exactly where you were.
+- **Fixed:** if setting up notifications or opening the encrypted database failed at start-up, the app showed a blank screen. Notifications failing no longer stops the app (Today still shows everything), and a database that cannot be opened right now shows "Kukira couldn't open your records just now" with what to try first, instead of nothing.
+- **Fixed:** cukai taksiran (and other reminders that repeat from a month-end due date) drifted: after the end of February, the August half fell on 28 August instead of 31 August, for good. Month-end dates now stay at month end (31 Aug, 28/29 Feb, 31 Aug).
+- **Fixed:** Today asked for a vehicle's odometer reading twice when its monthly odometer reminder was already listed.
+- **Fixed:** Add asset could call into a closed screen if it was left while saving.
+- **Tests:** the Add asset flow (the first screen every new user sees, 16% covered before) is tested end to end, plus the lock cover, the start-up failure screen and month-end dates. CI now prints line coverage per file.
+
 ## 0.2.5
 
 UI polish from the first review of real screenshots (31 screens, made in CI). Looks and layout only; no change to how reminders, records or backups work.
