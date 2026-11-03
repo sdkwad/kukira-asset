@@ -2,7 +2,21 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.2 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.3 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.3
+
+Kebolehpercayaan harian, hasil audit penuh:
+
+- Butang Simpan tidak boleh menyimpan dua kali.
+- Peringatan lewat diingatkan setiap minggu, empat kali (sebelum ini sekali sahaja).
+- Peringatan waranti mengikut tarikh waranti rekod.
+- Simpan dan padam rekod serta dokumen dalam satu langkah, tiada yang tersimpan separuh.
+- Dengan kunci app, rekod tidak kelihatan dalam Recent apps.
+- Salinan dokumen yang dibuka dipadam 5 minit kemudian.
+- Log ralat bersulit dalam Semakan peringatan, dengan butang Salin.
+
+Pasang terus di atas 0.2.2 (kunci tandatangan sama, data kekal).
 
 ## Baharu dalam 0.2.2
 

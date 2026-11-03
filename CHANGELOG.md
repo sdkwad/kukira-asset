@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.2.3
+
+Daily-use reliability, from a full audit of the app.
+
+- **Fixed:** a quick double tap on Save could create a reminder, asset or vendor twice. Save buttons now disable themselves while saving.
+- **Changed:** an overdue reminder is now notified the day after its due date and then weekly, four times in all, instead of once. A swiped-away notification no longer leaves an overdue road tax silent.
+- **Fixed:** changing a record's warranty end date now moves its warranty reminder (before, it stayed at the old date). The reminder follows the date like road tax does, follows the record's title, and goes when the record is deleted. Existing warranty reminders are linked on upgrade (database schema 4).
+- **Fixed:** saving or deleting a record or document now happens in one step: if the app is stopped part way or the save fails, nothing is half-saved (no record without its cost items or photos, no document without its reminder). A failed record save now says so.
+- **Security:** with the app lock on, Recent apps no longer shows a picture of your records (Android 13+; on older Android this also blocks screenshots while the lock is on).
+- **Security:** decrypted copies made to view or share a document are deleted 5 minutes later once you're back in Kukira, instead of staying until the next app start.
+- **New:** an encrypted error log in Reminder health check lists errors Kukira caught quietly (where and what, never record contents), with Copy to send it to the developer.
+- **Build:** package versions are locked (`pubspec.lock` committed, enforced in CI) and analyzer warnings now fail the build.
+- **Tests:** save-once, weekly overdue nudges, warranty reminders, transactions with files, schema 1/2/3 to 4 upgrades, temp-file cleanup, Recent apps setting, error log and its screen.
+
 ## 0.2.2
 
 Safety release: nothing new to see, but less can go wrong with your data.
