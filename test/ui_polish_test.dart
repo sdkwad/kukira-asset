@@ -2,6 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:kukira_asset/data/db.dart';
+import 'package:kukira_asset/domain/rules.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/ui/assets.dart';
 import 'package:kukira_asset/ui/common.dart';
@@ -127,5 +129,23 @@ void main() {
     expect(find.byType(NoteBox), findsNWidgets(2));
     expect(find.textContaining(s.phoneBackupNote), findsOneWidget);
     expect(find.textContaining(s.backupNudgeNote), findsOneWidget);
+  });
+
+  testWidgets('the reminder sheet says overdue once and shows the next notification, not a past one', (tester) async {
+    setPhone(tester, height: 1600);
+    final now = DateTime.now();
+    final due = DateTime(now.year, now.month, now.day).subtract(const Duration(days: 6));
+    final r = fakeReminder(due: due);
+    await tester.pumpWidget(harness(
+      Builder(builder: (c) => TextButton(onPressed: () => showReminderSheet(c, r.id), child: const Text('open'))),
+      fakeWorld(reminders: [r]),
+    ));
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('${s.statusLabel(RStatus.overdue)} · '), findsNothing);
+    final next = planNotes([r.info], now: now, limit: 1).single.at;
+    expect(next.isAfter(now), isTrue);
+    expect(find.text(s.notifyOnAt(s.dShort(next), s.hm(next.hour, next.minute))), findsOneWidget);
   });
 }

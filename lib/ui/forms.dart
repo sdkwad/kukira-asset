@@ -24,7 +24,9 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
       if (r == null) return const SizedBox(height: 120);
       final a = w.asset(r.assetId);
       final st = remStatus(r, w);
-      final first = firstNotice(r.info);
+      // The next notification this reminder will get, from the same plan as the real schedule
+      // (not the first one, which may be long past for an overdue reminder).
+      final next = planNotes([r.info], now: DateTime.now(), hour: w.notifyHour, minute: w.notifyMinute, limit: 1).firstOrNull?.at;
       final odoReminder = r.category == 'odometer';
       return SafeArea(
         child: SingleChildScrollView(
@@ -35,9 +37,11 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
             Row(children: [AssetAvatar(a?.category ?? 'house', size: 24), const SizedBox(width: 8), Text(a?.nickname ?? '')]),
             const SizedBox(height: 14),
             Facts([
-              (s.statusWord, '${s.statusLabel(st)} · ${dueText(s, r, w)}'),
+              // An overdue reminder's due text already says it is overdue.
+              (s.statusWord, st == RStatus.overdue ? dueText(s, r, w) : '${s.statusLabel(st)} · ${dueText(s, r, w)}'),
               (s.ruleWord, ruleText(s, r)),
-              if (first != null && r.info.usesDate) (s.notifyWord, s.notifyOnAt(s.dShort(first), s.hm(w.notifyHour, w.notifyMinute))),
+              if (r.info.usesDate && r.dueDate != null)
+                (s.notifyWord, next == null ? s.noMoreNotifications : s.notifyOnAt(s.dShort(next), s.hm(next.hour, next.minute))),
               if (r.lastCompleted != null) (s.lastDoneWord, s.dLong(r.lastCompleted!)),
             ]),
             if (r.estimated) ...[

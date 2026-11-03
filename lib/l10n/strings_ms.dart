@@ -1172,4 +1172,8 @@ class StrMs extends Str {
   String get lockStatusPin => 'Hidup, dengan PIN';
   @override
   String get lockStatusPinBio => 'Hidup, dengan PIN dan cap jari';
+
+  // ------------------------------------------------ reminder sheet
+  @override
+  String get noMoreNotifications => 'Tiada lagi dijadualkan. Ia kekal di Hari ini.';
 }

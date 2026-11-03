@@ -136,10 +136,6 @@ NextDue nextAfterDone(RemInfo r, {required DateTime today, int? odometer}) {
   return NextDue(due: due, dueKm: dueKm, done: !repeats);
 }
 
-/// The day the first notification goes out (due date minus lead time), for date-based reminders.
-DateTime? firstNotice(RemInfo r) =>
-    r.usesDate && r.due != null ? dayOnly(r.due!).subtract(Duration(days: r.leadDays)) : null;
-
 /// Overdue follow-ups, in days after the due date: the next day, then weekly, four in all.
 /// After about four weeks the reminder stays on Today without more notifications.
 const overdueNudgeDays = [1, 8, 15, 22];

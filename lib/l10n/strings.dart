@@ -594,4 +594,7 @@ abstract class Str {
   String get lockStatusOff;
   String get lockStatusPin;
   String get lockStatusPinBio;
+
+  // ------------------------------------------------ reminder sheet
+  String get noMoreNotifications;
 }

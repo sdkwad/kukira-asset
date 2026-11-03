@@ -1172,4 +1172,8 @@ class StrEn extends Str {
   String get lockStatusPin => 'On, with PIN';
   @override
   String get lockStatusPinBio => 'On, with PIN and fingerprint';
+
+  // ------------------------------------------------ reminder sheet
+  @override
+  String get noMoreNotifications => 'None left to send. It stays on Today.';
 }
