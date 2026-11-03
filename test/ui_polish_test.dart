@@ -1,5 +1,6 @@
 // Checks for the 0.2.5 UI polish (from the screenshot review): each test pins one change.
 
+import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/data/db.dart';
@@ -147,6 +148,18 @@ void main() {
     final next = planNotes([r.info], now: now, limit: 1).single.at;
     expect(next.isAfter(now), isTrue);
     expect(find.text(s.notifyOnAt(s.dShort(next), s.hm(next.hour, next.minute))), findsOneWidget);
+  });
+
+  testWidgets('Today asks for the odometer once, not twice', (tester) async {
+    setPhone(tester, height: 1600);
+    final now = DateTime.now();
+    Reminder r(int id, String title, {String? category, String rule = 'fixed', int? dueKm}) => fakeReminder(id: id, title: title, due: now.subtract(const Duration(days: 2))).copyWith(category: Value(category), ruleType: rule, dueOdometer: Value(dueKm));
+    // Engine oil by km makes the car's reading matter; the monthly odometer reminder is overdue too.
+    final w = fakeWorld(reminders: [r(1, 'Engine oil', rule: 'either', dueKm: 50000), r(2, 'Update odometer', category: 'odometer')]);
+    await tester.pumpWidget(harness(const TodayScreen(), w));
+    await tester.pumpAndSettle();
+    expect(find.text('Update odometer'), findsOneWidget);
+    expect(find.text(s.updateOdoTitle('Myvi')), findsNothing);
   });
 
   testWidgets('the three summary tiles on Today are the same height', (tester) async {

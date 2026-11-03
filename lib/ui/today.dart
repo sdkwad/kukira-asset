@@ -66,6 +66,8 @@ class TodayScreen extends StatelessWidget {
       final soon = live.where((r) => remStatus(r, w) == RStatus.dueSoon).toList()..sort(remOrder(w));
       final stale = w.assets.where((a) {
         if (a.category == 'house') return false;
+        // The monthly odometer reminder already asks for this reading when it is listed above.
+        if ([...over, ...soon].any((r) => r.assetId == a.id && r.category == 'odometer')) return false;
         final hasKm = live.any((r) => r.assetId == a.id && r.info.usesKm);
         if (!hasKm) return false;
         final o = w.odometer[a.id];
