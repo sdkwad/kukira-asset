@@ -6,6 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import '../data/db.dart';
 import '../data/vault.dart';
 import '../l10n/strings.dart';
+import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import '../services/privacy.dart';
@@ -80,6 +81,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
   }
 
   void _attach() {
+    ErrorLog.attach(_db!);
     _sub?.cancel();
     _world.value = null;
     _sub = _db!.watchWorld().listen((w) {

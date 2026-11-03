@@ -1138,4 +1138,18 @@ class StrMs extends Str {
   // ------------------------------------------------ restore
   @override
   String get restoreFailed => 'Sandaran tidak dapat dipulihkan, jadi tiada apa daripadanya yang digunakan. Rekod di telefon ini kekal seperti sebelumnya.';
+
+  // ------------------------------------------------ error log
+  @override
+  String get clearErrorLog => 'Kosongkan';
+  @override
+  String get copyErrorLog => 'Salin';
+  @override
+  String get errorLogCopied => 'Log ralat disalin. Tampal dalam mesej kepada pembangun.';
+  @override
+  String get errorLogNone => 'Tiada ralat direkodkan.';
+  @override
+  String get errorLogNote => 'Ralat yang Kukira tangkap tanpa memberitahu anda, contohnya pemberitahuan yang gagal dijadualkan. Hanya tempat dan mesej ralat disimpan, bukan isi rekod anda. Log ini disulitkan dan kekal di telefon ini sehingga anda menyalinnya.';
+  @override
+  String get errorLogTitle => 'Log ralat';
 }

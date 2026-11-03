@@ -572,4 +572,12 @@ abstract class Str {
 
   // ------------------------------------------------ restore
   String get restoreFailed;
+
+  // ------------------------------------------------ error log
+  String get clearErrorLog;
+  String get copyErrorLog;
+  String get errorLogCopied;
+  String get errorLogNone;
+  String get errorLogNote;
+  String get errorLogTitle;
 }

@@ -37,7 +37,7 @@ void main() {
     'Vendor form': (const VendorFormScreen(), find.text(s.save)),
     'Vendor book': (const VendorsScreen(), find.byType(FloatingActionButton)),
     'All reminders': (const AllRemindersScreen(), find.text(s.addReminder)),
-    'Reminder health check': (const HealthScreen(), find.text(s.todayIsGuaranteed)),
+    'Reminder health check': (const HealthScreen(), find.text(s.errorLogNote)),
     'Backup and restore': (const BackupScreen(), find.text(s.backupNudgeNote)),
     'App lock': (const SecurityScreen(), find.text(s.pinForgetNote)),
     'Assets': (const AssetsScreen(), find.text(s.addAsset)),

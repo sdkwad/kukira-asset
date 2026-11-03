@@ -63,6 +63,9 @@ class SecureFiles {
     return d;
   }
 
+  /// The key that encrypts documents and photos (also used for the error log).
+  static Future<Uint8List> fileKey(AppDb db) => _fileKey(db);
+
   static Future<Uint8List> _fileKey(AppDb db) async {
     if (_key != null) return _key!;
     var k = await db.getSetting('fileKey');

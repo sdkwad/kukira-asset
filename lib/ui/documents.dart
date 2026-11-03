@@ -7,6 +7,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../data/db.dart';
 import '../domain/rules.dart';
+import '../services/error_log.dart';
 import '../services/files.dart';
 import 'common.dart';
 
@@ -41,7 +42,8 @@ Future<Picked?> pickFile(BuildContext context, String source) async {
     if (x == null) return null;
     final ext = SecureFiles.extOf(x.name);
     return Picked(await x.readAsBytes(), ext.isEmpty ? 'jpg' : ext, x.name);
-  } catch (_) {
+  } catch (e) {
+    ErrorLog.record('document.pick', e);
     if (context.mounted) snack(context, context.s.couldNotRead);
     return null;
   }
@@ -505,7 +507,8 @@ class _DocumentFormState extends State<DocumentFormScreen> {
           ));
         }
       });
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('document.save', e);
       if (mounted) {
         setState(() => _saving = false);
         snack(context, s.couldNotSave);

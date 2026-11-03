@@ -1,13 +1,13 @@
-import 'dart:typed_data';
-
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import '../data/db.dart';
 import '../data/vault.dart';
 import '../l10n/strings.dart';
 import '../services/backup.dart';
+import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import 'common.dart';
@@ -246,7 +246,68 @@ class HealthScreen extends StatelessWidget {
         ),
         const SizedBox(height: 16),
         NoteBox(s.todayIsGuaranteed),
+        const SizedBox(height: 16),
+        const ErrorLogCard(),
       ]),
+    );
+  }
+}
+
+/// Errors the app caught and kept quiet (see ErrorLog), newest first, with Copy and Clear.
+class ErrorLogCard extends StatefulWidget {
+  const ErrorLogCard({super.key});
+
+  @override
+  State<ErrorLogCard> createState() => _ErrorLogCardState();
+}
+
+class _ErrorLogCardState extends State<ErrorLogCard> {
+  late Future<List<LoggedError>> _entries = ErrorLog.entries();
+
+  Future<void> _copy(List<LoggedError> list) async {
+    final s = context.s;
+    final info = await PackageInfo.fromPlatform();
+    await Clipboard.setData(ClipboardData(text: ErrorLog.asText(list, version: '${info.version} (${info.buildNumber})')));
+    if (mounted) snack(context, s.errorLogCopied);
+  }
+
+  Future<void> _clear() async {
+    await ErrorLog.clear();
+    if (mounted) setState(() => _entries = ErrorLog.entries());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return FutureBuilder<List<LoggedError>>(
+      future: _entries,
+      builder: (c, snap) {
+        final list = snap.data ?? const <LoggedError>[];
+        return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+          SectionTitle(s.errorLogTitle, count: list.length),
+          CardList(
+            [
+              for (final e in list.reversed.take(5))
+                ListTile(
+                  dense: true,
+                  title: Text(e.where),
+                  subtitle: Text('${s.dLong(e.at)}, ${s.timeOfDay(e.at)} · ${e.what}', maxLines: 3, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            empty: s.errorLogNone,
+          ),
+          if (list.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Row(children: [
+              Expanded(child: OutlinedButton.icon(icon: const Icon(Icons.copy_outlined), label: Text(s.copyErrorLog), onPressed: () => _copy(list))),
+              const SizedBox(width: 8),
+              Expanded(child: TextButton(onPressed: _clear, child: Text(s.clearErrorLog))),
+            ]),
+          ],
+          const SizedBox(height: 8),
+          NoteBox(s.errorLogNote, icon: Icons.privacy_tip_outlined),
+        ]);
+      },
     );
   }
 }
@@ -332,7 +393,8 @@ Future<BackupContents?> pickAndOpenBackup(BuildContext context, Str s) async {
   final Uint8List? bytes;
   try {
     bytes = await Backup.pick();
-  } catch (_) {
+  } catch (e) {
+    ErrorLog.record('backup.pick', e);
     if (context.mounted) snack(context, s.couldNotRead);
     return null;
   }
@@ -352,7 +414,8 @@ Future<BackupContents?> pickAndOpenBackup(BuildContext context, Str s) async {
     } on NewerBackup {
       if (context.mounted) snack(context, s.backupTooNew);
       return null;
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('backup.open', e);
       if (context.mounted) snack(context, s.couldNotRead);
       return null;
     }
@@ -412,7 +475,8 @@ class BackupScreen extends StatelessWidget {
     bool saved;
     try {
       saved = where == 'share' ? await Backup.share(bytes, name) : await Backup.saveToFolder(bytes, name);
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('backup.save', e);
       saved = false;
     }
     if (!context.mounted) return;
@@ -431,7 +495,8 @@ class BackupScreen extends StatelessWidget {
     if (c == null || !context.mounted) return;
     try {
       await withProgress(context, s.restoring, () => Backup.restore(db, c));
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('backup.restore', e);
       // Backup.restore leaves the current records and files as they were.
       if (context.mounted) snack(context, s.restoreFailed);
       return;
@@ -535,14 +600,16 @@ class _UnreadableState extends State<UnreadableScreen> {
       final AppDb db;
       try {
         db = await Vault.resetAndOpen();
-      } catch (_) {
+      } catch (e) {
+        ErrorLog.record('vault.reset', e);
         error = s.secureStorageError;
         return null;
       }
       try {
         await Backup.restore(db, c);
         return db;
-      } catch (_) {
+      } catch (e) {
+        ErrorLog.record('backup.restore', e);
         await db.close();
         error = s.restoreFailed;
         return null;
@@ -561,7 +628,8 @@ class _UnreadableState extends State<UnreadableScreen> {
     try {
       // The unreadable records are set aside by Vault, not deleted.
       db = await Vault.resetAndOpen();
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('vault.reset', e);
       if (mounted) snack(context, widget.s.secureStorageError);
       return;
     }

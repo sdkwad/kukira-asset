@@ -5,6 +5,7 @@ import 'package:timezone/timezone.dart' as tz;
 import '../data/db.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
+import 'error_log.dart';
 
 class RebuildInfo {
   const RebuildInfo({required this.at, required this.count, this.nextAt, this.nextTitle});
@@ -34,7 +35,8 @@ class Notifier {
   static Future<bool> enabled() async {
     try {
       return await _android?.areNotificationsEnabled() ?? false;
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('notifications.enabled', e);
       return false;
     }
   }
@@ -42,7 +44,8 @@ class Notifier {
   static Future<bool> request() async {
     try {
       return await _android?.requestNotificationsPermission() ?? false;
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('notifications.request', e);
       return false;
     }
   }
@@ -64,7 +67,9 @@ class Notifier {
     final plan = planNotes(live.map((r) => r.info).toList(), now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: 49);
     try {
       await plugin.cancelAll();
-    } catch (_) {}
+    } catch (e) {
+      ErrorLog.record('notifications.cancel', e);
+    }
     final details = _details(s);
     var id = 0;
     for (final n in plan) {
@@ -108,7 +113,8 @@ class Notifier {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('notifications.schedule', e);
       // A failed schedule must never break the app. Today still shows the reminder.
     }
   }

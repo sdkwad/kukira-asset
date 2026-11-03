@@ -14,6 +14,7 @@ import 'package:sqlite3/open.dart' as sqlite_open;
 import 'package:sqlite3/sqlite3.dart';
 
 import '../domain/pin_throttle.dart';
+import '../services/error_log.dart';
 import 'db.dart';
 
 enum BootState { ready, locked, unreadable }
@@ -66,7 +67,8 @@ class Vault {
   static Future<String?> _read(String name) async {
     try {
       return await _storage.read(key: name);
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('vault.read', e);
       return null;
     }
   }
@@ -235,7 +237,8 @@ class Vault {
       try {
         await (await _bioFile(title, cancel)).write(hex);
         mode = 'pin_bio';
-      } catch (_) {
+      } catch (e) {
+        ErrorLog.record('vault.fingerprint', e);
         mode = 'pin';
       }
     }
@@ -256,7 +259,8 @@ class Vault {
         await _storage.write(key: _modeName, value: 'pin');
       }
       return true;
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('vault.fingerprint', e);
       return false;
     }
   }

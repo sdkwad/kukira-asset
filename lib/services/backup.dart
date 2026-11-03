@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
 import '../data/db.dart';
+import 'error_log.dart';
 import 'files.dart';
 
 /// Thrown when the passphrase does not open the file.
@@ -81,7 +82,8 @@ class Backup {
     for (final n in names) {
       try {
         files[n] = await SecureFiles.read(db, n);
-      } catch (_) {
+      } catch (e) {
+        ErrorLog.record('backup.missingFile', e);
         // A missing file should not stop the backup of everything else, but the user is told.
         missing++;
       }

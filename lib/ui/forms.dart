@@ -6,6 +6,7 @@ import '../domain/presets.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
 import '../services/auto_reminders.dart';
+import '../services/error_log.dart';
 import '../services/files.dart';
 import 'assets.dart';
 import 'common.dart';
@@ -647,7 +648,8 @@ class _RecordFormState extends State<RecordFormScreen> {
             status: status, reportedOn: reportedOn, photoNames: photoNames, warranty: warranty, overwrite: overwrite, msgs: msgs);
         return recordId;
       });
-    } catch (_) {
+    } catch (e) {
+      ErrorLog.record('record.save', e);
       if (mounted) {
         setState(() => _saving = false);
         snack(context, s.couldNotSave);
