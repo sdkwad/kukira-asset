@@ -767,6 +767,15 @@ class _RecordFormState extends State<RecordFormScreen> {
             ),
           ],
           if (_kind == 'incident') CheckboxListTile(contentPadding: EdgeInsets.zero, value: _claim, title: Text(s.madeClaim), onChanged: (v) => setState(() => _claim = v ?? false)),
+          // The reading keeps mileage reminders right, so it is not tucked away under More details.
+          if (vehicle) ...[
+            const SizedBox(height: 14),
+            TextField(
+              controller: _odo,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(labelText: s.odometerKm, hintText: w.odoOf(a.id)?.toString(), border: const OutlineInputBorder()),
+            ),
+          ],
           const SizedBox(height: 8),
           PhotoEditor(existing: _photosKept, added: _photosAdded, onChanged: () => setState(() {})),
           const SizedBox(height: 8),
@@ -798,14 +807,7 @@ class _RecordFormState extends State<RecordFormScreen> {
                   CheckboxListTile(contentPadding: EdgeInsets.zero, value: _saveVendor, title: Text(s.saveToVendorBook), onChanged: (v) => setState(() => _saveVendor = v ?? false)),
                 const SizedBox(height: 12),
               ],
-              if (vehicle) ...[
-                TextField(
-                  controller: _odo,
-                  keyboardType: TextInputType.number,
-                  decoration: InputDecoration(labelText: s.odometerKm, hintText: w.odoOf(a.id)?.toString(), border: const OutlineInputBorder()),
-                ),
-                const SizedBox(height: 12),
-              ] else if (!defect) ...[
+              if (!vehicle && !defect) ...[
                 TextField(controller: _area, decoration: InputDecoration(labelText: s.area, hintText: s.areaHint, border: const OutlineInputBorder())),
                 const SizedBox(height: 12),
               ],

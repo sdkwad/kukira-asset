@@ -1,9 +1,11 @@
 // Checks for the 0.2.5 UI polish (from the screenshot review): each test pins one change.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/ui/assets.dart';
 import 'package:kukira_asset/ui/common.dart';
+import 'package:kukira_asset/ui/forms.dart';
 import 'package:kukira_asset/ui/more.dart';
 import 'package:kukira_asset/ui/today.dart';
 
@@ -68,5 +70,18 @@ void main() {
       expect(find.byType(AssetBanner), findsNothing);
       expect(find.text(s.assetPhoto), findsOneWidget);
     });
+  });
+
+  testWidgets('a vehicle record shows the odometer field without opening More details', (tester) async {
+    setPhone(tester, height: 2000);
+    await tester.pumpWidget(harness(const RecordFormScreen(assetId: 2), fakeWorld()));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, s.odometerKm), findsOneWidget);
+
+    // A new form, not the car's form reused with its state.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpWidget(harness(const RecordFormScreen(assetId: 1), fakeWorld()));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, s.odometerKm), findsNothing, reason: 'a house has no odometer');
   });
 }
