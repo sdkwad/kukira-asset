@@ -356,6 +356,9 @@ abstract class Str {
   String get notifOffSub;
   String lastBackupAt(String when);
 
+  // ------------------------------------------------ Asset cards
+  String moreOverdue(int n);
+
   // ------------------------------------------------ more
   String get backupRestore;
   String get noBackupYet;

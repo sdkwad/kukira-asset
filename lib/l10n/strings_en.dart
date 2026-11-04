@@ -731,6 +731,10 @@ class StrEn extends Str {
   @override
   String lastBackupAt(String when) => 'Last backup $when';
 
+  // ------------------------------------------------ Asset cards
+  @override
+  String moreOverdue(int n) => '+$n more overdue';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Backup and restore';

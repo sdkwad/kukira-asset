@@ -36,12 +36,13 @@ void main() {
       expect(find.byType(StatusLabel), findsWidgets);
     });
 
-    testWidgets('an asset card names its next reminder without a second status', (tester) async {
+    testWidgets('an asset card names its next reminder and says how late once', (tester) async {
       setPhone(tester, height: 1600);
-      await tester.pumpWidget(harness(const AssetsScreen(), fakeWorld(reminders: [fakeReminder(due: DateTime.now().subtract(const Duration(days: 3)))])));
+      await tester.pumpWidget(harness(const AssetsScreen(), fakeWorld(reminders: [fakeReminder(due: today().subtract(const Duration(days: 3)))])));
       await tester.pumpAndSettle();
-      expect(find.text(s.overdueCount(1)), findsOneWidget);
-      expect(find.byType(StatusLabel), findsNothing);
+      expect(find.text('Road tax renewal'), findsOneWidget);
+      expect(find.text(s.lateDays(3)), findsOneWidget);
+      expect(find.byType(StatusLabel), findsOneWidget);
     });
   });
 

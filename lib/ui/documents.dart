@@ -58,8 +58,15 @@ class SecureImage extends StatelessWidget {
   final BoxFit fit;
   final int? cacheWidth;
 
+  /// Screenshots only: draws a test picture for [name] instead of reading an encrypted file,
+  /// so asset photos can be pictured without a key. Never set in the app.
+  @visibleForTesting
+  static ImageProvider Function(String name)? debugImage;
+
   @override
   Widget build(BuildContext context) {
+    final debug = debugImage;
+    if (debug != null) return Image(image: debug(name), width: size, height: size, fit: fit);
     return FutureBuilder<Uint8List>(
       future: SecureFiles.read(context.db, name),
       builder: (c, snap) {

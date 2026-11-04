@@ -223,6 +223,37 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
+/// Covers the left of a photo with the card's own colour and lets it fade out towards the
+/// right, so text on the left always reads and the photo shows on the right. The text sits
+/// on the solid part (see [photoTextWidth]); the stops keep at least 94% cover under it.
+class PhotoFade extends StatelessWidget {
+  const PhotoFade({super.key, required this.photo, required this.color, this.photoWidth = 0.7});
+  final String photo;
+  final Color color;
+  final double photoWidth;
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+        child: Stack(fit: StackFit.expand, children: [
+          Align(
+            alignment: Alignment.centerRight,
+            child: FractionallySizedBox(widthFactor: photoWidth, heightFactor: 1, child: SecureImage(photo, cacheWidth: 900)),
+          ),
+          DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [color, color, color.withValues(alpha: 0.94), color.withValues(alpha: 0)],
+                stops: const [0, 0.40, 0.55, 0.90],
+              ),
+            ),
+          ),
+        ]),
+      );
+}
+
+/// How much of a photo card's width the text may use: all of it on the solid part.
+const photoTextWidth = 0.52;
+
 class _AssetCard extends StatelessWidget {
   const _AssetCard(this.a, this.w);
   final Asset a;
@@ -231,79 +262,64 @@ class _AssetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
+    final k = context.tokens;
     final live = w.reminders.where((r) => !r.done && r.assetId == a.id).toList()..sort(remOrder(w));
     final next = live.firstOrNull;
-    final over = live.where((r) => remStatus(r, w) == RStatus.overdue).length;
-    final end = dlpEnd(w, a.id);
-    final left = end == null ? null : daysBetween(today(), end);
-    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    final photo = a.photoPath != null;
-    final badge = Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: Theme.of(context).colorScheme.error, borderRadius: BorderRadius.circular(99)),
-      child: Text(s.overdueCount(over), style: TextStyle(color: Theme.of(context).colorScheme.onError, fontWeight: FontWeight.w700, fontSize: 12)),
-    );
+    final moreOverdue = live.where((r) => remStatus(r, w) == RStatus.overdue).length - (next != null && remStatus(next, w) == RStatus.overdue ? 1 : 0);
+    final v = w.vehicles[a.id];
+    final o = w.odometer[a.id];
+    final meta = KText.meta.copyWith(color: k.textMuted);
+    final makeYear = [v?.make, v?.year?.toString()].whereType<String>().join(' · ');
+    final text = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      Text(a.nickname, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.subtitle.copyWith(color: k.text)),
+      const SizedBox(height: 2),
+      if (v != null)
+        Wrap(spacing: 6, runSpacing: 2, crossAxisAlignment: WrapCrossAlignment.center, children: [
+          Plate(v.plate),
+          Text(makeYear.isEmpty ? s.categoryName(a.category) : makeYear, style: meta),
+        ])
+      else
+        Text(assetSubtitle(context, a, w), style: meta),
+      const SizedBox(height: 10),
+      if (next == null)
+        Text(s.noRemindersYet, style: meta)
+      else ...[
+        Text(next.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, height: 20 / 14, color: k.text)),
+        const SizedBox(height: 2),
+        Builder(builder: (context) {
+          final (st, tone) = shortDue(s, next, w);
+          return StatusLabel(st, tone);
+        }),
+        if (moreOverdue > 0) Text(s.moreOverdue(moreOverdue), style: meta),
+      ],
+      if (v != null && o != null) ...[const SizedBox(height: 4), Text('${s.km(o.km)} · ${s.ago(o.date)}', style: meta)],
+    ]);
+    final photo = a.photoPath;
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          if (photo)
-            Stack(children: [
-              AssetBanner(a),
-              if (over > 0) Positioned(right: 12, top: 12, child: badge),
-            ]),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                if (!photo) ...[AssetAvatar(a.category, size: 44), const SizedBox(width: 12)],
-                Expanded(
-                  child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                    // The overdue badge sits by the name, so the plate line keeps its full width.
-                    Row(children: [
-                      Flexible(child: Text(a.nickname, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700))),
-                      if (!photo && over > 0) ...[const SizedBox(width: 8), badge],
-                    ]),
-                    const SizedBox(height: 2),
-                    Row(children: [
-                      if (w.vehicles[a.id] != null) ...[Plate(w.vehicles[a.id]!.plate), const SizedBox(width: 6)],
-                      Flexible(child: Text(assetSubtitle(context, a, w), style: TextStyle(color: muted, fontSize: 13))),
-                    ]),
-                  ]),
-                ),
-                Icon(Icons.chevron_right, color: muted),
-              ]),
-              const Divider(height: 22),
-              if (next == null)
-                Text(s.noRemindersYet, style: TextStyle(color: muted))
-              else
-                Text.rich(TextSpan(children: [
-                  TextSpan(text: '${s.nextLabel}: '),
-                  TextSpan(text: next.title, style: const TextStyle(fontWeight: FontWeight.w600)),
-                  TextSpan(text: '\n${dueText(s, next, w)}', style: TextStyle(color: muted, fontSize: 13)),
-                ])),
-              if (left != null && left > 0) ...[
-                const SizedBox(height: 8),
-                Row(children: [
-                  Icon(Icons.construction_outlined, size: 16, color: muted),
-                  const SizedBox(width: 6),
-                  Expanded(child: Text(s.dlpDaysLeftShort(left), style: TextStyle(fontSize: 13, color: muted))),
-                  const EstTag(),
+        child: photo == null
+            ? Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  AssetAvatar(a.category, size: 44),
+                  const SizedBox(width: 12),
+                  Expanded(child: text),
                 ]),
-              ],
-              if (w.vehicles[a.id] != null && w.odometer[a.id] != null) ...[
-                const SizedBox(height: 8),
-                Row(children: [
-                  Icon(Icons.speed_outlined, size: 16, color: muted),
-                  const SizedBox(width: 6),
-                  Text('${s.km(w.odometer[a.id]!.km)} · ${s.ago(w.odometer[a.id]!.date)}', style: TextStyle(fontSize: 13, color: muted)),
+              )
+            : ConstrainedBox(
+                // Full width: in the asset list's column it would otherwise shrink to its text.
+                constraints: const BoxConstraints(minHeight: 136, minWidth: double.infinity),
+                child: Stack(children: [
+                  Positioned.fill(child: PhotoFade(photo: photo, color: k.surface)),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    child: FractionallySizedBox(widthFactor: photoTextWidth, alignment: Alignment.topLeft, child: text),
+                  ),
                 ]),
-              ],
-            ]),
-          ),
-        ]),
+              ),
       ),
     );
   }

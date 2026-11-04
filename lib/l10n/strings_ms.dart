@@ -731,6 +731,10 @@ class StrMs extends Str {
   @override
   String lastBackupAt(String when) => 'Sandaran terakhir $when';
 
+  // ------------------------------------------------ Asset cards
+  @override
+  String moreOverdue(int n) => '+$n lagi lewat';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Sandaran & pemulihan';

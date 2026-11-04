@@ -68,6 +68,16 @@ Future<void> _loadFonts() async {
 /// A house, a car and a motorcycle with reminders in every state, records and a vendor.
 /// Categories are the real record category keys (lib/domain/presets.dart), so screens that
 /// match records to reminders behave as on the phone.
+/// Photos decode outside the test's fake clock; without this they would be blank.
+Future<void> _decodeImages(WidgetTester tester) async {
+  await tester.runAsync(() async {
+    for (final e in find.byType(Image).evaluate()) {
+      await precacheImage((e.widget as Image).image, e);
+    }
+  });
+  await tester.pumpAndSettle();
+}
+
 World demoWorld() {
   final now = DateTime.now();
   final t = DateTime(now.year, now.month, now.day);
@@ -97,9 +107,10 @@ World demoWorld() {
       );
   return World(
     assets: [
-      Asset(id: 1, nickname: 'Rumah Setia Alam', category: 'house', createdAt: created, updatedAt: created),
+      // Photos on the house and the motorcycle (test/fixtures); the car has none.
+      Asset(id: 1, nickname: 'Rumah Setia Alam', category: 'house', photoPath: 'house.jpg', createdAt: created, updatedAt: created),
       Asset(id: 2, nickname: 'Myvi', category: 'car', createdAt: created, updatedAt: created),
-      Asset(id: 3, nickname: 'Y15ZR', category: 'motorcycle', createdAt: created, updatedAt: created),
+      Asset(id: 3, nickname: 'Y15ZR', category: 'motorcycle', photoPath: 'moto.jpg', createdAt: created, updatedAt: created),
     ],
     houses: {1: HouseProfile(assetId: 1, propertyType: 'landed', source: 'new_from_developer', vpDate: d(-300), titleStatus: 'individual', council: 'MBSA', state: 'Selangor')},
     vehicles: {
@@ -164,6 +175,8 @@ void main() {
     await _loadFonts();
     FlutterSecureStorage.setMockInitialValues({});
     PackageInfo.setMockInitialValues(appName: 'Kukira Asset', packageName: 'app.kukira.kukira_asset', version: '0.2.4', buildNumber: '6', buildSignature: '');
+    final photos = {for (final n in ['house.jpg', 'moto.jpg']) n: MemoryImage(File('test/fixtures/$n').readAsBytesSync())};
+    SecureImage.debugImage = (name) => photos[name] ?? photos['house.jpg']!;
     if (_out.existsSync()) _out.deleteSync(recursive: true);
     _out.createSync(recursive: true);
   });
@@ -188,10 +201,12 @@ void main() {
       try {
         await tester.pumpWidget(RepaintBoundary(key: _boundary, child: _app(screen(), world ?? demoWorld(), lang: lang, brightness: brightness, textScale: textScale)));
         await tester.pumpAndSettle();
+        await _decodeImages(tester);
         // For tabs and sheets: tap through to the state to picture.
         if (act != null) {
           await act(tester);
           await tester.pumpAndSettle();
+          await _decodeImages(tester);
         }
         await expectLater(find.byKey(_boundary), matchesGoldenFile('goldens/$name.png'));
       } finally {
