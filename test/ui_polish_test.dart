@@ -18,13 +18,15 @@ void main() {
   final s = strFor('en');
 
   group('status is said once', () {
-    testWidgets('Today groups by status, so its rows have no status label', (tester) async {
+    testWidgets('a Today row says how late once, on the right, and the date below', (tester) async {
       setPhone(tester, height: 1600);
-      await tester.pumpWidget(harness(const TodayScreen(), fakeWorld(reminders: [fakeReminder(due: DateTime.now().subtract(const Duration(days: 3)))])));
+      final due = today().subtract(const Duration(days: 3));
+      await tester.pumpWidget(harness(const TodayScreen(), fakeWorld(reminders: [fakeReminder(due: due)])));
       await tester.pumpAndSettle();
-      expect(find.text(s.overdue), findsWidgets);
+      expect(find.text(s.needsAction), findsOneWidget);
       expect(find.byType(ReminderTile), findsOneWidget);
-      expect(find.byType(StatusLabel), findsNothing);
+      expect(find.text(s.lateDays(3)), findsOneWidget);
+      expect(find.text('Myvi · ${s.dueOn(s.dShort(due))}'), findsOneWidget);
     });
 
     testWidgets('mixed lists (All reminders) still show the status', (tester) async {
@@ -43,13 +45,13 @@ void main() {
     });
   });
 
-  testWidgets('no backup yet is a warning, not a green note, and the tile says Never', (tester) async {
+  testWidgets('no backup yet is a warning, not a green note', (tester) async {
     setPhone(tester, height: 1600);
     await tester.pumpWidget(harness(const TodayScreen(), fakeWorld()));
     await tester.pumpAndSettle();
-    final banner = tester.widget<InfoBanner>(find.ancestor(of: find.text(s.noBackupBanner), matching: find.byType(InfoBanner)));
-    expect(banner.warn, isTrue);
-    expect(find.text(s.neverShort), findsOneWidget);
+    final row = find.ancestor(of: find.text(s.noBackupTitle), matching: find.byType(AppRow));
+    final icon = tester.widget<IconAvatar>(find.descendant(of: row, matching: find.byType(IconAvatar)));
+    expect(icon.warn, isTrue);
     expect(find.text('–'), findsNothing);
   });
 
@@ -159,17 +161,15 @@ void main() {
     await tester.pumpWidget(harness(const TodayScreen(), w));
     await tester.pumpAndSettle();
     expect(find.text('Update odometer'), findsOneWidget);
-    expect(find.text(s.updateOdoTitle('Myvi')), findsNothing);
+    expect(find.text(s.odoReadings), findsNothing, reason: 'no second odometer section');
   });
 
-  testWidgets('the three summary tiles on Today are the same height', (tester) async {
+  testWidgets('Today sums up what is due in one sentence, in Malay too', (tester) async {
     setPhone(tester, height: 1600);
-    await tester.pumpWidget(harness(const TodayScreen(), fakeWorld(), lang: 'ms'));
+    final w = fakeWorld(reminders: [fakeReminder(due: today().subtract(const Duration(days: 2)))]);
+    await tester.pumpWidget(harness(const TodayScreen(), w, lang: 'ms'));
     await tester.pumpAndSettle();
     final ms = strFor('ms');
-    double height(String label) => tester.getSize(find.ancestor(of: find.text(label), matching: find.byType(Material)).first).height;
-    final h = height(ms.lastBackupLabel);
-    expect(height(ms.overdue), h);
-    expect(height(ms.dueSoonShort), h);
+    expect(find.text(ms.todaySummary(1, 0, 2).map((p) => p.$1).join()), findsOneWidget);
   });
 }

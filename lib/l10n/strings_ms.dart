@@ -666,6 +666,71 @@ class StrMs extends Str {
         _ => 'Dokumen',
       };
 
+  // ------------------------------------------------ Today
+  @override
+  String lateDays(int n) => 'Lewat $n hari';
+  @override
+  String lateKm(String km) => 'Lewat $km';
+  @override
+  String inDays(int n) => '$n hari';
+  @override
+  String kmToGoShort(String km) => '$km lagi';
+  @override
+  String dueOn(String date) => 'tarikh $date';
+  @override
+  String endsOn(String date) => 'tamat $date';
+  @override
+  String atKm(String km) => 'pada $km';
+  @override
+  String limitEither(String date, String km) => 'had $date atau $km';
+  @override
+  String get search => 'Cari';
+  @override
+  String get searchPrompt => 'Cari aset, rekod, peringatan dan dokumen.';
+  @override
+  List<(String, RStatus?)> todaySummary(int over, int soon, int assets) => [
+        if (over > 0) ('$over lewat', RStatus.overdue),
+        if (over > 0 && soon > 0) (' dan ', null),
+        if (soon > 0) ('$soon hampir tiba', RStatus.dueSoon),
+        (assets == 1 ? ' pada aset anda.' : ' dalam $assets aset anda.', null),
+      ];
+  @override
+  String get allClear => 'Semua terkawal';
+  @override
+  String get allClearBody => 'Tiada yang lewat atau tamat dalam 30 hari. Kukira akan beritahu anda lebih awal.';
+  @override
+  String get noRemindersCalm => 'Belum ada peringatan';
+  @override
+  String get noRemindersCalmBody => 'Tekan Tambah untuk merekod servis atau menetapkan peringatan cukai, insurans dan servis.';
+  @override
+  String get needsAction => 'Perlu tindakan';
+  @override
+  String get next30 => '30 hari akan datang';
+  @override
+  String get odoReadings => 'Bacaan odometer';
+  @override
+  String get doNow => 'Boleh dibuat sekarang';
+  @override
+  String get comingUp => 'Seterusnya';
+  @override
+  String odoRowTitle(String name) => 'Bacaan odometer $name';
+  @override
+  String get odoNeverShort => 'Belum direkod';
+  @override
+  String get noBackupTitle => 'Belum ada sandaran';
+  @override
+  String get noBackupSub => 'Rekod hanya ada dalam telefon ini';
+  @override
+  String oldBackupTitle(String ago) => 'Sandaran terakhir $ago';
+  @override
+  String get oldBackupSub => 'Rekod selepas itu belum disandarkan';
+  @override
+  String get notifOffTitle => 'Pemberitahuan dimatikan';
+  @override
+  String get notifOffSub => 'Peringatan hanya muncul bila app dibuka';
+  @override
+  String lastBackupAt(String when) => 'Sandaran terakhir $when';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Sandaran & pemulihan';

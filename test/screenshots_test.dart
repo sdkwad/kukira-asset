@@ -204,6 +204,7 @@ void main() {
 
   shot('01-hari-ini', () => const Shell());
   shot('02-hari-ini-kosong', () => const Shell(), world: _emptyWorld());
+  shot('29-hari-ini-tenang', () => const Shell(), world: _calmWorld());
   shot('03-aset', () => const AssetsScreen());
   shot('04-kereta', () => const AssetDetailScreen(assetId: 2));
   shot('05-rumah', () => const AssetDetailScreen(assetId: 1));
@@ -268,6 +269,24 @@ void main() {
   shot('30-en-today', () => const Shell(), lang: 'en');
   shot('31-en-car', () => const AssetDetailScreen(assetId: 2), lang: 'en');
   shot('32-en-more', () => const MoreScreen(), lang: 'en', height: 1100);
+}
+
+/// The demo with nothing overdue or due in 30 days, and a backup two days ago.
+World _calmWorld() {
+  final w = demoWorld();
+  final now = DateTime.now();
+  return World(
+    assets: w.assets,
+    houses: w.houses,
+    vehicles: w.vehicles,
+    reminders: w.reminders.where((r) => r.done || (r.dueDate != null && r.dueDate!.difference(now).inDays > 30)).toList(),
+    records: w.records,
+    odometer: w.odometer,
+    vendors: w.vendors,
+    documents: w.documents,
+    settings: {'lastBackup': now.subtract(const Duration(days: 2)).toIso8601String()},
+    costItems: w.costItems,
+  );
 }
 
 World _emptyWorld() => World(

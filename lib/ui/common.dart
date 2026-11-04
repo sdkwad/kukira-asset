@@ -151,6 +151,55 @@ String dueText(Str s, Reminder r, World w) {
   }
 }
 
+/// The few words on the right of a reminder row: how late it is, or how long to go, on
+/// whichever measure (date or km) is nearer. The tone comes from the same status rules.
+(String, Tone) shortDue(Str s, Reminder r, World w) {
+  final t = today();
+  final tone = toneOf(remStatus(r, w));
+  if (r.snoozedUntil != null && r.snoozedUntil!.isAfter(t)) return (s.snoozedUntil(s.dShort(r.snoozedUntil!)), tone);
+  final odo = w.odoOf(r.assetId);
+  final days = r.info.usesDate && r.dueDate != null ? daysBetween(t, r.dueDate!) : null;
+  final kmLeft = r.info.usesKm && r.dueOdometer != null && odo != null ? r.dueOdometer! - odo : null;
+  // The same levels as statusOf: 2 overdue, 1 due soon, 0 upcoming. A tie shows the date.
+  final soonDays = r.leadDays > dueSoonDays ? r.leadDays : dueSoonDays;
+  final dateLevel = days == null ? -1 : (days < 0 ? 2 : (days <= soonDays ? 1 : 0));
+  final kmLevel = kmLeft == null ? -1 : (kmLeft <= 0 ? 2 : (kmLeft <= r.leadKm ? 1 : 0));
+  final byKm = kmLeft != null && (days == null || kmLevel > dateLevel);
+  if (byKm) return (kmLeft <= 0 ? s.lateKm(s.km(-kmLeft)) : s.kmToGoShort(s.km(kmLeft)), tone);
+  if (days != null) {
+    if (days < 0) return (s.lateDays(-days), tone);
+    if (days == 0) return (s.dueToday, tone);
+    if (days == 1) return (s.dueTomorrow, tone);
+    return (s.inDays(days), tone);
+  }
+  // A mileage reminder before the first odometer reading.
+  return (r.dueOdometer == null ? '' : s.km(r.dueOdometer!), tone);
+}
+
+/// When a reminder is due, for the second line of its row: "ends 12 Nov", "by 28 Oct or
+/// 50,120 km". How late or near it is goes on the right ([shortDue]), so it is not said twice.
+String dueDetail(Str s, Reminder r, World w) {
+  if (r.snoozedUntil != null && r.snoozedUntil!.isAfter(today()) && r.dueDate != null) return s.dueOn(s.dShort(r.dueDate!));
+  final km = r.dueOdometer == null ? null : s.km(r.dueOdometer!);
+  final date = r.dueDate == null ? null : s.dShort(r.dueDate!);
+  switch (r.ruleType) {
+    case 'mileage':
+      return km == null ? '' : s.atKm(km);
+    case 'either':
+      if (date != null && km != null) return s.limitEither(date, km);
+      return km != null ? s.atKm(km) : s.dueOn(date ?? '');
+    default:
+      if (date == null) return '';
+      // A date that comes from the asset or a document is an expiry.
+      final expiry = r.autoSource != null || r.category == 'document';
+      if (r.autoSource == 'insurance') {
+        final insurer = w.vehicles[r.assetId]?.insuranceProvider;
+        if (insurer != null) return '$insurer · ${s.endsOn(date)}';
+      }
+      return expiry ? s.endsOn(date) : s.dueOn(date);
+  }
+}
+
 String ruleText(Str s, Reminder r) {
   switch (r.ruleType) {
     case 'fixed':
@@ -184,21 +233,25 @@ IconData catIcon(String category) => switch (category) {
 
 /// A neutral icon tile at the start of a row. Icons tell types apart; colour is kept for status.
 class IconAvatar extends StatelessWidget {
-  const IconAvatar(this.icon, {super.key, this.size = 36, this.tonal = false});
+  const IconAvatar(this.icon, {super.key, this.size = 36, this.tonal = false, this.warn = false});
   final IconData icon;
   final double size;
 
   /// The brand tint, for an action that creates something new.
   final bool tonal;
 
+  /// The due-soon tint, for something that needs doing (no backup yet).
+  final bool warn;
+
   @override
   Widget build(BuildContext context) {
     final k = context.tokens;
+    final (bg, fg) = warn ? (k.dueSoonBg, k.dueSoon) : (tonal ? (k.tonal, k.onTonal) : (k.iconBg, k.iconFg));
     return Container(
       width: size,
       height: size,
-      decoration: BoxDecoration(color: tonal ? k.tonal : k.iconBg, borderRadius: BorderRadius.circular(size * 0.28)),
-      child: Icon(icon, color: tonal ? k.onTonal : k.iconFg, size: size * 0.55),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(size * 0.28)),
+      child: Icon(icon, color: fg, size: size * 0.55),
     );
   }
 }
@@ -464,64 +517,28 @@ class CardList extends StatelessWidget {
   }
 }
 
+/// A reminder as a row: how late or near on the right, when it is due below, so each is said once.
 class ReminderTile extends StatelessWidget {
-  const ReminderTile(this.r, this.w, {super.key, required this.onTap, this.showAsset = true, this.showStatus = true});
+  const ReminderTile(this.r, this.w, {super.key, required this.onTap, this.showAsset = true});
   final Reminder r;
   final World w;
   final VoidCallback onTap;
   final bool showAsset;
 
-  /// False in a list that is already grouped by status (Today's Overdue and Due soon),
-  /// where the section title and the due text say it.
-  final bool showStatus;
-
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final a = w.asset(r.assetId);
+    final (status, tone) = shortDue(s, r, w);
+    final detail = dueDetail(s, r, w);
     return AppRow(
       leading: AssetAvatar(a?.category ?? 'house', size: 36),
       title: r.title,
       // The tag is about the date, which is on the second line.
       metaTag: r.estimated ? const EstTag(margin: EdgeInsets.zero) : null,
-      status: showStatus ? StatusLabel.of(remStatus(r, w)) : null,
-      meta: showAsset ? '${a?.nickname ?? ''} · ${dueText(s, r, w)}' : dueText(s, r, w),
+      status: status.isEmpty ? null : StatusLabel(status, tone),
+      meta: [if (showAsset) a?.nickname ?? '', if (detail.isNotEmpty) detail].join(' · '),
       onTap: onTap,
-    );
-  }
-}
-
-class InfoBanner extends StatelessWidget {
-  const InfoBanner({super.key, required this.icon, required this.text, this.action, this.onAction, this.warn = false});
-  final IconData icon;
-  final String text;
-  final String? action;
-  final VoidCallback? onAction;
-  final bool warn;
-
-  @override
-  Widget build(BuildContext context) {
-    final c = Theme.of(context).colorScheme;
-    final (bg, fg) = warn ? statusColors(context, RStatus.dueSoon) : (c.secondaryContainer, c.onSecondaryContainer);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(14)),
-      child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Icon(icon, color: fg, size: 20),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Text(text, style: TextStyle(color: c.onSurface)),
-            if (action != null)
-              TextButton(
-                style: TextButton.styleFrom(padding: EdgeInsets.zero, visualDensity: VisualDensity.compact),
-                onPressed: onAction,
-                child: Text(action!),
-              ),
-          ]),
-        ),
-      ]),
     );
   }
 }

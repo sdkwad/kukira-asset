@@ -325,6 +325,37 @@ abstract class Str {
   /// [action] is an AddKind name; [assetCategory] house, car or motorcycle.
   String addActionName(String action, String assetCategory);
 
+  // ------------------------------------------------ Today
+  String lateDays(int n);
+  String lateKm(String km);
+  String inDays(int n);
+  String kmToGoShort(String km);
+  String dueOn(String date);
+  String endsOn(String date);
+  String atKm(String km);
+  String limitEither(String date, String km);
+  String get search;
+  String get searchPrompt;
+  List<(String, RStatus?)> todaySummary(int over, int soon, int assets);
+  String get allClear;
+  String get allClearBody;
+  String get noRemindersCalm;
+  String get noRemindersCalmBody;
+  String get needsAction;
+  String get next30;
+  String get odoReadings;
+  String get doNow;
+  String get comingUp;
+  String odoRowTitle(String name);
+  String get odoNeverShort;
+  String get noBackupTitle;
+  String get noBackupSub;
+  String oldBackupTitle(String ago);
+  String get oldBackupSub;
+  String get notifOffTitle;
+  String get notifOffSub;
+  String lastBackupAt(String when);
+
   // ------------------------------------------------ more
   String get backupRestore;
   String get noBackupYet;

@@ -130,28 +130,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
           ),
         ]);
       } else {
-        final as = w.assets.where((a) => '${a.nickname} ${w.vehicles[a.id]?.plate ?? ''} ${assetSubtitle(context, a, w)}'.toLowerCase().contains(q)).toList();
-        final rs = w.reminders.where((r) => !r.done && r.title.toLowerCase().contains(q)).toList();
-        final recs = w.records.where((r) => '${r.title} ${r.vendorName ?? ''} ${r.area ?? ''} ${r.notes ?? ''}'.toLowerCase().contains(q)).toList();
-        final docs = w.files.where((d) => '${d.title} ${s.docTypeName(d.docType)}'.toLowerCase().contains(q)).toList();
-        body = Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-          SectionTitle(s.assetsTab, count: as.length),
-          CardList([
-            for (final a in as)
-              ListTile(
-                leading: AssetAvatar(a.category, size: 36),
-                title: Text(a.nickname),
-                subtitle: Text(assetSubtitle(context, a, w)),
-                onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
-              ),
-          ], empty: s.noMatch),
-          SectionTitle(s.remindersTab, count: rs.length),
-          CardList([for (final r in rs) ReminderTile(r, w, onTap: () => showReminderSheet(context, r.id))], empty: s.noMatch),
-          SectionTitle(s.recordsTitle, count: recs.length),
-          CardList([for (final r in recs) RecordTile(r, w, showAsset: true)], empty: s.noMatch),
-          SectionTitle(s.documentsTab, count: docs.length),
-          CardList([for (final d in docs) DocTile(d, w, showAsset: true)], empty: s.noMatch),
-        ]);
+        body = SearchResults(q, w);
       }
       return SafeScaffold(
         floatingActionButton: const AddButton(),
@@ -168,6 +147,77 @@ class _AssetsScreenState extends State<AssetsScreen> {
             body,
           ]),
         ),
+      );
+    });
+  }
+}
+
+/// Assets, reminders, records and documents matching [q] (lower case), in that order.
+/// Shown under the search on Assets and on the search screen opened from Today.
+class SearchResults extends StatelessWidget {
+  const SearchResults(this.q, this.w, {super.key});
+  final String q;
+  final World w;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final as = w.assets.where((a) => '${a.nickname} ${w.vehicles[a.id]?.plate ?? ''} ${assetSubtitle(context, a, w)}'.toLowerCase().contains(q)).toList();
+    final rs = w.reminders.where((r) => !r.done && r.title.toLowerCase().contains(q)).toList();
+    final recs = w.records.where((r) => '${r.title} ${r.vendorName ?? ''} ${r.area ?? ''} ${r.notes ?? ''}'.toLowerCase().contains(q)).toList();
+    final docs = w.files.where((d) => '${d.title} ${s.docTypeName(d.docType)}'.toLowerCase().contains(q)).toList();
+    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      SectionTitle(s.assetsTab, count: as.length),
+      CardList([
+        for (final a in as)
+          AppRow(
+            leading: AssetAvatar(a.category, size: 36),
+            title: a.nickname,
+            meta: assetSubtitle(context, a, w),
+            onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
+          ),
+      ], empty: s.noMatch),
+      SectionTitle(s.remindersTab, count: rs.length),
+      CardList([for (final r in rs) ReminderTile(r, w, onTap: () => showReminderSheet(context, r.id))], empty: s.noMatch),
+      SectionTitle(s.recordsTitle, count: recs.length),
+      CardList([for (final r in recs) RecordTile(r, w, showAsset: true)], empty: s.noMatch),
+      SectionTitle(s.documentsTab, count: docs.length),
+      CardList([for (final d in docs) DocTile(d, w, showAsset: true)], empty: s.noMatch),
+    ]);
+  }
+}
+
+/// Search across everything, opened from the search button on Today.
+class SearchScreen extends StatefulWidget {
+  const SearchScreen({super.key});
+
+  @override
+  State<SearchScreen> createState() => _SearchScreenState();
+}
+
+class _SearchScreenState extends State<SearchScreen> {
+  String _q = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return WorldView(builder: (context, w) {
+      final q = _q.trim().toLowerCase();
+      return SafeScaffold(
+        appBar: AppBar(
+          title: TextField(
+            autofocus: true,
+            textInputAction: TextInputAction.search,
+            decoration: InputDecoration(hintText: s.searchHint, border: InputBorder.none),
+            onChanged: (v) => setState(() => _q = v),
+          ),
+        ),
+        body: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
+          if (q.isEmpty)
+            Padding(padding: const EdgeInsets.fromLTRB(4, 20, 4, 0), child: Text(s.searchPrompt, style: KText.meta.copyWith(color: context.tokens.textMuted)))
+          else
+            SearchResults(q, w),
+        ]),
       );
     });
   }

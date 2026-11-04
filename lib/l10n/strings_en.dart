@@ -666,6 +666,71 @@ class StrEn extends Str {
         _ => 'Document',
       };
 
+  // ------------------------------------------------ Today
+  @override
+  String lateDays(int n) => n == 1 ? '1 day late' : '$n days late';
+  @override
+  String lateKm(String km) => '$km over';
+  @override
+  String inDays(int n) => n == 1 ? '1 day' : '$n days';
+  @override
+  String kmToGoShort(String km) => '$km to go';
+  @override
+  String dueOn(String date) => 'due $date';
+  @override
+  String endsOn(String date) => 'ends $date';
+  @override
+  String atKm(String km) => 'at $km';
+  @override
+  String limitEither(String date, String km) => 'by $date or $km';
+  @override
+  String get search => 'Search';
+  @override
+  String get searchPrompt => 'Search assets, records, reminders and documents.';
+  @override
+  List<(String, RStatus?)> todaySummary(int over, int soon, int assets) => [
+        if (over > 0) ('$over overdue', RStatus.overdue),
+        if (over > 0 && soon > 0) (' and ', null),
+        if (soon > 0) ('$soon due soon', RStatus.dueSoon),
+        (assets == 1 ? ' on your asset.' : ' across your $assets assets.', null),
+      ];
+  @override
+  String get allClear => 'All in order';
+  @override
+  String get allClearBody => 'Nothing is overdue or due in the next 30 days. Kukira will remind you ahead of time.';
+  @override
+  String get noRemindersCalm => 'No reminders yet';
+  @override
+  String get noRemindersCalmBody => 'Tap Add to record a service or set reminders for tax, insurance and servicing.';
+  @override
+  String get needsAction => 'Needs action';
+  @override
+  String get next30 => 'Next 30 days';
+  @override
+  String get odoReadings => 'Odometer readings';
+  @override
+  String get doNow => 'You can do now';
+  @override
+  String get comingUp => 'Coming up';
+  @override
+  String odoRowTitle(String name) => '$name odometer reading';
+  @override
+  String get odoNeverShort => 'Not recorded yet';
+  @override
+  String get noBackupTitle => 'No backup yet';
+  @override
+  String get noBackupSub => 'Your records are only on this phone';
+  @override
+  String oldBackupTitle(String ago) => 'Last backup $ago';
+  @override
+  String get oldBackupSub => 'Newer records are not backed up';
+  @override
+  String get notifOffTitle => 'Notifications are off';
+  @override
+  String get notifOffSub => 'Reminders only show when you open the app';
+  @override
+  String lastBackupAt(String when) => 'Last backup $when';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Backup and restore';
