@@ -173,7 +173,9 @@ class SecureFiles {
   /// drawn in the same frame instead of after a decrypt.
   static Uint8List? cached(String name) => _cache[name];
 
-  static Future<Uint8List> read(AppDb db, String name) async {
+  /// The decrypted bytes of stored file [name]. Small files are kept in memory for the next
+  /// read, unless [keep] is false (a backup reads every file once).
+  static Future<Uint8List> read(AppDb db, String name, {bool keep = true}) async {
     _checked(name);
     final hit = _cache[name];
     if (hit != null) return hit;
@@ -184,7 +186,7 @@ class SecureFiles {
       final box = SecretBox.fromConcatenation(sealed, nonceLength: 12, macLength: 16);
       return Uint8List.fromList(await AesGcm.with256bits().decrypt(box, secretKey: SecretKey(key)));
     });
-    if (clear.length < 3 * 1024 * 1024) {
+    if (keep && clear.length < 3 * 1024 * 1024) {
       if (_cache.length > 40) _cache.remove(_cache.keys.first);
       _cache[name] = clear;
     }
@@ -245,6 +247,17 @@ class SecureFiles {
   /// How long a decrypted copy may stay for the phone's viewer or a share target to read it.
   static const tempLifetime = Duration(minutes: 5);
 
+  /// The folder a new backup file is written into before it is saved or shared. It holds
+  /// only encrypted backups, and is not swept while the app runs (the save dialog may stay
+  /// open for long): the file is removed after it is saved, and the folder at start-up.
+  static const outgoingFolder = 'backup-out';
+
+  static Future<File> outgoing(String fileName) async {
+    final dir = Directory(p.join((await getTemporaryDirectory()).path, outgoingFolder));
+    if (!await dir.exists()) await dir.create(recursive: true);
+    return File(p.join(dir.path, fileName));
+  }
+
   /// The folders that hold decrypted copies for another app: Kukira's own, for the viewer
   /// and the share sheet, and the one the share sheet copies every shared file into
   /// (share_plus empties it only at the next share, so a shared document stayed there).
@@ -260,7 +273,7 @@ class SecureFiles {
     } catch (_) {
       return;
     }
-    for (final folder in handOverFolders) {
+    for (final folder in [...handOverFolders, if (olderThan == null) outgoingFolder]) {
       try {
         final dir = Directory(p.join(tmp, folder));
         if (!await dir.exists()) continue;

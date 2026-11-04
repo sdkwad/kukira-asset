@@ -1,3 +1,5 @@
+import 'dart:io' show File;
+
 import 'package:app_settings/app_settings.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -398,26 +400,37 @@ Future<String?> _askPassphrase(BuildContext context, Str s, {String? error}) {
 }
 
 /// Pick a file, ask for the passphrase (retrying on a wrong one) and show a preview.
-/// Returns the contents only when the user confirms the replacement.
+/// Returns the contents only when the user confirms the replacement. The picked file is
+/// still needed then (a format 3 backup is read again while restoring); the caller removes
+/// it with [SecureFiles.clearPickerCopies] once the restore is done.
 Future<BackupContents?> pickAndOpenBackup(BuildContext context, Str s) async {
-  final Uint8List? bytes;
+  final c = await _pickAndOpen(context, s);
+  if (c == null) await SecureFiles.clearPickerCopies();
+  return c;
+}
+
+Future<BackupContents?> _pickAndOpen(BuildContext context, Str s) async {
+  final File? file;
   try {
-    bytes = await Backup.pick();
+    file = await Backup.pick();
   } catch (e) {
     ErrorLog.record('backup.pick', e);
     if (context.mounted) snack(context, s.couldNotRead);
     return null;
   }
-  if (bytes == null || !context.mounted) return null;
+  if (file == null || !context.mounted) return null;
   String? error;
   BackupContents? contents;
   while (contents == null) {
     final pass = await _askPassphrase(context, s, error: error);
     if (pass == null || !context.mounted) return null;
     try {
-      contents = await withProgress(context, s.unlocking, () => Backup.open(bytes!, pass));
+      contents = await withProgress(context, s.unlocking, () => Backup.openFile(file!, pass));
     } on WrongPassphrase {
       error = s.wrongPassphrase;
+    } on DamagedBackup {
+      if (context.mounted) snack(context, s.backupDamaged);
+      return null;
     } on NotABackup {
       if (context.mounted) snack(context, s.notABackup);
       return null;
@@ -469,8 +482,10 @@ Future<bool> restoreBackup(BuildContext context) async {
   } catch (e) {
     ErrorLog.record('backup.restore', e);
     // Backup.restore leaves the current records and files as they were.
-    if (context.mounted) snack(context, s.restoreFailed);
+    if (context.mounted) snack(context, e is DamagedBackup ? s.backupDamaged : s.restoreFailed);
     return false;
+  } finally {
+    await SecureFiles.clearPickerCopies();
   }
   if (context.mounted) snack(context, s.restoredFrom(s.dLong(c.created)));
   return true;
@@ -519,22 +534,34 @@ class BackupScreen extends StatelessWidget {
     final db = context.db;
     final pass = await _askNewPassphrase(context);
     if (pass == null || !context.mounted) return;
-    final backup = await withProgress(context, s.encrypting, () => Backup.create(db, pass));
-    final bytes = backup.bytes;
-    if (!context.mounted) return;
-    final name = Backup.fileName(DateTime.now());
-    final where = await chooseBackupPlace(context);
-    if (where == null || !context.mounted) return;
+    final BackupFile backup;
+    try {
+      backup = await withProgress(context, s.encrypting, () => Backup.create(db, pass));
+    } catch (e) {
+      // Such as a phone too full for the file.
+      ErrorLog.record('backup.create', e);
+      if (context.mounted) snack(context, s.backupNotSaved);
+      return;
+    }
+    final name = backup.name;
+    final where = context.mounted ? await chooseBackupPlace(context) : null;
+    if (where == null || !context.mounted) {
+      await backup.discard();
+      return;
+    }
     String? place;
     try {
       // Folders on the phone, Drive, OneDrive and Dropbox are all places in Android's own save
       // dialog: a cloud app does the upload, so Kukira needs no internet permission for it.
       // Where the file went is what the dialog answers, not what was picked above: the
       // dialog often opens at Downloads, and saving there keeps the file on the phone.
-      place = where == 'share' ? (await Backup.share(bytes, name) ? 'share' : null) : await Backup.saveWithDialog(bytes, name);
+      place = where == 'share' ? (await Backup.share(backup) ? 'share' : null) : await Backup.saveWithDialog(backup);
     } catch (e) {
       ErrorLog.record('backup.save', e);
       place = null;
+    } finally {
+      // Saved, shared (the share sheet keeps its own copy) or not: this copy is done with.
+      await backup.discard();
     }
     if (!context.mounted) return;
     if (place == null) {
@@ -662,8 +689,10 @@ class _UnreadableState extends State<UnreadableScreen> {
       } catch (e) {
         ErrorLog.record('backup.restore', e);
         await db.close();
-        error = s.restoreFailed;
+        error = e is DamagedBackup ? s.backupDamaged : s.restoreFailed;
         return null;
+      } finally {
+        await SecureFiles.clearPickerCopies();
       }
     });
     if (!mounted) return;

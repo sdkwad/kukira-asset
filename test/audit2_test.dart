@@ -218,15 +218,16 @@ void main() {
       });
       addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(Backup.saveChannel, null));
 
-      final bytes = Uint8List.fromList([1, 2, 3]);
-      expect(await Backup.saveWithDialog(bytes, 'kukira-backup-2026-11-05.kukira'), 'cloud');
+      // The file goes by its path, so a large backup is never held in memory to be sent.
+      final file = BackupFile(File('/data/cache/backup-out/kukira-backup-2026-11-05.kukira'), 0);
+      expect(await Backup.saveWithDialog(file), 'cloud');
       expect(calls.single.method, 'createDocument');
-      expect(calls.single.arguments, {'name': 'kukira-backup-2026-11-05.kukira', 'bytes': bytes});
+      expect(calls.single.arguments, {'name': 'kukira-backup-2026-11-05.kukira', 'path': file.file.path});
 
       answer = 'com.android.providers.downloads.documents';
-      expect(await Backup.saveWithDialog(bytes, 'b.kukira'), 'folder');
+      expect(await Backup.saveWithDialog(file), 'folder');
       answer = null;
-      expect(await Backup.saveWithDialog(bytes, 'c.kukira'), isNull, reason: 'backed out');
+      expect(await Backup.saveWithDialog(file), isNull, reason: 'backed out');
     });
 
     test('picking the cloud and saving on the phone is pointed out', () {

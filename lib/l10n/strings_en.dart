@@ -1507,4 +1507,8 @@ class StrEn extends Str {
   String get hideNoteDetailsOn => 'Notifications only say there is a reminder. Asset names, plates and titles do not show on the lock screen or a smartwatch.';
   @override
   String get hideNoteDetailsOff => 'Notifications show the reminder and its asset, also on the lock screen if the phone allows it.';
+
+  // ------------------------------------------------ Large backups
+  @override
+  String get backupDamaged => 'This backup file is damaged or incomplete, so nothing from it was restored. The records on this phone are as they were. Try another copy of the backup.';
 }

@@ -8,13 +8,15 @@ import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
+import java.io.File
+import java.io.FileInputStream
 import java.io.IOException
 
 // FragmentActivity is needed for the fingerprint prompt (biometric_storage).
 class MainActivity : FlutterFragmentActivity() {
-    // The backup waiting for the save dialog to answer.
+    // The backup waiting for the save dialog to answer: its file, copied once a place is picked.
     private var saveResult: MethodChannel.Result? = null
-    private var saveBytes: ByteArray? = null
+    private var savePath: String? = null
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
@@ -35,7 +37,7 @@ class MainActivity : FlutterFragmentActivity() {
         }
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kukira/save").setMethodCallHandler { call, result ->
             when (call.method) {
-                "createDocument" -> createDocument(call.argument<String>("name"), call.argument<ByteArray>("bytes"), result)
+                "createDocument" -> createDocument(call.argument<String>("name"), call.argument<String>("path"), result)
                 else -> result.notImplemented()
             }
         }
@@ -46,9 +48,9 @@ class MainActivity : FlutterFragmentActivity() {
     // file, so Kukira itself never goes online. Answers the authority of the place the file
     // went to, so the app can tell the phone from the cloud, or null when the owner backed out.
     @Suppress("DEPRECATION")
-    private fun createDocument(name: String?, bytes: ByteArray?, result: MethodChannel.Result) {
-        if (name == null || bytes == null) {
-            result.error("args", "A name and the bytes are needed", null)
+    private fun createDocument(name: String?, path: String?, result: MethodChannel.Result) {
+        if (name == null || path == null) {
+            result.error("args", "A name and the file are needed", null)
             return
         }
         if (saveResult != null) {
@@ -60,12 +62,12 @@ class MainActivity : FlutterFragmentActivity() {
             .setType("application/octet-stream")
             .putExtra(Intent.EXTRA_TITLE, name)
         saveResult = result
-        saveBytes = bytes
+        savePath = path
         try {
             startActivityForResult(intent, SAVE_REQUEST)
         } catch (e: Exception) {
             saveResult = null
-            saveBytes = null
+            savePath = null
             result.error("noDialog", e.message, null)
         }
     }
@@ -75,19 +77,20 @@ class MainActivity : FlutterFragmentActivity() {
         super.onActivityResult(requestCode, resultCode, data)
         if (requestCode != SAVE_REQUEST) return
         val result = saveResult ?: return
-        val bytes = saveBytes
+        val path = savePath
         saveResult = null
-        saveBytes = null
+        savePath = null
         val uri = data?.data
-        if (resultCode != Activity.RESULT_OK || uri == null || bytes == null) {
+        if (resultCode != Activity.RESULT_OK || uri == null || path == null) {
             result.success(null)
             return
         }
-        // Written away from the main thread: a cloud app can take a while to accept the file.
+        // Copied a piece at a time, away from the main thread: a backup can be large, and a
+        // cloud app can take a while to accept it.
         Thread {
             try {
                 val out = contentResolver.openOutputStream(uri) ?: throw IOException("No stream for the file")
-                out.use { it.write(bytes) }
+                out.use { o -> FileInputStream(File(path)).use { it.copyTo(o, 64 * 1024) } }
                 runOnUiThread { result.success(uri.authority ?: "") }
             } catch (e: Exception) {
                 runOnUiThread { result.error("write", e.message, null) }

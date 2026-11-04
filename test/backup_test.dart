@@ -66,7 +66,7 @@ void main() {
     test('brings back the backup files and removes files nothing uses any more', () async {
       final phone = await sampleDb();
       final geran = await attach(phone, 'Geran', [1, 1, 1]);
-      final backup = await Backup.open((await Backup.create(phone, pass)).bytes, pass);
+      final backup = await Backup.openFile((await Backup.create(phone, pass)).file, pass);
 
       // After the backup: a new document, and a leftover from an interrupted write.
       final later = await attach(phone, 'Later receipt', [2, 2, 2]);
@@ -103,12 +103,12 @@ void main() {
     });
   });
 
-  test('format 2: a backup restores to exactly the same records', () async {
+  test('format 3: a backup restores to exactly the same records', () async {
     final a = await sampleDb(autoSource: 'roadTax');
     final file = await Backup.create(a, pass);
     expect(file.missing, 0);
 
-    final c = await Backup.open(file.bytes, pass);
+    final c = await Backup.openFile(file.file, pass);
     expect(c.schema, AppDb.latestSchema);
     expect(c.count('assets'), 1);
     expect(c.count('costItems'), 2);
@@ -120,11 +120,27 @@ void main() {
     await b.close();
   });
 
+  test('format 2 (0.2.0 to 0.2.8 build 15): a backup still restores to exactly the same records', () async {
+    final a = await sampleDb(autoSource: 'roadTax');
+    final body = {'created': DateTime(2026, 10, 30).toIso8601String(), 'schema': AppDb.latestSchema, 'tables': await a.exportTables()};
+    final f = File('${storage.path}/old.kukira')..writeAsBytesSync(await Backup.pack(body, {'abc.pdf': Uint8List.fromList([4, 5])}, pass));
+
+    final c = await Backup.openFile(f, pass);
+    expect(c.files.keys, ['abc.pdf']);
+    final b = AppDb(NativeDatabase.memory());
+    await Backup.restore(b, c);
+    expect(await b.exportTables(), await a.exportTables());
+    await a.close();
+    await b.close();
+  });
+
   test('a wrong passphrase opens nothing', () async {
     final a = await sampleDb();
     final file = await Backup.create(a, pass);
-    await expectLater(Backup.open(file.bytes, 'wrong passphrase'), throwsA(isA<WrongPassphrase>()));
+    await expectLater(Backup.openFile(file.file, 'wrong passphrase'), throwsA(isA<WrongPassphrase>()));
     await expectLater(Backup.open(Uint8List.fromList(utf8.encode('hello')), pass), throwsA(isA<NotABackup>()));
+    final hello = File('${storage.path}/hello.kukira')..writeAsStringSync('hello');
+    await expectLater(Backup.openFile(hello, pass), throwsA(isA<NotABackup>()));
     await a.close();
   });
 
@@ -195,9 +211,11 @@ void main() {
 
     final file = await Backup.create(a, pass);
     expect(file.missing, 1);
-    final c = await Backup.open(file.bytes, pass);
-    expect(c.files.keys.toList(), [kept]);
-    expect(c.files[kept], [1, 2, 3]);
+    final c = await Backup.openFile(file.file, pass);
+    final got = <String, Uint8List>{};
+    await c.eachFile((name, bytes) async => got[name] = bytes);
+    expect(got.keys.toList(), [kept]);
+    expect(got[kept], [1, 2, 3]);
     expect(c.count('documents'), 2);
     await a.close();
   });

@@ -780,4 +780,7 @@ abstract class Str {
   String get hideNoteDetails;
   String get hideNoteDetailsOn;
   String get hideNoteDetailsOff;
+
+  // ------------------------------------------------ Large backups
+  String get backupDamaged;
 }

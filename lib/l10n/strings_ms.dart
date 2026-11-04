@@ -1504,4 +1504,8 @@ class StrMs extends Str {
   String get hideNoteDetailsOn => 'Notifikasi hanya berkata ada peringatan. Nama aset, nombor plat dan tajuk tidak keluar pada skrin kunci atau jam pintar.';
   @override
   String get hideNoteDetailsOff => 'Notifikasi menunjukkan peringatan dan asetnya, juga pada skrin kunci jika telefon membenarkannya.';
+
+  // ------------------------------------------------ Large backups
+  @override
+  String get backupDamaged => 'Fail sandaran ini rosak atau tidak lengkap, jadi tiada apa daripadanya yang dipulihkan. Rekod di telefon ini kekal seperti sebelumnya. Cuba salinan sandaran yang lain.';
 }
