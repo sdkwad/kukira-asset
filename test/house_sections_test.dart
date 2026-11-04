@@ -83,6 +83,23 @@ void main() {
     expect(find.text(s.tenancyStart), findsNothing);
   });
 
+  testWidgets('the rent day is picked from a grid of days, and can be cleared', (tester) async {
+    await open(tester, const HouseProfile(assetId: 1, propertyType: 'landed', occupancy: 'rented'));
+    expect(find.text(s.notSet), findsOneWidget);
+    await tester.tap(find.byType(DayOfMonthField));
+    await tester.pumpAndSettle();
+    expect(find.text('31'), findsOneWidget);
+    await tester.tap(find.text('12'));
+    await tester.pumpAndSettle();
+    expect(find.text(s.rentDueDay(12)), findsOneWidget);
+
+    await tester.tap(find.byType(DayOfMonthField));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(s.clear));
+    await tester.pumpAndSettle();
+    expect(find.text(s.notSet), findsOneWidget);
+  });
+
   testWidgets('saving a subsale past the DLP clears its VP date, and keeps the tenancy when no longer rented', (tester) async {
     setPhone(tester, height: 3200);
     final db = AppDb(NativeDatabase.memory());

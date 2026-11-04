@@ -9,7 +9,7 @@
 
 import 'dart:io';
 
-import 'package:drift/drift.dart' show driftRuntimeOptions;
+import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -28,6 +28,7 @@ import 'package:kukira_asset/ui/forms.dart';
 import 'package:kukira_asset/ui/lock.dart';
 import 'package:kukira_asset/ui/more.dart';
 import 'package:kukira_asset/ui/vendors.dart';
+import 'package:kukira_asset/ui/welcome.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 
 import 'helpers.dart';
@@ -144,12 +145,12 @@ World demoWorld() {
   );
 }
 
-Widget _app(Widget home, World w, {required String lang, required Brightness brightness, double textScale = 1}) => AppScope(
+Widget _app(Widget home, World w, {required String lang, required Brightness brightness, double textScale = 1, bool? notif = true}) => AppScope(
       db: AppDb(NativeDatabase.memory()),
       s: strFor(lang),
       lang: lang,
       world: ValueNotifier<World?>(w),
-      notif: ValueNotifier<bool?>(true),
+      notif: ValueNotifier<bool?>(notif),
       rebuildInfo: ValueNotifier(null),
       setLang: (_) {},
       rebuildNow: () async {},
@@ -192,6 +193,7 @@ void main() {
       Brightness brightness = Brightness.light,
       double height = phoneHeight,
       double textScale = 1,
+      bool? notif = true,
       Future<void> Function(WidgetTester t)? act}) {
     testWidgets(name, skip: !_enabled, (tester) async {
       setPhone(tester, height: height);
@@ -199,7 +201,7 @@ void main() {
       final previous = FlutterError.onError;
       FlutterError.onError = (d) => _problems.add('$name: ${d.exceptionAsString().split('\n').first}');
       try {
-        await tester.pumpWidget(RepaintBoundary(key: _boundary, child: _app(screen(), world ?? demoWorld(), lang: lang, brightness: brightness, textScale: textScale)));
+        await tester.pumpWidget(RepaintBoundary(key: _boundary, child: _app(screen(), world ?? demoWorld(), lang: lang, brightness: brightness, textScale: textScale, notif: notif)));
         await tester.pumpAndSettle();
         await _decodeImages(tester);
         // For tabs and sheets: tap through to the state to picture.
@@ -284,6 +286,34 @@ void main() {
   shot('30-en-today', () => const Shell(), lang: 'en');
   shot('31-en-car', () => const AssetDetailScreen(assetId: 2), lang: 'en');
   shot('32-en-more', () => const MoreScreen(), lang: 'en', height: 1100);
+
+  // 0.2.7c: the first run, pick lists, the house form by situation and the photo row.
+  shot('60-sambutan', () => const WelcomeScreen(), world: _emptyWorld());
+  shot('61-sediakan', () => const SetupScreen(), world: _emptyWorld(), notif: false);
+  shot('62-ubah-rumah-sewa', () => const HouseEditScreen(assetId: 1), world: _rentedSubsale(), height: 2700);
+  shot('63-pilih-model', () => const VehicleEditScreen(assetId: 2), act: (t) async {
+    final field = find.widgetWithText(TextField, ms.model);
+    await t.tap(field);
+    await t.enterText(field, 'A');
+  });
+  shot('64-senarai-pbt', () => const HouseEditScreen(assetId: 1), act: (t) async {
+    final field = find.widgetWithText(TextField, ms.council);
+    await t.scrollUntilVisible(field, 200, scrollable: find.byType(Scrollable).first);
+    await t.pumpAndSettle();
+    await t.tap(find.descendant(of: field, matching: find.byTooltip(ms.showList)));
+  });
+  shot('65-insurans', () => const VehicleEditScreen(assetId: 2), act: (t) async {
+    final field = find.widgetWithText(TextField, ms.insurer);
+    await t.scrollUntilVisible(field, 200, scrollable: find.byType(Scrollable).first);
+    await t.pumpAndSettle();
+    await t.tap(field);
+    await t.enterText(field, 'ta');
+  });
+  shot('66-tambah-aset-gambar', () => const AddAssetScreen(), act: tap(ms.categoryName('motorcycle')));
+  shot('67-besar-ubah-rumah', () => const HouseEditScreen(assetId: 1), world: _rentedSubsale(), textScale: 1.3, height: 3300);
+  shot('68-besar-sambutan', () => const WelcomeScreen(), world: _emptyWorld(), textScale: 1.3);
+  shot('69-gelap-sambutan', () => const WelcomeScreen(), world: _emptyWorld(), brightness: Brightness.dark);
+  shot('70-en-sediakan', () => const SetupScreen(), world: _emptyWorld(), lang: 'en', notif: false);
 }
 
 /// The demo with nothing overdue or due in 30 days, and a backup two days ago.
@@ -300,6 +330,32 @@ World _calmWorld() {
     vendors: w.vendors,
     documents: w.documents,
     settings: {'lastBackup': now.subtract(const Duration(days: 2)).toIso8601String()},
+    costItems: w.costItems,
+  );
+}
+
+/// The demo house as a subsale still in the developer's DLP, rented out.
+World _rentedSubsale() {
+  final w = demoWorld();
+  final now = DateTime.now();
+  final h = w.houses[1]!.copyWith(
+    source: const Value('subsale'),
+    occupancy: const Value('rented'),
+    tenancyStart: Value(now.subtract(const Duration(days: 240))),
+    tenancyEnd: Value(now.add(const Duration(days: 125))),
+    rentDueDay: const Value(5),
+    address: const Value('No. 8, Jalan Setia Murni U13/2, Setia Alam'),
+  );
+  return World(
+    assets: w.assets,
+    houses: {1: h},
+    vehicles: w.vehicles,
+    reminders: w.reminders,
+    records: w.records,
+    odometer: w.odometer,
+    vendors: w.vendors,
+    documents: w.documents,
+    settings: w.settings,
     costItems: w.costItems,
   );
 }

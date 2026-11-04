@@ -1647,17 +1647,7 @@ class _HouseEditState extends State<HouseEditScreen> {
             const SizedBox(height: 12),
             DateField(label: s.tenancyEnd, value: _tenancyEnd, onChanged: (d) => setState(() => _tenancyEnd = d)),
             const SizedBox(height: 12),
-            DropdownButtonFormField<int?>(
-              value: _rentDay,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: s.rentDue, border: const OutlineInputBorder()),
-              items: [
-                DropdownMenuItem<int?>(value: null, child: Text(s.notSet, maxLines: 1, overflow: TextOverflow.ellipsis)),
-                for (var d = 1; d <= 31; d++)
-                  DropdownMenuItem<int?>(value: d, child: Text(s.rentDueDay(d), maxLines: 1, overflow: TextOverflow.ellipsis)),
-              ],
-              onChanged: (v) => setState(() => _rentDay = v),
-            ),
+            DayOfMonthField(label: s.rentDue, value: _rentDay, onChanged: (v) => setState(() => _rentDay = v)),
             Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.tenancyNote, style: help)),
           ],
 
@@ -1722,6 +1712,73 @@ class _HouseEditState extends State<HouseEditScreen> {
         ]),
       );
     });
+  }
+}
+
+/// A day of the month (rent due on the 5th), picked from a grid of 1 to 31. It looks and
+/// sizes like DateField, so it stays readable at large text sizes.
+class DayOfMonthField extends StatelessWidget {
+  const DayOfMonthField({super.key, required this.label, required this.value, required this.onChanged});
+  final String label;
+  final int? value;
+  final ValueChanged<int?> onChanged;
+
+  Future<void> _pick(BuildContext context) async {
+    final s = context.s;
+    final k = context.tokens;
+    // 0 clears the day; null is a cancel.
+    final picked = await showDialog<int>(
+      context: context,
+      builder: (c) => AlertDialog(
+        title: Text(label),
+        content: SizedBox(
+          width: 7 * 40,
+          child: GridView.count(
+            crossAxisCount: 7,
+            shrinkWrap: true,
+            mainAxisSpacing: 4,
+            crossAxisSpacing: 4,
+            children: [
+              for (var d = 1; d <= 31; d++)
+                Semantics(
+                  button: true,
+                  selected: d == value,
+                  label: s.rentDueDay(d),
+                  excludeSemantics: true,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(20),
+                    onTap: () => Navigator.pop(c, d),
+                    child: Container(
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(color: d == value ? k.primary : null, shape: BoxShape.circle),
+                      child: Text('$d', style: TextStyle(color: d == value ? k.onPrimary : k.text, fontFeatures: const [FontFeature.tabularFigures()])),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        actions: [
+          if (value != null) TextButton(onPressed: () => Navigator.pop(c, 0), child: Text(s.clear)),
+          TextButton(onPressed: () => Navigator.pop(c), child: Text(s.cancel)),
+        ],
+      ),
+    );
+    if (picked == null) return;
+    onChanged(picked == 0 ? null : picked);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return InkWell(
+      borderRadius: BorderRadius.circular(4),
+      onTap: () => _pick(context),
+      child: InputDecorator(
+        decoration: InputDecoration(labelText: label, border: const OutlineInputBorder(), suffixIcon: const Icon(Icons.expand_more)),
+        child: Text(value == null ? s.notSet : s.rentDueDay(value!)),
+      ),
+    );
   }
 }
 

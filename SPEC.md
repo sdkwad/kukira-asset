@@ -28,6 +28,14 @@ Road tax expiry, insurance expiry (vehicles) and the DLP end (house, from the VP
 - The due date of a linked reminder is edited on the asset page, not in the reminder form.
 - The planning rules are in `lib/domain/auto_sync.dart` (pure, unit tested); applying them is `lib/services/auto_reminders.dart`.
 
+## Pick lists and official sources
+
+Fields with a natural list (make, model, year, insurer, state, council, area, cost item) use `ComboField` (`lib/ui/combo.dart`): it suggests, and whatever is typed is saved as typed.
+
+- The council list is generated from KPKT's list of local authorities by `tool/councils` (see its README), with DBKL added. Never edit `lib/domain/councils.dart` by hand. A council keeps a website only if it was opened and named the council when the list was made.
+- The insurer list in `lib/domain/lists.dart` is the companies with a General Insurance Business or General Takaful Business licence in the BNM Financial Sector Participants directory. Say the date it was read when it changes.
+- Websites open in the phone's browser through the `kukira/links` channel in MainActivity. The app never loads a page itself and never asks for the internet permission for it.
+
 ## Backlog and constraints
 
 Not built yet. These notes constrain how they are built.

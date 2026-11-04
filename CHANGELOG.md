@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.7 (phase c, build 11)
+
+Forms that ask only what applies, lists to pick from, and a first run. No database change; encryption, backups, documents and notifications work as before, and the app still has no internet permission.
+
+- **New:** make, model, year, insurer, state, council (PBT), area and cost item fields suggest from a list as you type, and the arrow opens the whole list. Whatever you type is saved as typed, so a model or council that is not listed is never an error. Names you typed before are offered too, and models follow the make.
+- **New:** the council list is generated from KPKT's official list of local authorities (156 councils with DBKL), and the insurer list is every company with a general insurance or general takaful licence in Bank Negara Malaysia's directory (23), both read on 4 Nov 2026. A council's website is kept only if it opened and named the council when the list was made (150 of 156); `tool/councils` re-checks them.
+- **New:** a council with a website has a link in the house form and in the house details. It opens in the phone's own browser; Kukira does not load the page. A short form shared by two councils (MPS is Sandakan and Selayang) links only when the state makes it clear.
+- **Changed:** a subsale house asks "Still within the developer's DLP?" first. Only then are the original VP date and DLP end asked; otherwise they are cleared on save, with the DLP reminder. The SPA date, address, contact and notes wait behind "+" buttons until needed.
+- **New:** a house that is rented out asks for the tenancy start and end and the day rent is due, and shows them in the details. For reference only: there is no tenancy reminder yet. They are kept if the house stops being rented out, so a wrong tap loses nothing.
+- **New:** a fresh install opens on a welcome (what Kukira does, BM or EN, and "Restore a backup" for moving from an old phone), then a setup page for notifications, their time and the PIN lock. Both finish the first run; a phone that already has assets never sees them.
+- **New:** a photo can be added while adding an asset, and changed or taken out before saving. It is encrypted like every other picture once the asset exists; if it cannot be saved, the asset is kept and you are told. In Edit details the photo is one small row with a Change button instead of a banner and three buttons.
+- **Tests:** matching and the official lists, picking and typing in the forms, the council link (and no guess on a shared short form), each house situation and what it saves, the first run and what marks it done, the photo saved encrypted and linked to the asset, and every new screen at 130% text on a 360 dp phone and above the navigation bar.
+
 ## 0.2.7 (phase b, build 10)
 
 How the app looks, from the second design review and the owner's test on a phone. No database change; encryption, backups, documents and notifications work as before.

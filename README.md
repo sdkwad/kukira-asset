@@ -2,7 +2,20 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.7 fasa b, build 10 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.7 fasa c, build 11 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.7 (fasa c)
+
+Borang yang hanya bertanya apa yang berkaitan, senarai untuk dipilih, dan kali pertama. Tiada perubahan pangkalan data, dan app masih tiada kebenaran internet.
+
+- Jenama, model, tahun, insurans, negeri, PBT, kawasan dan item kos: pilih dari senarai atau taip sendiri. Apa yang ditaip disimpan seperti ditaip.
+- Senarai PBT dari KPKT (156 majlis) dan senarai insurans am dan takaful am berlesen dari BNM (23). Pautan laman web PBT dibuka dalam pelayar telefon.
+- Rumah subsale bertanya "Masih dalam tempoh DLP pemaju?" dahulu. Tarikh SPA, alamat, hubungan dan nota di sebalik butang "+".
+- Rumah disewakan: mula sewa, tamat sewa dan hari sewa dibayar (rujukan sahaja, belum ada peringatan).
+- Pemasangan baharu dibuka dengan Sambutan dan Sediakan; ada pautan pulihkan sandaran.
+- Gambar boleh ditambah semasa Tambah aset; dalam Ubah butiran, gambar ialah satu baris kecil.
+
+Pasang terus di atas 0.2.7 fasa b.
 
 ## Baharu dalam 0.2.7 (fasa b)
 
