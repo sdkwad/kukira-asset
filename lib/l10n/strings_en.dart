@@ -184,39 +184,17 @@ class StrEn extends Str {
   @override
   String get offlineNote => 'Works offline. Your records stay on this phone.';
   @override
-  String get notifOffBanner => 'Notifications are off. Reminders appear only when you open the app.';
-  @override
-  String get allowNotifications => 'Turn on notifications';
-  @override
   String get notifDeniedHelp => 'Allow them in phone Settings > Apps > Kukira Asset > Notifications.';
-  @override
-  String get noBackupBanner => "You haven't made a backup yet. If this phone is lost, your records go with it.";
-  @override
-  String oldBackupBanner(String ago) => 'Last backup $ago. Records added since then are lost if this phone is lost.';
-  @override
-  String get backUpNow => 'Back up now';
   @override
   String get overdue => 'Overdue';
   @override
-  String get nothingOverdue => 'Nothing overdue.';
-  @override
-  String get dueSoonTitle => 'Due soon · next 30 days';
-  @override
-  String get nothingSoon => 'Nothing due in the next 30 days.';
-  @override
   String get recentlyDone => 'Recently completed';
-  @override
-  String get nothingDone => 'Nothing marked done in the last 30 days.';
   @override
   String doneAgo(String ago) => 'done $ago';
   @override
   String allReminders(int n) => 'All reminders ($n)';
   @override
   String updateOdoTitle(String name) => 'Update $name odometer';
-  @override
-  String get odoNever => 'Not recorded yet. Mileage reminders depend on it.';
-  @override
-  String odoLastUpdated(String ago) => 'Last updated $ago';
 
   // ------------------------------------------------ due text
   @override
@@ -425,15 +403,11 @@ class StrEn extends Str {
   @override
   String get noRemindersYet => 'No reminders yet.';
   @override
-  String get nextLabel => 'Next';
-  @override
-  String dlpDaysLeftShort(int n) => 'DLP: $n days left to report defects';
-  @override
   String get assetDeleted => 'This asset was deleted.';
   @override
   String get overviewTab => 'Overview';
   @override
-  String get upkeepTab => 'Upkeep';
+  String get upkeepTab => 'Records';
   @override
   String deleteAssetQ(String name) => 'Delete $name?';
   @override
@@ -470,14 +444,6 @@ class StrEn extends Str {
   String get contactHint => 'Name and phone number';
   @override
   String get nickname => 'Nickname';
-  @override
-  String get dlpTitle => 'Defect liability period';
-  @override
-  String get dlpDaysLeft => 'days left to report defects';
-  @override
-  String endsAbout(String date) => 'Ends about $date';
-  @override
-  String get dlpNote => 'Estimated: 24 months from vacant possession, as in the standard SPA for new homes. Confirm the date in your SPA.';
   @override
   String get dlpSubsaleNote => 'Subsale buyers may inherit the remaining warranty. Check with your lawyer.';
   @override
@@ -528,8 +494,6 @@ class StrEn extends Str {
   String get deleteRecordQ => 'Delete this record?';
   @override
   String get cannotUndo => 'This cannot be undone.';
-  @override
-  String spentThisYear(int year) => 'Spent in $year so far';
   @override
   String get noRecordsYet => 'No records yet.';
   @override
@@ -597,7 +561,7 @@ class StrEn extends Str {
   @override
   String addedIn(String name, String time) => '$name added in $time.';
   @override
-  String stepOf(int a, int b) => 'STEP $a OF $b';
+  String stepOf(int a, int b) => 'Step $a of $b';
   @override
   String get whatAdding => 'What are you adding?';
   @override
@@ -1015,10 +979,6 @@ class StrEn extends Str {
   @override
   String get customRepeat => 'Custom';
   @override
-  String daysShort(int n) => n == 0 ? 'Today' : '${n}d';
-  @override
-  String get daysWord => 'days';
-  @override
   String get deleteDocBody => 'The file is deleted from this phone, with its expiry reminder.';
   @override
   String get deleteDocQ => 'Delete this document?';
@@ -1030,10 +990,6 @@ class StrEn extends Str {
   String dlpEndOverrideHelp(String date) => 'Leave empty to use the estimate ($date). Fill it in if your SPA says otherwise.';
   @override
   String get dlpEndOverrideLabel => 'DLP end date (if different)';
-  @override
-  String get dlpOverrideNote => 'You set this end date from your SPA.';
-  @override
-  String get dlpSetByYou => 'Set by you';
   @override
   String get docCopiedNote => 'The file is copied into Kukira and encrypted. The original stays where it was.';
   @override
@@ -1050,8 +1006,6 @@ class StrEn extends Str {
   String docTypeName(String t) => switch (t) { 'spa' => 'SPA', 'geran' => 'Geran', 'vp_letter' => 'VP letter', 'dlp' => 'DLP', 'tax_bill' => 'Tax bill', 'insurance' => 'Insurance', 'receipt' => 'Receipt', 'photo' => 'Photo', _ => 'Other' };
   @override
   String get docsPrivacyNote => 'Files are stored encrypted inside Kukira and open in your phone\'s own viewer.';
-  @override
-  String get dueSoonShort => 'Due soon';
   @override
   String get edit => 'Edit';
   @override
@@ -1092,8 +1046,6 @@ class StrEn extends Str {
   String get forgotPinTitle => 'Forgot PIN';
   @override
   String get gallery => 'Gallery';
-  @override
-  String greeting(int hour) => hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   @override
   String get item => 'Item';
   @override
@@ -1140,10 +1092,6 @@ class StrEn extends Str {
   String get notifyTime => 'Notification time';
   @override
   String get open => 'Open';
-  @override
-  String openDefectList(int n) => 'Open defect list ($n open)';
-  @override
-  String overdueCount(int n) => '$n overdue';
   @override
   String get parts => 'Parts';
   @override
@@ -1290,8 +1238,6 @@ class StrEn extends Str {
   String get refreshNoteTitle => 'Open Kukira';
 
   // ------------------------------------------------ backup tile
-  @override
-  String get neverShort => 'Never';
 
   // ------------------------------------------------ asset photo
   @override

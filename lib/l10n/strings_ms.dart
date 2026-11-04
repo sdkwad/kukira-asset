@@ -184,39 +184,17 @@ class StrMs extends Str {
   @override
   String get offlineNote => 'Berfungsi tanpa internet. Rekod anda kekal dalam telefon ini.';
   @override
-  String get notifOffBanner => 'Pemberitahuan dimatikan. Peringatan hanya muncul apabila anda buka app.';
-  @override
-  String get allowNotifications => 'Hidupkan pemberitahuan';
-  @override
   String get notifDeniedHelp => 'Benarkan dalam Tetapan telefon > Apl > Kukira Asset > Pemberitahuan.';
-  @override
-  String get noBackupBanner => 'Anda belum buat sandaran. Jika telefon hilang, rekod anda turut hilang.';
-  @override
-  String oldBackupBanner(String ago) => 'Sandaran terakhir $ago. Rekod selepas itu akan hilang jika telefon hilang.';
-  @override
-  String get backUpNow => 'Buat sandaran sekarang';
   @override
   String get overdue => 'Lewat';
   @override
-  String get nothingOverdue => 'Tiada yang lewat.';
-  @override
-  String get dueSoonTitle => 'Hampir tiba · 30 hari';
-  @override
-  String get nothingSoon => 'Tiada apa dalam 30 hari akan datang.';
-  @override
   String get recentlyDone => 'Baru selesai';
-  @override
-  String get nothingDone => 'Tiada yang ditanda selesai dalam 30 hari lalu.';
   @override
   String doneAgo(String ago) => 'selesai $ago';
   @override
   String allReminders(int n) => 'Semua peringatan ($n)';
   @override
   String updateOdoTitle(String name) => 'Kemas kini odometer $name';
-  @override
-  String get odoNever => 'Belum direkod. Peringatan ikut jarak bergantung padanya.';
-  @override
-  String odoLastUpdated(String ago) => 'Kemas kini terakhir $ago';
 
   // ------------------------------------------------ due text
   @override
@@ -425,10 +403,6 @@ class StrMs extends Str {
   @override
   String get noRemindersYet => 'Belum ada peringatan.';
   @override
-  String get nextLabel => 'Seterusnya';
-  @override
-  String dlpDaysLeftShort(int n) => 'DLP: $n hari lagi untuk lapor kecacatan';
-  @override
   String get assetDeleted => 'Aset ini sudah dipadam.';
   @override
   String get overviewTab => 'Ringkasan';
@@ -470,14 +444,6 @@ class StrMs extends Str {
   String get contactHint => 'Nama dan nombor telefon';
   @override
   String get nickname => 'Nama panggilan';
-  @override
-  String get dlpTitle => 'Tempoh liabiliti kecacatan';
-  @override
-  String get dlpDaysLeft => 'hari lagi untuk lapor kecacatan';
-  @override
-  String endsAbout(String date) => 'Tamat sekitar $date';
-  @override
-  String get dlpNote => 'Anggaran: 24 bulan dari milikan kosong, seperti dalam SPA standard rumah baharu. Sahkan tarikh dalam SPA anda.';
   @override
   String get dlpSubsaleNote => 'Pembeli subsale mungkin mewarisi baki waranti. Semak dengan peguam anda.';
   @override
@@ -528,8 +494,6 @@ class StrMs extends Str {
   String get deleteRecordQ => 'Padam rekod ini?';
   @override
   String get cannotUndo => 'Ini tidak boleh dibatalkan.';
-  @override
-  String spentThisYear(int year) => 'Belanja $year setakat ini';
   @override
   String get noRecordsYet => 'Belum ada rekod.';
   @override
@@ -597,7 +561,7 @@ class StrMs extends Str {
   @override
   String addedIn(String name, String time) => '$name ditambah dalam $time.';
   @override
-  String stepOf(int a, int b) => 'LANGKAH $a DARI $b';
+  String stepOf(int a, int b) => 'Langkah $a daripada $b';
   @override
   String get whatAdding => 'Apa yang anda mahu tambah?';
   @override
@@ -1015,10 +979,6 @@ class StrMs extends Str {
   @override
   String get customRepeat => 'Lain';
   @override
-  String daysShort(int n) => n == 0 ? 'Hari ini' : '$n hari';
-  @override
-  String get daysWord => 'hari';
-  @override
   String get deleteDocBody => 'Fail ini dipadam dari telefon, bersama peringatan tarikh tamatnya.';
   @override
   String get deleteDocQ => 'Padam dokumen ini?';
@@ -1030,10 +990,6 @@ class StrMs extends Str {
   String dlpEndOverrideHelp(String date) => 'Biarkan kosong untuk guna anggaran ($date). Isi jika SPA anda menyatakan tarikh lain.';
   @override
   String get dlpEndOverrideLabel => 'Tarikh tamat DLP (jika berbeza)';
-  @override
-  String get dlpOverrideNote => 'Tarikh tamat ini anda tetapkan sendiri dari SPA.';
-  @override
-  String get dlpSetByYou => 'Ditetapkan oleh anda';
   @override
   String get docCopiedNote => 'Fail disalin ke dalam Kukira dan disulitkan. Fail asal kekal di tempatnya.';
   @override
@@ -1050,8 +1006,6 @@ class StrMs extends Str {
   String docTypeName(String t) => switch (t) { 'spa' => 'SPA', 'geran' => 'Geran', 'vp_letter' => 'Surat VP', 'dlp' => 'DLP', 'tax_bill' => 'Bil cukai', 'insurance' => 'Insurans', 'receipt' => 'Resit', 'photo' => 'Gambar', _ => 'Lain-lain' };
   @override
   String get docsPrivacyNote => 'Fail disimpan secara tersulit dalam Kukira dan dibuka dengan pemapar telefon anda.';
-  @override
-  String get dueSoonShort => 'Hampir tiba';
   @override
   String get edit => 'Ubah';
   @override
@@ -1092,8 +1046,6 @@ class StrMs extends Str {
   String get forgotPinTitle => 'Lupa PIN';
   @override
   String get gallery => 'Galeri';
-  @override
-  String greeting(int hour) => hour < 12 ? 'Selamat pagi' : hour < 15 ? 'Selamat tengah hari' : hour < 19 ? 'Selamat petang' : 'Selamat malam';
   @override
   String get item => 'Item';
   @override
@@ -1140,10 +1092,6 @@ class StrMs extends Str {
   String get notifyTime => 'Masa pemberitahuan';
   @override
   String get open => 'Buka';
-  @override
-  String openDefectList(int n) => 'Buka senarai kecacatan ($n belum selesai)';
-  @override
-  String overdueCount(int n) => '$n lewat';
   @override
   String get parts => 'Barang';
   @override
@@ -1290,8 +1238,6 @@ class StrMs extends Str {
   String get refreshNoteTitle => 'Buka Kukira';
 
   // ------------------------------------------------ backup tile
-  @override
-  String get neverShort => 'Belum';
 
   // ------------------------------------------------ asset photo
   @override

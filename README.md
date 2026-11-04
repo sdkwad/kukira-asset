@@ -2,7 +2,19 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.7 fasa a, build 9 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.7 fasa b, build 10 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.7 (fasa b)
+
+Rupa app, daripada semakan reka bentuk dan ujian di telefon. Tiada perubahan pangkalan data.
+
+- Hari ini: satu ayat ringkasan; bila tiada apa-apa, "Semua terkawal" dan tiga perkara seterusnya. Ikon carian merentas semua.
+- Setiap peringatan menyebut "Lewat 6 hari" atau "9 hari" di kanan, dan tarikh atau km di bawah.
+- Gambar aset pudar dari kanan ke kiri pada kad dan di atas halaman aset; mengecil semasa ditatal.
+- Ringkasan aset baharu: Keadaan, Penyelenggaraan, rekod terkini, Butiran yang dilipat.
+- Rekod sebagai sejarah ikut tahun, dengan item dan carian dalam item.
+
+Pasang terus di atas 0.2.7 fasa a.
 
 ## Baharu dalam 0.2.7 (fasa a)
 

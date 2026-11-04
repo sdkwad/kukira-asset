@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.7 (phase b, build 10)
+
+How the app looks, from the second design review and the owner's test on a phone. No database change; encryption, backups, documents and notifications work as before.
+
+- **Changed:** Today says what is due in one sentence ("2 overdue and 2 due soon across your 3 assets") instead of three tiles, which cut off at large text sizes. "Needs action" and "Next 30 days" appear only when they have something. When nothing is due it says "All in order" and shows the next three, instead of three empty sections. A search button searches assets, reminders, records and documents.
+- **Changed:** every reminder row says how late or how near on the right ("6 days late", "9 days", "580 km to go", on whichever of date or km is nearer) and when below ("by 28 Oct or 50,120 km", "ends 12 Nov"), so neither is said twice. Backup and notification warnings are rows on Today.
+- **New:** an asset's photo shows on its card on the right, faded into the card on the left, where the name, plate and next reminder stay readable (at least 94% cover under the text, in light and dark). Assets without a photo keep the plain icon.
+- **New:** an asset page with a photo opens on it, faded the same way, and shrinks to a small photo by the name as you scroll.
+- **Changed:** the asset overview: what the asset is, a sentence on what needs attention, Status (odometer, monthly odometer reminder, road tax and insurance; for a house the defect liability period, taxes and charges), Upkeep with a km bar, the latest records with this year's spending, and Details folded into one line. The DLP line always says it is an estimate to confirm in your SPA.
+- **Changed:** Records is a history: newest first on a line down the side, each year with its count and total, and each record with its items. The search looks inside items ("battery"). An unreported defect during the DLP can be marked reported from its card.
+- **Changed:** the remaining all-capital labels are in sentence case, and the English Records tab is called Records.
+- **Tests:** Today busy and calm, the short status rules, search, photo cards, the photo header shrinking, the overview (DLP line, details, monthly odometer switch), the record history (years, items, search, marking reported), all at 130% text on a 360 dp phone. Screenshots now picture asset photos (two sample photos in `test/fixtures`, credited).
+
 ## 0.2.7 (phase a, build 9)
 
 The foundation of the approved 0.2.7 design: navigation, Tambah and the design system. No database change; encryption, backups, documents and notifications work as before.

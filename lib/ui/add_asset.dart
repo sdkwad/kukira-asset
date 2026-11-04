@@ -194,7 +194,7 @@ class _AddAssetState extends State<AddAssetScreen> {
       default:
         final sug = suggestionsFor(_cat, _ptype);
         body = ListView(padding: const EdgeInsets.all(16), children: [
-          Text(s.optional.toUpperCase(), style: theme.textTheme.labelMedium),
+          Text(s.optional, style: theme.textTheme.labelMedium),
           const SizedBox(height: 4),
           Text(s.suggestedReminders, style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
           const SizedBox(height: 4),

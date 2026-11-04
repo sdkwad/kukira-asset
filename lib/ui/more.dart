@@ -522,7 +522,7 @@ class BackupScreen extends StatelessWidget {
             child: Padding(
               padding: const EdgeInsets.all(16),
               child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(s.lastBackupLabel.toUpperCase(), style: Theme.of(context).textTheme.labelMedium),
+                Text(s.lastBackupLabel, style: Theme.of(context).textTheme.labelMedium),
                 const SizedBox(height: 4),
                 Text(last == null ? s.never : s.dLong(last), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
                 if (last != null) Text(s.ago(last)),

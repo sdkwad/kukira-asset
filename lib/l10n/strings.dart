@@ -79,23 +79,12 @@ abstract class Str {
   String get emptyBody;
   String get addFirstAsset;
   String get offlineNote;
-  String get notifOffBanner;
-  String get allowNotifications;
   String get notifDeniedHelp;
-  String get noBackupBanner;
-  String oldBackupBanner(String ago);
-  String get backUpNow;
   String get overdue;
-  String get nothingOverdue;
-  String get dueSoonTitle;
-  String get nothingSoon;
   String get recentlyDone;
-  String get nothingDone;
   String doneAgo(String ago);
   String allReminders(int n);
   String updateOdoTitle(String name);
-  String get odoNever;
-  String odoLastUpdated(String ago);
 
   // ------------------------------------------------ due text
   String snoozedUntil(String date);
@@ -204,8 +193,6 @@ abstract class Str {
   String get remindersTab;
   String get recordsTitle;
   String get noRemindersYet;
-  String get nextLabel;
-  String dlpDaysLeftShort(int n);
   String get assetDeleted;
   String get overviewTab;
   String get upkeepTab;
@@ -227,10 +214,6 @@ abstract class Str {
   String get contact;
   String get contactHint;
   String get nickname;
-  String get dlpTitle;
-  String get dlpDaysLeft;
-  String endsAbout(String date);
-  String get dlpNote;
   String get dlpSubsaleNote;
   String dlpEnded(String date);
   String get addVpForDlp;
@@ -256,7 +239,6 @@ abstract class Str {
   String get yes;
   String get deleteRecordQ;
   String get cannotUndo;
-  String spentThisYear(int year);
   String get noRecordsYet;
   String get addRecord;
   String get addReminder;
@@ -506,16 +488,12 @@ abstract class Str {
   String get couldNotOpen;
   String get couldNotSave;
   String get customRepeat;
-  String daysShort(int n);
-  String get daysWord;
   String get deleteDocBody;
   String get deleteDocQ;
   String get deleteVendorBody;
   String deleteVendorQ(String name);
   String dlpEndOverrideHelp(String date);
   String get dlpEndOverrideLabel;
-  String get dlpOverrideNote;
-  String get dlpSetByYou;
   String get docCopiedNote;
   String docExpires(String title);
   String get docSaved;
@@ -524,7 +502,6 @@ abstract class Str {
   String get docType;
   String docTypeName(String t);
   String get docsPrivacyNote;
-  String get dueSoonShort;
   String get edit;
   String get editDefect;
   String get editDocument;
@@ -545,7 +522,6 @@ abstract class Str {
   String get forgotPinBody;
   String get forgotPinTitle;
   String get gallery;
-  String greeting(int hour);
   String get item;
   String get itemHint;
   String jobsCount(int n);
@@ -569,8 +545,6 @@ abstract class Str {
   String notifyOnAt(String date, String time);
   String get notifyTime;
   String get open;
-  String openDefectList(int n);
-  String overdueCount(int n);
   String get parts;
   String get phone;
   String get photos;
@@ -653,7 +627,6 @@ abstract class Str {
   String get refreshNoteTitle;
 
   // ------------------------------------------------ backup tile
-  String get neverShort;
 
   // ------------------------------------------------ asset photo
   String get assetPhoto;
