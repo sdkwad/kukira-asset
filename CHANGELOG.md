@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2.7 (phase d, build 12)
+
+Tambah suggests what is due, a new Documents tab, the photo fade from the owner's test, and a smoother app. No database change; encryption, backups and documents work as before, and the app still has no internet permission.
+
+- **Changed:** an asset's photo now fills its card and the top of its page: at full strength on the right, and at a quarter of it under the text, instead of only the right half. Text on a photo uses the main text colour, which stays at least 6:1 even over a black or white photo, and a status such as "6 days late" sits on its own chip.
+- **Faster:** the encrypted database runs on its own isolate, so saving and reloading no longer hold up drawing and touches. It still uses SQLCipher and still refuses to open unencrypted; if its isolate cannot start, it opens as before and the reason goes to the error log.
+- **Faster:** after a change, only the notifications that changed are scheduled again, instead of all of them (up to 50), each of which made Android rewrite its whole list on the thread that delivers touches. "Rebuild the schedule now" still schedules everything.
+- **Faster:** a picture is decrypted once instead of on every rebuild (the shrinking page header rebuilt every frame), one already in memory shows at once, and the header fades its photo without an offscreen layer.
+- **New:** Tambah starts with "Suggested": up to three reminders that are overdue or due soon, with the asset and how late or near. "Record engine oil change" opens a record that marks the reminder done when saved; road tax, insurance, the DLP and the odometer open the reminder itself. On an asset's page only that asset's, then "Other records for Myvi".
+- **Changed:** Documents shows how many there are, groups them by asset with the three that matter most first (those about to end) and "See N more", and filters by asset and type with two buttons instead of a long row of chips. The search lists every matching document with its asset, and "Also in records": records that mention the words in their name, notes, shop, area or items, such as a policy number in the notes. "Add document" is a floating button.
+- **Tests:** worst-case contrast of text over a photo in both modes, the photo filling the card, the database opening, writing, reopening and refusing to run unencrypted on its own isolate, when a notification is scheduled again, suggestions (which, in what order, what they open), Documents (order, groups, filters, search in records) and every new screen at 130% text on a 360 dp phone.
+
 ## 0.2.7 (phase c, build 11)
 
 Forms that ask only what applies, lists to pick from, and a first run. No database change; encryption, backups, documents and notifications work as before, and the app still has no internet permission.

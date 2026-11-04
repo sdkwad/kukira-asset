@@ -2,7 +2,18 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.7 fasa c, build 11 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.7 fasa d, build 12 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.7 (fasa d)
+
+Tiada perubahan pangkalan data, dan app masih tiada kebenaran internet.
+
+- Gambar aset mengisi seluruh kad dan pengepala: 100% di kanan, 25% di bawah teks. Status di atas gambar ada cipnya sendiri.
+- Lebih lancar: pangkalan data bersulit berjalan dalam isolate sendiri, hanya pemberitahuan yang berubah dijadual semula, dan gambar dinyahsulit sekali sahaja.
+- Tambah bermula dengan cadangan: apa yang lewat atau hampir tiba, terus ke rekod yang menanda peringatan selesai.
+- Dokumen baharu: ikut aset (tiga dahulu, "Lihat N lagi"), penapis Aset dan Jenis, carian yang juga mencari dalam rekod, dan butang Tambah dokumen.
+
+Pasang terus di atas 0.2.7 fasa c.
 
 ## Baharu dalam 0.2.7 (fasa c)
 

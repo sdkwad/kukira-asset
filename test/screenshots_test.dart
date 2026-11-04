@@ -134,10 +134,22 @@ World demoWorld() {
       UpkeepRecord(id: 1, assetId: 2, kind: 'maintenance', category: 'oil', title: 'Servis 40,000 km', date: d(-170), cost: 245.5, vendorName: 'Bengkel Ah Seng', vendorId: 1, odometer: 40120, createdAt: d(-170)),
       UpkeepRecord(id: 2, assetId: 1, kind: 'defect', title: 'Retak dinding bilik utama', date: d(-20), area: 'Bilik utama', status: 'in_progress', reportedToDeveloper: d(-18), createdAt: d(-20)),
       UpkeepRecord(id: 3, assetId: 1, kind: 'maintenance', category: 'aircond', title: 'Servis aircond 3 unit', date: d(-180), cost: 270, createdAt: d(-180)),
+      UpkeepRecord(id: 4, assetId: 2, kind: 'payment', category: 'insurance_premium', title: 'Pembaharuan insurans', date: d(-356), cost: 1086.40, notes: 'Polisi baharu, NCD 25%', createdAt: d(-356)),
+      UpkeepRecord(id: 5, assetId: 3, kind: 'payment', category: 'road_tax', title: 'Insurans dan cukai jalan', date: d(-225), cost: 100, notes: 'No. polisi ET-2603-7781', createdAt: d(-225)),
     ],
     odometer: {2: OdometerReading(id: 1, assetId: 2, date: d(-12), km: 47310)},
     vendors: [const Vendor(id: 1, name: 'Bengkel Ah Seng', phone: '012-345 6789', trade: 'workshop')],
-    documents: [AssetDocument(id: 1, assetId: 2, filePath: 'x.pdf', title: 'Polisi insurans 2026', docType: 'insurance', expiry: d(9), addedAt: d(-30))],
+    documents: [
+      AssetDocument(id: 1, assetId: 2, filePath: 'x.pdf', title: 'Polisi insurans 2026', docType: 'insurance', expiry: d(9), addedAt: d(-30), linkedRecordId: 4),
+      AssetDocument(id: 2, assetId: 2, filePath: 'lkm.pdf', title: 'e-LKM cukai jalan', docType: 'other', expiry: d(9), addedAt: d(-40)),
+      AssetDocument(id: 3, assetId: 2, filePath: 'voc.pdf', title: 'Geran kenderaan (VOC)', docType: 'geran', addedAt: d(-600)),
+      AssetDocument(id: 4, assetId: 2, filePath: 'old.pdf', title: 'Polisi insurans 2025', docType: 'insurance', expiry: d(-356), addedAt: d(-700)),
+      AssetDocument(id: 5, assetId: 1, filePath: 'spa.pdf', title: 'Perjanjian jual beli (SPA)', docType: 'spa', addedAt: d(-620)),
+      AssetDocument(id: 6, assetId: 1, filePath: 'vp.pdf', title: 'Surat milikan kosong', docType: 'vp_letter', addedAt: d(-300)),
+      AssetDocument(id: 7, assetId: 1, filePath: 'fire.pdf', title: 'Polisi kebakaran rumah', docType: 'insurance', expiry: d(208), addedAt: d(-157)),
+      AssetDocument(id: 8, assetId: 1, filePath: 'bill.pdf', title: 'Bil cukai taksiran 2026', docType: 'tax_bill', addedAt: d(-60)),
+      AssetDocument(id: 9, assetId: 3, filePath: 'moto.pdf', title: 'Polisi insurans 2026', docType: 'insurance', expiry: d(140), addedAt: d(-225)),
+    ],
     settings: const {},
     costItems: {
       1: const [CostItem(id: 1, recordId: 1, label: 'Minyak enjin', amount: 180), CostItem(id: 2, recordId: 1, label: 'Upah', amount: 65.5)],
@@ -314,6 +326,16 @@ void main() {
   shot('68-besar-sambutan', () => const WelcomeScreen(), world: _emptyWorld(), textScale: 1.3);
   shot('69-gelap-sambutan', () => const WelcomeScreen(), world: _emptyWorld(), brightness: Brightness.dark);
   shot('70-en-sediakan', () => const SetupScreen(), world: _emptyWorld(), lang: 'en', notif: false);
+
+  // 0.2.7d: Tambah suggestions, Documents and its search.
+  shot('71-dokumen-cari', () => const DocumentsScreen(), height: 1000, act: (t) async {
+    await t.enterText(find.byType(TextField), 'polisi');
+  });
+  shot('72-dokumen-penapis', () => const DocumentsScreen(), act: tap(ms.typeFilter(ms.all)));
+  shot('73-besar-dokumen', () => const DocumentsScreen(), textScale: 1.3, height: 1300);
+  shot('74-gelap-aset', () => const AssetsScreen(), brightness: Brightness.dark);
+  shot('75-gelap-rumah', () => const AssetDetailScreen(assetId: 1), brightness: Brightness.dark);
+  shot('76-besar-tambah-cadangan', () => const AssetDetailScreen(assetId: 1), textScale: 1.3, act: openAdd);
 }
 
 /// The demo with nothing overdue or due in 30 days, and a backup two days ago.
