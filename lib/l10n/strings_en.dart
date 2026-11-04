@@ -735,6 +735,50 @@ class StrEn extends Str {
   @override
   String moreOverdue(int n) => '+$n more overdue';
 
+  // ------------------------------------------------ Asset overview
+  @override
+  String get statusNone => 'Nothing overdue or due soon.';
+  @override
+  String inDaysPhrase(int n) => n == 1 ? 'in 1 day' : 'in $n days';
+  @override
+  String andMoreDue(int n) => 'And $n more need attention.';
+  @override
+  String defectsUnreported(int n) => n == 1 ? '1 defect not reported to the developer yet.' : '$n defects not reported to the developer yet.';
+  @override
+  String get stateTitle => 'Status';
+  @override
+  String seeAll(int n) => 'All ($n)';
+  @override
+  String recordsYear(int year, String total) => 'Records $year · $total';
+  @override
+  String odoMeta(String ago) => 'Odometer · $ago';
+  @override
+  String get insuranceWord => 'Insurance';
+  @override
+  String endsCap(String date) => 'Ends $date';
+  @override
+  String get dlpRowTitle => 'Defect liability';
+  @override
+  String dlpRowMeta(String date) => 'Ends about $date · confirm in your SPA';
+  @override
+  String dlpRowMetaOwn(String date) => 'Ends $date · the date you set';
+  @override
+  String defectsAction(int total, int unreported) => unreported == 0 ? 'Defects ($total)' : 'Defects ($total): $unreported not reported';
+  @override
+  String get vehicleDetails => 'Vehicle details';
+  @override
+  String get houseDetails => 'Property details';
+  @override
+  String get detailsTitle => 'Details';
+  @override
+  String warrantyUntil2(String date) => 'warranty until $date';
+  @override
+  String vpOn(String date) => 'VP $date';
+
+  // ------------------------------------------------ Asset page
+  @override
+  String get moreOptions => 'More options';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Backup and restore';

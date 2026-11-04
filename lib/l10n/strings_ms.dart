@@ -735,6 +735,50 @@ class StrMs extends Str {
   @override
   String moreOverdue(int n) => '+$n lagi lewat';
 
+  // ------------------------------------------------ Asset overview
+  @override
+  String get statusNone => 'Tiada yang lewat atau hampir tiba.';
+  @override
+  String inDaysPhrase(int n) => 'dalam $n hari';
+  @override
+  String andMoreDue(int n) => 'Dan $n lagi perlu perhatian.';
+  @override
+  String defectsUnreported(int n) => '$n kecacatan belum dilapor kepada pemaju.';
+  @override
+  String get stateTitle => 'Keadaan';
+  @override
+  String seeAll(int n) => 'Semua ($n)';
+  @override
+  String recordsYear(int year, String total) => 'Rekod $year · $total';
+  @override
+  String odoMeta(String ago) => 'Odometer · $ago';
+  @override
+  String get insuranceWord => 'Insurans';
+  @override
+  String endsCap(String date) => 'Tamat $date';
+  @override
+  String get dlpRowTitle => 'Liabiliti kecacatan';
+  @override
+  String dlpRowMeta(String date) => 'Tamat sekitar $date · sahkan dalam SPA';
+  @override
+  String dlpRowMetaOwn(String date) => 'Tamat $date · tarikh yang anda tetapkan';
+  @override
+  String defectsAction(int total, int unreported) => unreported == 0 ? 'Kecacatan ($total)' : 'Kecacatan ($total): $unreported belum dilapor';
+  @override
+  String get vehicleDetails => 'Butiran kenderaan';
+  @override
+  String get houseDetails => 'Butiran hartanah';
+  @override
+  String get detailsTitle => 'Butiran';
+  @override
+  String warrantyUntil2(String date) => 'waranti hingga $date';
+  @override
+  String vpOn(String date) => 'VP $date';
+
+  // ------------------------------------------------ Asset page
+  @override
+  String get moreOptions => 'Pilihan lain';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Sandaran & pemulihan';

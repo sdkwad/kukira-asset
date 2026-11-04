@@ -359,6 +359,30 @@ abstract class Str {
   // ------------------------------------------------ Asset cards
   String moreOverdue(int n);
 
+  // ------------------------------------------------ Asset overview
+  String get statusNone;
+  String inDaysPhrase(int n);
+  String andMoreDue(int n);
+  String defectsUnreported(int n);
+  String get stateTitle;
+  String seeAll(int n);
+  String recordsYear(int year, String total);
+  String odoMeta(String ago);
+  String get insuranceWord;
+  String endsCap(String date);
+  String get dlpRowTitle;
+  String dlpRowMeta(String date);
+  String dlpRowMetaOwn(String date);
+  String defectsAction(int total, int unreported);
+  String get vehicleDetails;
+  String get houseDetails;
+  String get detailsTitle;
+  String warrantyUntil2(String date);
+  String vpOn(String date);
+
+  // ------------------------------------------------ Asset page
+  String get moreOptions;
+
   // ------------------------------------------------ more
   String get backupRestore;
   String get noBackupYet;

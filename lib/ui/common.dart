@@ -288,6 +288,35 @@ Tone toneOf(RStatus st) => switch (st) {
       RStatus.done => Tone.done,
     };
 
+Color toneColor(BuildContext context, Tone tone) {
+  final k = context.tokens;
+  return switch (tone) {
+    Tone.overdue => k.overdue,
+    Tone.dueSoon => k.dueSoon,
+    Tone.upcoming || Tone.inProgress => k.textMuted,
+    Tone.done => k.done,
+    Tone.expired => k.expired,
+  };
+}
+
+/// A thin bar for how much of an interval has gone (km since the last service).
+class ProgressLine extends StatelessWidget {
+  const ProgressLine(this.fraction, {super.key, this.color});
+  final double fraction;
+  final Color? color;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+        borderRadius: BorderRadius.circular(2),
+        child: LinearProgressIndicator(
+          value: fraction.clamp(0.0, 1.0),
+          minHeight: 4,
+          color: color ?? context.tokens.textMuted,
+          backgroundColor: context.tokens.divider,
+        ),
+      );
+}
+
 /// A status as coloured text with an icon, never colour alone. [StatusLabel.of] uses the
 /// standard word for a reminder status; the main constructor takes any text ("Expires 12 Nov").
 /// Needs a bounded width (AppRow gives it one), so a long word wraps instead of overflowing.
@@ -303,14 +332,14 @@ class StatusLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final k = context.tokens;
-    final (color, icon) = switch (tone) {
-      Tone.overdue => (k.overdue, Icons.error_outline),
-      Tone.dueSoon => (k.dueSoon, Icons.schedule),
-      Tone.upcoming => (k.textMuted, Icons.event_outlined),
-      Tone.inProgress => (k.textMuted, Icons.pending_outlined),
-      Tone.done => (k.done, Icons.check_circle_outline),
-      Tone.expired => (k.expired, Icons.history),
+    final color = toneColor(context, tone);
+    final icon = switch (tone) {
+      Tone.overdue => Icons.error_outline,
+      Tone.dueSoon => Icons.schedule,
+      Tone.upcoming => Icons.event_outlined,
+      Tone.inProgress => Icons.pending_outlined,
+      Tone.done => Icons.check_circle_outline,
+      Tone.expired => Icons.history,
     };
     return Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 16, color: color),
@@ -470,22 +499,26 @@ class EstTag extends StatelessWidget {
 }
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle(this.text, {super.key, this.count});
+  const SectionTitle(this.text, {super.key, this.count, this.link, this.onLink});
   final String text;
   final int? count;
+
+  /// A text button at the right instead of the count ("All (6)").
+  final String? link;
+  final VoidCallback? onLink;
 
   @override
   Widget build(BuildContext context) {
     final st = KText.section.copyWith(color: context.tokens.label, fontFeatures: const [FontFeature.tabularFigures()]);
-    return Semantics(
-      header: true,
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
-        child: Row(children: [
-          Expanded(child: Text(text, style: st)),
-          if (count != null) Text('$count', style: st),
-        ]),
-      ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(4, link == null ? 18 : 8, link == null ? 4 : 0, link == null ? 8 : 0),
+      child: Row(children: [
+        Expanded(child: Semantics(header: true, child: Text(text, style: st))),
+        if (link != null)
+          TextButton(onPressed: onLink, child: Text(link!))
+        else if (count != null)
+          Text('$count', style: st),
+      ]),
     );
   }
 }
@@ -519,11 +552,16 @@ class CardList extends StatelessWidget {
 
 /// A reminder as a row: how late or near on the right, when it is due below, so each is said once.
 class ReminderTile extends StatelessWidget {
-  const ReminderTile(this.r, this.w, {super.key, required this.onTap, this.showAsset = true});
+  const ReminderTile(this.r, this.w, {super.key, required this.onTap, this.showAsset = true, this.icon});
   final Reminder r;
   final World w;
   final VoidCallback onTap;
+
+  /// With the asset's name and icon (mixed lists), or without (on the asset's own page).
   final bool showAsset;
+
+  /// An icon for the row on the asset's page, where the asset icon would repeat itself.
+  final IconData? icon;
 
   @override
   Widget build(BuildContext context) {
@@ -531,8 +569,13 @@ class ReminderTile extends StatelessWidget {
     final a = w.asset(r.assetId);
     final (status, tone) = shortDue(s, r, w);
     final detail = dueDetail(s, r, w);
+    // How much of the km interval has gone since it was last done.
+    final odo = w.odoOf(r.assetId);
+    final every = r.repeatKm ?? 0;
+    final used = r.info.usesKm && every > 0 && r.dueOdometer != null && odo != null ? (odo - (r.dueOdometer! - every)) / every : null;
     return AppRow(
-      leading: AssetAvatar(a?.category ?? 'house', size: 36),
+      leading: icon != null ? IconAvatar(icon!) : (showAsset ? AssetAvatar(a?.category ?? 'house', size: 36) : null),
+      action: used == null ? null : ProgressLine(used, color: tone == Tone.upcoming ? null : toneColor(context, tone)),
       title: r.title,
       // The tag is about the date, which is on the second line.
       metaTag: r.estimated ? const EstTag(margin: EdgeInsets.zero) : null,
@@ -598,16 +641,17 @@ class NoteBox extends StatelessWidget {
 }
 
 class Facts extends StatelessWidget {
-  const Facts(this.rows, {super.key});
+  const Facts(this.rows, {super.key, this.bare = false});
   final List<(String, String)> rows;
+
+  /// Without its own card, inside another one.
+  final bool bare;
 
   @override
   Widget build(BuildContext context) {
     final muted = Theme.of(context).colorScheme.onSurfaceVariant;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: Padding(
-        padding: const EdgeInsets.all(14),
+    final list = Padding(
+        padding: EdgeInsets.all(bare ? 0 : 14),
         child: Column(
           children: [
             for (final (k, v) in rows)
@@ -620,8 +664,8 @@ class Facts extends StatelessWidget {
               ),
           ],
         ),
-      ),
-    );
+      );
+    return bare ? list : Card(margin: EdgeInsets.zero, child: list);
   }
 }
 

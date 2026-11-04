@@ -76,7 +76,7 @@ void main() {
     setPhone(tester, height: 1600);
     await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), withHouseRecords(vp: inDlp)));
     await tester.pumpAndSettle();
-    await tester.tap(find.text(s.openDefectList(1)));
+    await tester.tap(find.text(s.defectsAction(1, 1)));
     await tester.pumpAndSettle();
     expect(find.text(s.defectOpen), findsOneWidget);
     expect(find.text('Crack in bedroom wall'), findsOneWidget);

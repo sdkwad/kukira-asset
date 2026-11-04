@@ -5,6 +5,7 @@ import '../data/db.dart';
 import '../domain/auto_sync.dart';
 import '../domain/presets.dart';
 import '../domain/rules.dart';
+import '../l10n/strings.dart';
 import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
 import '../services/files.dart';
@@ -63,42 +64,6 @@ class AssetBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(height: height, width: double.infinity, child: SecureImage(a.photoPath!, cacheWidth: 900));
-}
-
-/// Days left in the DLP as a ring.
-class DlpRing extends StatelessWidget {
-  const DlpRing({super.key, required this.left, required this.fraction, this.size = 104});
-  final int left;
-  final double fraction;
-  final double size;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final late = left < 90;
-    final color = late ? statusColors(context, RStatus.dueSoon).$2 : theme.colorScheme.primary;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Stack(alignment: Alignment.center, children: [
-        SizedBox(
-          width: size,
-          height: size,
-          child: CircularProgressIndicator(
-            value: 1 - fraction.clamp(0.0, 1.0),
-            strokeWidth: 9,
-            strokeCap: StrokeCap.round,
-            color: color,
-            backgroundColor: theme.colorScheme.surfaceContainerHighest,
-          ),
-        ),
-        Column(mainAxisSize: MainAxisSize.min, children: [
-          Text('$left', style: theme.textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.w800, height: 1)),
-          Text(context.s.daysWord, style: theme.textTheme.labelSmall),
-        ]),
-      ]),
-    );
-  }
 }
 
 // ================================================================ list
@@ -227,10 +192,13 @@ class _SearchScreenState extends State<SearchScreen> {
 /// right, so text on the left always reads and the photo shows on the right. The text sits
 /// on the solid part (see [photoTextWidth]); the stops keep at least 94% cover under it.
 class PhotoFade extends StatelessWidget {
-  const PhotoFade({super.key, required this.photo, required this.color, this.photoWidth = 0.7});
+  const PhotoFade({super.key, required this.photo, required this.color, this.photoWidth = 0.7, this.solidTo = 0.40});
   final String photo;
   final Color color;
   final double photoWidth;
+
+  /// Fully covered up to this fraction of the width, 94% for 15% more, then fading out.
+  final double solidTo;
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
@@ -243,7 +211,7 @@ class PhotoFade extends StatelessWidget {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [color, color, color.withValues(alpha: 0.94), color.withValues(alpha: 0)],
-                stops: const [0, 0.40, 0.55, 0.90],
+                stops: [0, solidTo, solidTo + 0.15, (solidTo + 0.5).clamp(0.0, 1.0)],
               ),
             ),
           ),
@@ -350,56 +318,201 @@ class _AssetDetailState extends State<AssetDetailScreen> {
   Widget build(BuildContext context) {
     return WorldView(builder: (context, w) {
       final s = context.s;
+      final k = context.tokens;
       final a = w.asset(widget.assetId);
       if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.assetDeleted)));
       // The same four tabs for every asset and every stage, so they never move. Defects are
       // records: they are listed under Records, and the overview links to them while the DLP runs.
       final tabs = [s.overviewTab, s.upkeepTab, s.remindersTab, s.documentsTab];
+      final photo = a.photoPath;
+      final menu = PopupMenuButton<String>(
+        tooltip: s.moreOptions,
+        onSelected: (v) async {
+          if (v == 'edit') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => a.category == 'house' ? HouseEditScreen(assetId: a.id) : VehicleEditScreen(assetId: a.id)));
+          } else if (v == 'delete') {
+            final ok = await confirm(context, title: s.deleteAssetQ(a.nickname), body: s.deleteAssetBody, ok: s.delete, danger: true);
+            if (ok && context.mounted) {
+              final files = [...w.documents.where((d) => d.assetId == a.id).map((d) => d.filePath), if (a.photoPath != null) a.photoPath!];
+              await context.db.deleteAsset(a.id);
+              for (final f in files) {
+                await SecureFiles.delete(f);
+              }
+              if (context.mounted) Navigator.pop(context);
+            }
+          }
+        },
+        itemBuilder: (_) => [
+          PopupMenuItem(value: 'edit', child: Text(s.editDetails)),
+          PopupMenuItem(value: 'delete', child: Text(s.deleteAsset)),
+        ],
+      );
       return DefaultTabController(
         length: tabs.length,
         child: SafeScaffold(
           floatingActionButton: AddButton(assetId: a.id),
-          appBar: AppBar(
-            title: Text(a.nickname),
-            actions: [
-              PopupMenuButton<String>(
-                onSelected: (v) async {
-                  if (v == 'edit') {
-                    Navigator.push(context, MaterialPageRoute(builder: (_) => a.category == 'house' ? HouseEditScreen(assetId: a.id) : VehicleEditScreen(assetId: a.id)));
-                  } else if (v == 'delete') {
-                    final ok = await confirm(context, title: s.deleteAssetQ(a.nickname), body: s.deleteAssetBody, ok: s.delete, danger: true);
-                    if (ok && context.mounted) {
-                      final files = [...w.documents.where((d) => d.assetId == a.id).map((d) => d.filePath), if (a.photoPath != null) a.photoPath!];
-                      await context.db.deleteAsset(a.id);
-                      for (final f in files) {
-                        await SecureFiles.delete(f);
-                      }
-                      if (context.mounted) Navigator.pop(context);
-                    }
-                  }
-                },
-                itemBuilder: (_) => [
-                  PopupMenuItem(value: 'edit', child: Text(s.editDetails)),
-                  PopupMenuItem(value: 'delete', child: Text(s.deleteAsset)),
-                ],
+          body: NestedScrollView(
+            headerSliverBuilder: (context, scrolled) => [
+              SliverOverlapAbsorber(
+                handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
+                sliver: SliverAppBar(
+                  pinned: true,
+                  forceElevated: scrolled,
+                  // With a photo the page opens on it, and it shrinks to a small one by the
+                  // name as the page scrolls; without one it is a plain title bar.
+                  expandedHeight: photo == null ? null : _heroHeight + kTextTabBarHeight,
+                  title: photo == null ? Text(a.nickname) : null,
+                  flexibleSpace: photo == null ? null : _Hero(a, w),
+                  actions: [
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      // Over a photo the button gets a backdrop so it can be seen.
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: photo == null ? null : k.surface.withValues(alpha: 0.88)),
+                        child: menu,
+                      ),
+                    ),
+                  ],
+                  bottom: FitTabBar(tabs: tabs),
+                ),
               ),
             ],
-            bottom: FitTabBar(tabs: tabs),
+            body: TabBarView(children: [
+              _Overview(a, w, _recordKind),
+              _Records(a, w, _recordKind),
+              _Reminders(a, w),
+              _Documents(a, w),
+            ]),
           ),
-          body: TabBarView(children: [
-            _Overview(a, w, _recordKind),
-            _Records(a, w, _recordKind),
-            _Reminders(a, w),
-            _Documents(a, w),
-          ]),
         ),
       );
     });
   }
 }
 
+const _heroHeight = 208.0;
+
+/// The asset photo across the top of its page, faded from the right like its card, with the
+/// name over the solid part. As the page scrolls it fades into a small photo by the name.
+class _Hero extends StatelessWidget {
+  const _Hero(this.a, this.w);
+  final Asset a;
+  final World w;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = context.tokens;
+    final bar = context.dependOnInheritedWidgetOfExactType<FlexibleSpaceBarSettings>();
+    // 1 when fully open, 0 when only the title bar and tabs are left.
+    final open = bar == null || bar.maxExtent == bar.minExtent ? 1.0 : ((bar.currentExtent - bar.minExtent) / (bar.maxExtent - bar.minExtent)).clamp(0.0, 1.0);
+    return LayoutBuilder(builder: (context, box) {
+      return Stack(fit: StackFit.expand, children: [
+        Positioned(
+          left: 0,
+          right: 0,
+          top: 0,
+          bottom: kTextTabBarHeight,
+          child: Opacity(
+            opacity: open,
+            child: Stack(fit: StackFit.expand, children: [
+              PhotoFade(photo: a.photoPath!, color: k.background, photoWidth: 0.72, solidTo: 0.52),
+              // The text ends by 64% of the width, where the fade still covers 95%: a name such
+              // as "Rumah Setia Alam" fits one line on a 360 dp phone.
+              Positioned(left: 20, right: box.maxWidth * 0.36, bottom: 14, child: _Identity(a, w, large: true)),
+            ]),
+          ),
+        ),
+        Positioned(
+          left: 56,
+          right: 56,
+          top: 0,
+          height: kToolbarHeight,
+          child: IgnorePointer(
+            child: Opacity(
+              opacity: 1 - open,
+              child: Row(children: [
+                ClipRRect(borderRadius: BorderRadius.circular(9), child: SecureImage(a.photoPath!, size: 32, cacheWidth: 120)),
+                const SizedBox(width: 10),
+                Expanded(child: Text(a.nickname, maxLines: 1, overflow: TextOverflow.ellipsis, style: KText.title.copyWith(color: k.text))),
+              ]),
+            ),
+          ),
+        ),
+      ]);
+    });
+  }
+}
+
+/// What the asset is: the model and plate of a vehicle, the type and place of a house.
+class _Identity extends StatelessWidget {
+  const _Identity(this.a, this.w, {this.large = false});
+  final Asset a;
+  final World w;
+
+  /// In the photo header: with the name, which the title bar does not show there.
+  final bool large;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    final v = w.vehicles[a.id];
+    final h = w.houses[a.id];
+    final meta = KText.meta.copyWith(color: k.textMuted);
+    final String line1;
+    final Widget line2;
+    if (v != null) {
+      final mm = [v.make, v.model].whereType<String>().join(' ');
+      line1 = mm.isEmpty ? s.categoryName(a.category) : mm;
+      line2 = Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+        Plate(v.plate),
+        Text([if (v.year != null) '${v.year}', s.categoryName(a.category)].join(' · '), style: meta),
+      ]);
+    } else {
+      line1 = s.ptypeName(h?.propertyType ?? 'landed');
+      final place = [h?.state, h?.council].whereType<String>().join(' · ');
+      line2 = Text(place.isEmpty ? s.categoryName(a.category) : place, style: meta);
+    }
+    final text = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
+      if (large) Text(a.nickname, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.screenTitle.copyWith(color: k.text)),
+      Text(line1, style: large ? meta : KText.subtitle.copyWith(color: k.text)),
+      SizedBox(height: large ? 2 : 4),
+      line2,
+    ]);
+    if (large) return text;
+    return Row(children: [AssetAvatar(a.category, size: 52), const SizedBox(width: 14), Expanded(child: text)]);
+  }
+}
+
+/// A tab's content inside the scrolling page header (NestedScrollView).
+class _TabScroll extends StatelessWidget {
+  const _TabScroll(this.name, this.children);
+  final String name;
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => CustomScrollView(
+        key: PageStorageKey<String>(name),
+        slivers: [
+          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+          SliverPadding(padding: _tabPadding, sliver: SliverList(delegate: SliverChildListDelegate(children))),
+        ],
+      );
+}
+
 // Room at the bottom of each tab for the Tambah button over it.
 const _tabPadding = EdgeInsets.fromLTRB(16, 16, 16, KSpace.fabClearance);
+
+/// What a reminder needs, as words for a sentence: "lewat 6 hari", "tamat 12 Nov".
+(String, Tone) statusPhrase(Str s, Reminder r, World w) {
+  final (text, tone) = shortDue(s, r, w);
+  final lower = text.isEmpty ? text : text[0].toLowerCase() + text.substring(1);
+  // Due soon on a date: when it ends, or in how many days ("Road tax ends 12 Nov").
+  final days = r.dueDate == null ? null : daysBetween(today(), r.dueDate!);
+  final onDate = tone == Tone.dueSoon && r.info.usesDate && days != null && days > 1 && text == s.inDays(days);
+  if (!onDate) return (lower, tone);
+  return (r.autoSource != null || r.category == 'document' ? s.endsOn(s.dShort(r.dueDate!)) : s.inDaysPhrase(days), tone);
+}
 
 class _Overview extends StatelessWidget {
   const _Overview(this.a, this.w, this.recordKind);
@@ -407,20 +520,181 @@ class _Overview extends StatelessWidget {
   final World w;
   final ValueNotifier<String?> recordKind;
 
+  /// On a house, dues and cover go under Status with the DLP; the rest is upkeep.
+  static const _houseDues = {'cukai_tanah', 'cukai_petak', 'cukai_taksiran', 'maintenance_charge', 'sinking_fund', 'insurance_premium'};
+
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final theme = Theme.of(context);
-    final children = <Widget>[
-      if (a.photoPath != null) ...[
-        ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
-        const SizedBox(height: 12),
-      ],
-    ];
-    void edit() => Navigator.push(context, MaterialPageRoute(builder: (_) => a.category == 'house' ? HouseEditScreen(assetId: a.id) : VehicleEditScreen(assetId: a.id)));
-    if (a.category == 'house') {
-      final h = w.houses[a.id]!;
-      children.add(Facts([
+    final k = context.tokens;
+    final house = a.category == 'house';
+    final v = w.vehicles[a.id];
+    final h = w.houses[a.id];
+    final t = today();
+    final live = w.reminders.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
+    void tab(int i, [String? kind]) {
+      recordKind.value = kind;
+      DefaultTabController.of(context).animateTo(i);
+    }
+
+    void edit() => Navigator.push(context, MaterialPageRoute(builder: (_) => house ? HouseEditScreen(assetId: a.id) : VehicleEditScreen(assetId: a.id)));
+    void open(Reminder r) => showReminderSheet(context, r.id);
+    final lead = KText.subtitle.copyWith(fontSize: 15, height: 22 / 15, fontWeight: FontWeight.w400, color: k.label);
+    final children = <Widget>[];
+
+    // Who this is, when there is no photo header to say it.
+    if (a.photoPath == null) children.add(Padding(padding: const EdgeInsets.only(bottom: 14), child: _Identity(a, w)));
+
+    // In a sentence or two: what needs attention now.
+    final urgent = live.where((r) => remStatus(r, w) == RStatus.overdue || remStatus(r, w) == RStatus.dueSoon).toList();
+    final defects = w.records.where((r) => r.assetId == a.id && r.kind == 'defect').toList();
+    final end = house ? dlpEnd(w, a.id) : null;
+    final inDlp = end != null && daysBetween(t, end) > 0;
+    final unreported = defects.where((r) => r.reportedToDeveloper == null && r.status != 'done').length;
+    final spans = <InlineSpan>[];
+    for (final r in urgent.take(2)) {
+      final (phrase, tone) = statusPhrase(s, r, w);
+      spans.addAll([
+        TextSpan(text: '${r.title} '),
+        TextSpan(text: phrase, style: TextStyle(color: toneColor(context, tone), fontWeight: FontWeight.w500)),
+        const TextSpan(text: '. '),
+      ]);
+    }
+    if (urgent.length > 2) spans.add(TextSpan(text: '${s.andMoreDue(urgent.length - 2)} '));
+    if (inDlp && unreported > 0) spans.add(TextSpan(text: s.defectsUnreported(unreported)));
+    children.add(Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Text.rich(TextSpan(children: spans.isEmpty ? [TextSpan(text: s.statusNone)] : spans), style: lead),
+    ));
+
+    // Status: what keeps the asset legal and covered.
+    final state = <Widget>[];
+    if (v != null) {
+      final o = w.odometer[a.id];
+      final monthly = live.where((r) => r.category == 'odometer').firstOrNull;
+      state.addAll([
+        AppRow(
+          leading: const IconAvatar(Icons.speed_outlined),
+          title: o == null ? s.odoNotSet : s.km(o.km),
+          meta: o == null ? s.odoAddFirst : s.odoMeta(s.ago(o.date)),
+          trailing: TextButton(onPressed: () => showOdometerDialog(context, a.id), child: Text(s.update)),
+          onTap: () => showOdometerDialog(context, a.id),
+        ),
+        AppRow(
+          leading: const IconAvatar(Icons.event_repeat_outlined),
+          title: s.monthlyOdoReminder,
+          meta: s.monthlyOdoReminderSub,
+          trailing: Switch(
+            value: monthly != null,
+            onChanged: (on) async {
+              final db = context.db;
+              if (on) {
+                await db.addReminder(RemindersCompanion(
+                  assetId: Value(a.id),
+                  title: Value(s.updateOdoTitle(a.nickname)),
+                  category: const Value('odometer'),
+                  ruleType: const Value('repeat'),
+                  dueDate: Value(DateTime(t.year, t.month + 1, 1)),
+                  repeatMonths: const Value(1),
+                  leadDays: const Value(0),
+                ));
+              } else {
+                await db.deleteReminder(monthly!.id);
+              }
+            },
+          ),
+        ),
+        _expiry(context, s.catName('road_tax'), Icons.receipt_long_outlined, v.roadTaxExpiry, autoRoadTax, null, edit),
+        _expiry(context, s.insuranceWord, Icons.shield_outlined, v.insuranceExpiry, autoInsurance, v.insuranceProvider, edit),
+      ]);
+    }
+    if (house && h != null) {
+      if (end != null) {
+        final left = daysBetween(t, end);
+        final total = daysBetween(h.vpDate!, end);
+        final gone = daysBetween(h.vpDate!, t).clamp(0, total);
+        state.add(AppRow(
+          leading: const IconAvatar(Icons.construction_outlined),
+          title: s.dlpRowTitle,
+          titleTag: h.dlpEndOverride == null ? const EstTag() : null,
+          status: left > 0 ? StatusLabel(s.inDays(left), left < 90 ? Tone.dueSoon : Tone.upcoming) : StatusLabel(s.expired, Tone.expired),
+          // Never a fact: who to confirm the date with is part of the line (SPEC rule 5).
+          meta: h.dlpEndOverride == null ? s.dlpRowMeta(s.dLong(end)) : s.dlpRowMetaOwn(s.dLong(end)),
+          action: left <= 0
+              ? null
+              : Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  ProgressLine(total == 0 ? 1 : gone / total),
+                  const SizedBox(height: 10),
+                  FilledButton.tonal(onPressed: () => tab(1, 'defect'), child: Text(s.defectsAction(defects.length, unreported))),
+                ]),
+          onTap: () => tab(1, 'defect'),
+        ));
+      } else if (h.source != 'subsale') {
+        state.add(AppRow(leading: const IconAvatar(Icons.construction_outlined), title: s.dlpRowTitle, meta: s.addVpForDlp, trailing: const Icon(Icons.chevron_right), onTap: edit));
+      }
+      for (final r in live.where((r) => _houseDues.contains(r.category))) {
+        state.add(ReminderTile(r, w, showAsset: false, icon: Icons.receipt_long_outlined, onTap: () => open(r)));
+      }
+    }
+    if (state.isNotEmpty) children.addAll([SectionTitle(s.stateTitle), CardList(state)]);
+    if (house && h != null && h.source == 'subsale' && inDlp) children.addAll([const SizedBox(height: 8), NoteBox(s.dlpSubsaleNote)]);
+    if (house && h?.propertyType == 'strata') children.addAll([const SizedBox(height: 8), NoteBox(s.strataInsuranceNote, icon: Icons.shield_outlined)]);
+
+    // Upkeep: the other reminders, most urgent first. Linked dates are shown above.
+    final upkeep = live.where((r) => !(house && _houseDues.contains(r.category)) && r.autoSource == null && r.category != 'odometer').toList();
+    if (upkeep.isNotEmpty) {
+      children.addAll([
+        SectionTitle(s.kindName('maintenance'), link: s.seeAll(upkeep.length), onLink: () => tab(2)),
+        CardList([for (final r in upkeep.take(3)) ReminderTile(r, w, showAsset: false, onTap: () => open(r))]),
+      ]);
+    }
+
+    // The latest records, with this year's spending.
+    final recs = w.records.where((r) => r.assetId == a.id).toList()..sort((x, y) => y.date.compareTo(x.date));
+    final spent = recs.where((r) => r.date.year == t.year).fold<double>(0, (sum, r) => sum + (r.cost ?? 0));
+    children.addAll([
+      SectionTitle(s.recordsYear(t.year, s.rm(spent)), link: recs.isEmpty ? null : s.seeAll(recs.length), onLink: () => tab(1)),
+      CardList([for (final r in recs.take(3)) RecordTile(r, w)], empty: s.noRecordsYet),
+      SectionTitle(s.detailsTitle),
+      _Details(a, w, edit),
+    ]);
+    return _TabScroll('overview', children);
+  }
+
+  /// A date the asset carries (road tax, insurance), with the reminder that follows it.
+  Widget _expiry(BuildContext context, String title, IconData icon, DateTime? date, String source, String? extra, VoidCallback edit) {
+    final s = context.s;
+    if (date == null) return AppRow(leading: IconAvatar(icon), title: title, meta: s.notSet, trailing: const Icon(Icons.chevron_right), onTap: edit);
+    final r = w.reminders.where((x) => x.assetId == a.id && x.autoSource == source && !x.done).firstOrNull;
+    final days = daysBetween(today(), date);
+    final (st, tone) = r != null ? shortDue(s, r, w) : (days < 0 ? (s.expired, Tone.expired) : (s.inDays(days), Tone.upcoming));
+    return AppRow(
+      leading: IconAvatar(icon),
+      title: title,
+      status: StatusLabel(st, tone),
+      meta: extra == null ? s.endsCap(s.dLong(date)) : '$extra · ${s.endsOn(s.dLong(date))}',
+      onTap: r != null ? () => showReminderSheet(context, r.id) : edit,
+    );
+  }
+}
+
+/// Everything else about the asset, folded away: a one-line summary that opens the full list.
+class _Details extends StatelessWidget {
+  const _Details(this.a, this.w, this.edit);
+  final Asset a;
+  final World w;
+  final VoidCallback edit;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    final List<(String, String)> facts;
+    final String summary;
+    final h = w.houses[a.id];
+    final v = w.vehicles[a.id];
+    if (h != null) {
+      facts = [
         (s.propertyType, s.ptypeName(h.propertyType)),
         if (h.source != null) (s.boughtAs, s.sourceName(h.source!)),
         if (h.vpDate != null) (h.source == 'subsale' ? s.vpDateSubsale : s.vpDate, s.dLong(h.vpDate!)),
@@ -432,117 +706,51 @@ class _Overview extends StatelessWidget {
         if (h.address != null) (s.address, h.address!),
         if (h.contact != null) (s.contact, h.contact!),
         if (a.notes != null) (s.notes, a.notes!),
-      ]));
-      final end = dlpEnd(w, a.id);
-      if (end != null) {
-        final left = daysBetween(today(), end);
-        final total = daysBetween(h.vpDate!, end);
-        final gone = daysBetween(h.vpDate!, today()).clamp(0, total);
-        children.add(const SizedBox(height: 12));
-        if (left > 0) {
-          children.add(Card(
-            margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Row(children: [
-                  DlpRing(left: left, fraction: total == 0 ? 1.0 : gone / total),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                      Text(s.dlpTitle.toUpperCase(), style: theme.textTheme.labelMedium),
-                      const SizedBox(height: 4),
-                      Text(s.dlpDaysLeft, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
-                      const SizedBox(height: 4),
-                      Text(s.endsAbout(s.dLong(end)), style: theme.textTheme.bodySmall),
-                      if (h.dlpEndOverride != null) Text(s.dlpSetByYou, style: theme.textTheme.bodySmall),
-                    ]),
-                  ),
-                ]),
-                const SizedBox(height: 12),
-                NoteBox(h.dlpEndOverride != null ? s.dlpOverrideNote : s.dlpNote, warn: h.dlpEndOverride == null),
-                if (h.source == 'subsale') ...[const SizedBox(height: 8), NoteBox(s.dlpSubsaleNote)],
-                const SizedBox(height: 4),
-                TextButton.icon(
-                  icon: const Icon(Icons.construction_outlined),
-                  label: Text(s.openDefectList(w.records.where((r) => r.assetId == a.id && r.kind == 'defect' && r.status != 'done').length)),
-                  onPressed: () {
-                    recordKind.value = 'defect';
-                    DefaultTabController.of(context).animateTo(1);
-                  },
-                ),
-              ]),
-            ),
-          ));
-        } else {
-          children.add(NoteBox(s.dlpEnded(s.dLong(end))));
-        }
-      } else if (h.source != 'subsale') {
-        children.add(const SizedBox(height: 12));
-        children.add(NoteBox(s.addVpForDlp));
-      }
-      if (h.propertyType == 'strata') {
-        children.add(const SizedBox(height: 12));
-        children.add(NoteBox(s.strataInsuranceNote, icon: Icons.shield_outlined));
-      }
+      ];
+      summary = [
+        if (h.titleStatus != null) s.titleName(h.titleStatus!),
+        if (h.vpDate != null) s.vpOn(s.dShort(h.vpDate!)),
+        if (h.occupancy != null) s.occupancyName(h.occupancy!),
+      ].join(' · ');
     } else {
-      final v = w.vehicles[a.id]!;
-      final o = w.odometer[a.id];
-      final monthly = w.reminders.where((r) => r.assetId == a.id && r.category == 'odometer' && !r.done).firstOrNull;
-      children.addAll([
-        Center(child: Padding(padding: const EdgeInsets.only(bottom: 10), child: Plate(v.plate, big: true))),
-        Card(
-          margin: EdgeInsets.zero,
-          child: Column(children: [
-            ListTile(
-              contentPadding: const EdgeInsets.fromLTRB(16, 8, 12, 0),
-              leading: const Icon(Icons.speed_outlined, size: 32),
-              title: Text(o == null ? s.odoNotSet : s.km(o.km), style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
-              subtitle: Text(o == null ? s.odoAddFirst : s.odoLastUpdated(s.ago(o.date))),
-              trailing: FilledButton.tonal(onPressed: () => showOdometerDialog(context, a.id), child: Text(s.update)),
-            ),
-            SwitchListTile(
-              value: monthly != null,
-              title: Text(s.monthlyOdoReminder),
-              subtitle: Text(s.monthlyOdoReminderSub),
-              onChanged: (on) async {
-                final db = context.db;
-                if (on) {
-                  await db.addReminder(RemindersCompanion(
-                    assetId: Value(a.id),
-                    title: Value(s.updateOdoTitle(a.nickname)),
-                    category: const Value('odometer'),
-                    ruleType: const Value('repeat'),
-                    dueDate: Value(DateTime(today().year, today().month + 1, 1)),
-                    repeatMonths: const Value(1),
-                    leadDays: const Value(0),
-                  ));
-                } else {
-                  await db.deleteReminder(monthly!.id);
-                }
-              },
-            ),
-          ]),
-        ),
-        const SizedBox(height: 12),
-        Facts([
-          if (v.make != null || v.model != null) (s.vehicle, [v.make, v.model, v.year?.toString()].whereType<String>().join(' ')),
-          (s.roadTaxExpiry, v.roadTaxExpiry == null ? s.notSet : s.dLong(v.roadTaxExpiry!)),
-          (s.insuranceExpiry, v.insuranceExpiry == null ? s.notSet : s.dLong(v.insuranceExpiry!)),
-          if (v.insuranceProvider != null) (s.insurer, v.insuranceProvider!),
-          if (v.policyNo != null) (s.policyNo, v.policyNo!),
-          if (v.warrantyExpiry != null || v.warrantyKm != null)
-            (s.warranty, [if (v.warrantyExpiry != null) s.dLong(v.warrantyExpiry!), if (v.warrantyKm != null) s.km(v.warrantyKm!)].join(s.orWord)),
-          if (v.condition != null) (s.boughtAs, s.conditionName(v.condition!)),
-          if (a.notes != null) (s.notes, a.notes!),
-        ]),
-      ]);
+      facts = [
+        if (v != null && (v.make != null || v.model != null)) (s.vehicle, [v.make, v.model, v.year?.toString()].whereType<String>().join(' ')),
+        if (v?.cc != null) ('cc', '${v!.cc}'),
+        if (v?.insuranceProvider != null) (s.insurer, v!.insuranceProvider!),
+        if (v?.policyNo != null) (s.policyNo, v!.policyNo!),
+        if (v != null && (v.warrantyExpiry != null || v.warrantyKm != null))
+          (s.warranty, [if (v.warrantyExpiry != null) s.dLong(v.warrantyExpiry!), if (v.warrantyKm != null) s.km(v.warrantyKm!)].join(s.orWord)),
+        if (v?.condition != null) (s.boughtAs, s.conditionName(v!.condition!)),
+        if (v?.chassisNo != null) (s.chassisNo, v!.chassisNo!),
+        if (v?.engineNo != null) (s.engineNo, v!.engineNo!),
+        if (a.notes != null) (s.notes, a.notes!),
+      ];
+      summary = [
+        if (v?.cc != null) '${v!.cc} cc',
+        if (v?.warrantyExpiry != null) s.warrantyUntil2(s.dShort(v!.warrantyExpiry!)),
+        if (v?.condition != null) s.conditionName(v!.condition!),
+      ].join(' · ');
     }
-    children.addAll([
-      const SizedBox(height: 12),
-      OutlinedButton.icon(icon: const Icon(Icons.edit_outlined), label: Text(s.editDetails), onPressed: edit),
-    ]);
-    return ListView(padding: _tabPadding, children: children);
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: ExpansionTile(
+        // Its own storage key: without one it would read the tab's scroll offset as its state.
+        key: const PageStorageKey<String>('details'),
+        shape: const Border(),
+        collapsedShape: const Border(),
+        tilePadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+        childrenPadding: const EdgeInsets.fromLTRB(14, 0, 14, 14),
+        expandedCrossAxisAlignment: CrossAxisAlignment.stretch,
+        title: Text(h != null ? s.houseDetails : s.vehicleDetails, style: KText.row.copyWith(color: k.text)),
+        subtitle: summary.isEmpty ? null : Text(summary, style: KText.meta.copyWith(color: k.textMuted)),
+        children: [
+          if (facts.isNotEmpty) Facts(facts, bare: true),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(icon: const Icon(Icons.edit_outlined), label: Text(s.editDetails), onPressed: edit),
+        ],
+      ),
+    );
   }
 }
 
@@ -731,7 +939,7 @@ class _Records extends StatelessWidget {
           final rs = k == null ? all : all.where((r) => r.kind == k).toList();
           final year = today().year;
           final spent = rs.where((r) => r.date.year == year).fold<double>(0, (t, r) => t + (r.cost ?? 0));
-          return ListView(padding: _tabPadding, children: [
+          return _TabScroll('records', [
             if (filter != null) filter,
             Row(children: [Expanded(child: Text(s.spentThisYear(year))), Text(s.rm(spent), style: const TextStyle(fontWeight: FontWeight.w700))]),
             const SizedBox(height: 12),
@@ -756,7 +964,7 @@ class _Reminders extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final rs = w.reminders.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
-    return ListView(padding: _tabPadding, children: [
+    return _TabScroll('reminders', [
       CardList([for (final r in rs) ReminderTile(r, w, showAsset: false, onTap: () => showReminderSheet(context, r.id))], empty: s.noRemindersYet),
       const SizedBox(height: 12),
       OutlinedButton.icon(
@@ -777,7 +985,7 @@ class _Documents extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final ds = w.files.where((d) => d.assetId == a.id).toList()..sort((x, y) => y.addedAt.compareTo(x.addedAt));
-    return ListView(padding: _tabPadding, children: [
+    return _TabScroll('documents', [
       CardList([for (final d in ds) DocTile(d, w)], empty: s.noDocsForAsset),
       const SizedBox(height: 12),
       OutlinedButton.icon(
@@ -810,7 +1018,7 @@ class _DefectList extends StatelessWidget {
       ]);
     }
 
-    return ListView(padding: _tabPadding, children: [
+    return _TabScroll('defects', [
       if (filter != null) filter!,
       if (end != null && left! > 0)
         NoteBox('$left ${s.dlpDaysLeftEnds(s.dLong(end))}. ${s.defectReportNote}', warn: true)

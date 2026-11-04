@@ -31,7 +31,7 @@ void main() {
     'New record': (const RecordFormScreen(assetId: 1), find.text(s.saveRecord)),
     'Edit details (house)': (const HouseEditScreen(assetId: 1), find.text(s.saveChanges)),
     'Edit details (vehicle)': (const VehicleEditScreen(assetId: 2), find.text(s.saveChanges)),
-    'Asset detail': (const AssetDetailScreen(assetId: 1), find.text(s.editDetails)),
+    'Asset detail': (const AssetDetailScreen(assetId: 1), find.text(s.houseDetails)),
     'Add asset': (const AddAssetScreen(), find.text(s.onlyNameNeeded)),
     'Attach document': (const DocumentFormScreen(assetId: 1), find.text(s.docCopiedNote)),
     'Vendor form': (const VendorFormScreen(), find.text(s.save)),

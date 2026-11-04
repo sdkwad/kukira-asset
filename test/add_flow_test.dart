@@ -181,7 +181,7 @@ void main() {
       setPhone(tester);
       for (final (screen, last) in [
         (const Shell() as Widget, find.textContaining(s.allReminders(1))),
-        (const AssetDetailScreen(assetId: 1), find.text(s.editDetails)),
+        (const AssetDetailScreen(assetId: 1), find.text(s.houseDetails)),
       ]) {
         await tester.pumpWidget(harness(screen, fakeWorld()));
         await tester.pumpAndSettle();

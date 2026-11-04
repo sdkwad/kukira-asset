@@ -79,16 +79,18 @@ void main() {
     expect(find.text(s.vpDate), findsNothing);
   });
 
-  testWidgets('subsale shows the DLP countdown only when a VP date exists', (tester) async {
+  testWidgets('subsale shows the DLP only when a VP date exists', (tester) async {
     setPhone(tester, height: 2400);
     final recentVp = DateTime.now().subtract(const Duration(days: 180));
     await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), fakeWorld(source: 'subsale', vp: recentVp)));
     await tester.pumpAndSettle();
-    expect(find.text(s.dlpDaysLeft), findsOneWidget);
+    expect(find.text(s.dlpRowTitle), findsOneWidget);
+    await tester.tap(find.text(s.houseDetails));
+    await tester.pumpAndSettle();
     expect(find.text(s.vpDateSubsale), findsOneWidget);
 
     await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), fakeWorld(source: 'subsale')));
     await tester.pumpAndSettle();
-    expect(find.text(s.dlpDaysLeft), findsNothing);
+    expect(find.text(s.dlpRowTitle), findsNothing);
   });
 }
