@@ -514,7 +514,6 @@ class _RecordFormState extends State<RecordFormScreen> {
   int? _linkedId;
   bool _loaded = false;
   bool _saving = false;
-  String? _error;
 
   @override
   void dispose() {
@@ -586,6 +585,11 @@ class _RecordFormState extends State<RecordFormScreen> {
         .firstOrNull;
   }
 
+  // An empty title takes the name of the reminder this record completes ("Tukar minyak
+  // enjin"), or else its category ("Minyak enjin").
+  String _fallbackTitle(Reminder? match) =>
+      match != null && (_markDone || widget.linkedReminderId != null) ? match.title : defaultRecordTitle(context.s, _kind, _cat);
+
   double? _itemsTotal() {
     var t = 0.0;
     var any = false;
@@ -601,7 +605,6 @@ class _RecordFormState extends State<RecordFormScreen> {
 
   Future<void> _save(World w) async {
     final s = context.s;
-    if (_title.text.trim().isEmpty) return setState(() => _error = s.errDescription);
     setState(() => _saving = true);
     final db = context.db;
     final defect = _kind == 'defect';
@@ -622,7 +625,7 @@ class _RecordFormState extends State<RecordFormScreen> {
       editId: widget.editId,
       kind: _kind,
       category: _cat,
-      title: _title.text.trim(),
+      title: nn(_title.text) ?? _fallbackTitle(match),
       date: _date,
       cost: _itemised ? _itemsTotal() : double.tryParse(_cost.text.replaceAll(',', '').trim()),
       costItems: [
@@ -710,7 +713,13 @@ class _RecordFormState extends State<RecordFormScreen> {
           TextField(
             controller: _title,
             textCapitalization: TextCapitalization.sentences,
-            decoration: InputDecoration(labelText: defect ? s.whatFound : s.whatDone, hintText: defect ? s.defectHint : s.recordHint, border: const OutlineInputBorder()),
+            decoration: InputDecoration(
+              labelText: defect ? s.whatFound : s.whatDone,
+              hintText: defect ? s.defectHint : s.recordHint,
+              helperText: s.titleIfEmpty(_fallbackTitle(match)),
+              helperMaxLines: 2,
+              border: const OutlineInputBorder(),
+            ),
           ),
           const SizedBox(height: 14),
           DateField(label: s.date, value: _date, clearable: false, onChanged: (d) => setState(() => _date = d ?? _date)),
@@ -841,10 +850,6 @@ class _RecordFormState extends State<RecordFormScreen> {
                   onChanged: (v) => setState(() => _markDone = v ?? false),
                 ),
               ),
-          ],
-          if (_error != null) ...[
-            const SizedBox(height: 12),
-            Text(_error!, style: TextStyle(color: theme.colorScheme.error)),
           ],
           const SizedBox(height: 20),
           FilledButton(

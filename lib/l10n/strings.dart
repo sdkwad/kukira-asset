@@ -189,7 +189,8 @@ abstract class Str {
   String get markDoneAndNext;
   String get saveRecord;
   String get saveDefect;
-  String get errDescription;
+  /// Under the record title: it may be left empty, and what is saved then.
+  String titleIfEmpty(String title);
   String get recordSaved;
   String get defectAdded;
   String alsoMarkedDone(String title, String? next);

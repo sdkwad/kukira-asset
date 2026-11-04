@@ -129,6 +129,15 @@ const vehicleKinds = ['maintenance', 'incident', 'payment'];
 
 List<String> kindsFor(String assetCategory) => assetCategory == 'house' ? houseKinds : vehicleKinds;
 
+/// The title a record gets when the user leaves it empty: its category ("Engine oil",
+/// "Road tax"), or its kind when the category says nothing on its own.
+String defaultRecordTitle(Str s, String kind, String? category) {
+  if (category == null || category == 'other') return s.kindName(kind);
+  // Renovation categories are only "Minor" and "Major".
+  if (kind == 'renovation') return '${s.kindName(kind)} (${s.catName(category)})';
+  return s.catName(category);
+}
+
 List<String> categoriesFor(String assetCategory, String kind) {
   if (assetCategory == 'house') {
     switch (kind) {

@@ -399,7 +399,7 @@ class StrMs extends Str {
   @override
   String get saveDefect => 'Simpan kecacatan';
   @override
-  String get errDescription => 'Tambah penerangan ringkas.';
+  String titleIfEmpty(String title) => 'Pilihan. Jika kosong: $title';
   @override
   String get recordSaved => 'Rekod disimpan.';
   @override

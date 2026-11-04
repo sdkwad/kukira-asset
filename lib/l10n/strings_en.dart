@@ -399,7 +399,7 @@ class StrEn extends Str {
   @override
   String get saveDefect => 'Save defect';
   @override
-  String get errDescription => 'Add a short description.';
+  String titleIfEmpty(String title) => 'Optional. If left empty: $title';
   @override
   String get recordSaved => 'Record saved.';
   @override
