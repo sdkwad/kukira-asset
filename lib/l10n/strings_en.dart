@@ -1260,4 +1260,28 @@ class StrEn extends Str {
   String get openFailedBody => "This is usually temporary. Close Kukira and open it again; if it still happens, restart the phone. Your records have not been changed.\n\nIf it keeps happening, you can restore from a Kukira backup file.";
   @override
   String get openFailedTitle => "Kukira couldn't open your records just now";
+
+  // ------------------------------------------------ Pick lists
+  @override
+  String get comboNotListed => 'Not in the list? Keep typing. The name is saved as you type it.';
+  @override
+  String get showList => 'Show list';
+  @override
+  String get searchList => 'Search the list';
+  @override
+  String get typeYourOwn => 'Not in the list? Close this and type it in the field.';
+  @override
+  String get openWebsite => 'Open the website in your browser';
+  @override
+  String councilWebsite(String? abbr) => abbr == null ? 'Council website' : '$abbr website';
+  @override
+  String get noBrowser => 'There is no browser to open this link.';
+  @override
+  String get councilListSource => 'Council list from KPKT, Nov 2026.';
+  @override
+  String get insurerListSource => 'Companies licensed for general insurance and general takaful, from BNM, Nov 2026.';
+  @override
+  List<String> get houseAreas => const ['Living room', 'Dining area', 'Kitchen', 'Wet kitchen', 'Master bedroom', 'Bedroom 2', 'Bedroom 3', 'Bedroom 4', 'Master bathroom', 'Bathroom 2', 'Bathroom 3', 'Laundry area', 'Store room', 'Balcony', 'Corridor', 'Staircase', 'Ceiling', 'Roof', 'Car porch', 'Garden', 'Fence', 'Main door', 'Windows'];
+  @override
+  List<String> itemSuggestions(bool vehicle) => vehicle ? const ['Engine oil', 'Oil filter', 'Air filter', 'Cabin filter', 'Spark plugs', 'Brake fluid', 'Brake pads', 'Gear oil', 'ATF', 'Coolant', 'Battery', 'Tyres', 'Wheel alignment', 'Wheel balancing', 'Wiper blades', 'Chain and sprocket', 'Labour'] : const ['Labour', 'Materials', 'Paint', 'Pipes', 'Tap', 'Wiring', 'Switch', 'Lights', 'Tiles', 'Cement', 'Lock', 'Hinges', 'Aircond gas', 'Water filter'];
 }

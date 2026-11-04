@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../data/db.dart';
 import '../domain/auto_sync.dart';
+import '../domain/lists.dart';
 import '../domain/presets.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
@@ -12,6 +13,7 @@ import '../services/files.dart';
 import '../services/notifications.dart';
 import 'add_actions.dart';
 import 'add_asset.dart';
+import 'combo.dart';
 import 'common.dart';
 import 'documents.dart';
 import 'forms.dart';
@@ -693,6 +695,8 @@ class _Details extends StatelessWidget {
     final String summary;
     final h = w.houses[a.id];
     final v = w.vehicles[a.id];
+    final council = councilNamed(h?.council, state: h?.state)?.$1;
+    final web = council?.web;
     if (h != null) {
       facts = [
         (s.propertyType, s.ptypeName(h.propertyType)),
@@ -746,6 +750,15 @@ class _Details extends StatelessWidget {
         subtitle: summary.isEmpty ? null : Text(summary, style: KText.meta.copyWith(color: k.textMuted)),
         children: [
           if (facts.isNotEmpty) Facts(facts, bare: true),
+          if (web != null)
+            Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                icon: const Icon(Icons.open_in_new, size: 18),
+                label: Text(s.councilWebsite(council?.abbr)),
+                onPressed: () => openWebsite(context, web),
+              ),
+            ),
           const SizedBox(height: 12),
           OutlinedButton.icon(icon: const Icon(Icons.edit_outlined), label: Text(s.editDetails), onPressed: edit),
         ],
@@ -1499,9 +1512,22 @@ class _HouseEditState extends State<HouseEditScreen> {
           FieldLabel(s.occupancy),
           ChoiceRow<String>(options: const ['owner', 'rented', 'vacant'], value: _occupancy, label: s.occupancyName, onChanged: (v) => setState(() => _occupancy = v)),
           const SizedBox(height: 14),
-          TextField(controller: _council, decoration: InputDecoration(labelText: s.council, hintText: s.councilHint, border: const OutlineInputBorder())),
+          ComboField(controller: _state, label: s.state, options: stateOptions(), onChanged: (_) => setState(() {})),
           const SizedBox(height: 12),
-          TextField(controller: _state, decoration: InputDecoration(labelText: s.state, border: const OutlineInputBorder())),
+          ComboField(
+            controller: _council,
+            label: s.council,
+            hint: s.councilHint,
+            options: councilOptions(w, _state.text),
+            source: s.councilListSource,
+            trailing: councilLinkButton(context, _council.text, state: _state.text),
+            onChanged: (_) => setState(() {}),
+            onSelected: (o) {
+              // Picked from every state's list: fill in the state too.
+              final c = councilNamed(o.value);
+              if (c != null && stateNamed(_state.text) == null) _state.text = c.$2;
+            },
+          ),
           const SizedBox(height: 12),
           TextField(controller: _address, maxLines: 2, decoration: InputDecoration(labelText: s.address, border: const OutlineInputBorder())),
           const SizedBox(height: 12),
@@ -1621,8 +1647,30 @@ class _VehicleEditState extends State<VehicleEditScreen> {
           const SizedBox(height: 16),
           tf(_name, s.nickname),
           tf(_plate, s.plate),
-          Row(children: [Expanded(child: tf(_make, s.make)), const SizedBox(width: 10), Expanded(child: tf(_model, s.model))]),
-          Row(children: [Expanded(child: tf(_year, s.year, number: true)), const SizedBox(width: 10), Expanded(child: tf(_cc, 'cc', number: true))]),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ComboField(controller: _make, label: s.make, options: makeOptions(w, a.category), onChanged: (_) => setState(() {})),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ComboField(controller: _model, label: s.model, options: modelOptions(w, a.category, _make.text)),
+          ),
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: ComboField(
+                  controller: _year,
+                  label: s.year,
+                  options: yearComboOptions(),
+                  keyboardType: TextInputType.number,
+                  textCapitalization: TextCapitalization.none,
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: tf(_cc, 'cc', number: true)),
+          ]),
           FieldLabel(s.boughtAs),
           ChoiceRow<String>(options: const ['new', 'second_hand'], value: _cond, label: s.conditionName, onChanged: (x) => setState(() => _cond = x)),
           const SizedBox(height: 14),
@@ -1630,7 +1678,10 @@ class _VehicleEditState extends State<VehicleEditScreen> {
           const SizedBox(height: 12),
           DateField(label: s.insuranceExpiry, value: _insExp, onChanged: (d) => setState(() => _insExp = d)),
           const SizedBox(height: 12),
-          tf(_insurer, s.insurer),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: ComboField(controller: _insurer, label: s.insurer, options: insurerOptions(w), source: s.insurerListSource),
+          ),
           tf(_policy, s.policyNo),
           NoteBox(s.autoSyncNoteVehicle, icon: Icons.sync),
           ExpansionTile(

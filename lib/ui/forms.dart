@@ -9,6 +9,7 @@ import '../services/error_log.dart';
 import '../services/record_save.dart';
 import 'add_actions.dart';
 import 'assets.dart';
+import 'combo.dart';
 import 'common.dart';
 import 'documents.dart';
 
@@ -725,7 +726,7 @@ class _RecordFormState extends State<RecordFormScreen> {
           DateField(label: s.date, value: _date, clearable: false, onChanged: (d) => setState(() => _date = d ?? _date)),
           const SizedBox(height: 14),
           if (defect) ...[
-            TextField(controller: _area, decoration: InputDecoration(labelText: s.area, hintText: s.areaHint, border: const OutlineInputBorder())),
+            ComboField(controller: _area, label: s.area, hint: s.areaHint, options: areaOptions(s, w), textCapitalization: TextCapitalization.sentences),
             CheckboxListTile(contentPadding: EdgeInsets.zero, value: _reported, title: Text(s.alreadyReported), onChanged: (v) => setState(() => _reported = v ?? false)),
           ] else ...[
             if (!_itemised)
@@ -740,7 +741,17 @@ class _RecordFormState extends State<RecordFormScreen> {
                 Padding(
                   padding: const EdgeInsets.only(bottom: 8),
                   child: Row(children: [
-                    Expanded(child: TextField(controller: i.label, decoration: InputDecoration(hintText: s.itemHint, border: const OutlineInputBorder(), isDense: true))),
+                    Expanded(
+                      child: ComboField(
+                        controller: i.label,
+                        label: null,
+                        hint: s.itemHint,
+                        options: itemOptions(s, w, vehicle: vehicle),
+                        textCapitalization: TextCapitalization.sentences,
+                        listButton: false,
+                        dense: true,
+                      ),
+                    ),
                     const SizedBox(width: 8),
                     SizedBox(
                       width: 110,
@@ -826,7 +837,7 @@ class _RecordFormState extends State<RecordFormScreen> {
                 const SizedBox(height: 12),
               ],
               if (!vehicle && !defect) ...[
-                TextField(controller: _area, decoration: InputDecoration(labelText: s.area, hintText: s.areaHint, border: const OutlineInputBorder())),
+                ComboField(controller: _area, label: s.area, hint: s.areaHint, options: areaOptions(s, w), textCapitalization: TextCapitalization.sentences),
                 const SizedBox(height: 12),
               ],
               if (!defect && _kind != 'payment') ...[

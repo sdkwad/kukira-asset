@@ -1260,4 +1260,28 @@ class StrMs extends Str {
   String get openFailedBody => 'Ini biasanya sementara. Tutup Kukira dan buka semula; jika masih berlaku, mulakan semula telefon. Rekod anda tidak diubah.\n\nJika ia terus berlaku, anda boleh memulihkan dari fail sandaran Kukira.';
   @override
   String get openFailedTitle => 'Kukira tidak dapat membuka rekod anda sebentar tadi';
+
+  // ------------------------------------------------ Pick lists
+  @override
+  String get comboNotListed => 'Tiada dalam senarai? Teruskan menaip. Nama disimpan seperti ditaip.';
+  @override
+  String get showList => 'Tunjuk senarai';
+  @override
+  String get searchList => 'Cari dalam senarai';
+  @override
+  String get typeYourOwn => 'Tiada dalam senarai? Tutup dan taip sendiri dalam ruangan.';
+  @override
+  String get openWebsite => 'Buka laman web dalam pelayar';
+  @override
+  String councilWebsite(String? abbr) => abbr == null ? 'Laman web majlis' : 'Laman web $abbr';
+  @override
+  String get noBrowser => 'Tiada pelayar untuk membuka pautan ini.';
+  @override
+  String get councilListSource => 'Senarai PBT dari KPKT, Nov 2026.';
+  @override
+  String get insurerListSource => 'Syarikat berlesen insurans am dan takaful am, dari BNM, Nov 2026.';
+  @override
+  List<String> get houseAreas => const ['Ruang tamu', 'Ruang makan', 'Dapur', 'Dapur basah', 'Bilik utama', 'Bilik tidur 2', 'Bilik tidur 3', 'Bilik tidur 4', 'Bilik air utama', 'Bilik air 2', 'Bilik air 3', 'Bilik dobi', 'Bilik stor', 'Balkoni', 'Koridor', 'Tangga', 'Siling', 'Bumbung', 'Porch', 'Laman', 'Pagar', 'Pintu utama', 'Tingkap'];
+  @override
+  List<String> itemSuggestions(bool vehicle) => vehicle ? const ['Minyak enjin', 'Penapis minyak', 'Penapis udara', 'Penapis kabin', 'Palam pencucuh', 'Minyak brek', 'Pad brek', 'Minyak gear', 'Minyak ATF', 'Air radiator', 'Bateri', 'Tayar', 'Penjajaran roda', 'Pengimbangan roda', 'Bilah pengelap', 'Rantai dan sproket', 'Upah'] : const ['Upah', 'Barang', 'Cat', 'Paip', 'Kepala paip', 'Wayar', 'Suis', 'Lampu', 'Jubin', 'Simen', 'Kunci', 'Engsel', 'Gas aircond', 'Penapis air'];
 }

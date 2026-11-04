@@ -642,4 +642,17 @@ abstract class Str {
   // ------------------------------------------------ open failed
   String get openFailedBody;
   String get openFailedTitle;
+
+  // ------------------------------------------------ Pick lists
+  String get comboNotListed;
+  String get showList;
+  String get searchList;
+  String get typeYourOwn;
+  String get openWebsite;
+  String councilWebsite(String? abbr);
+  String get noBrowser;
+  String get councilListSource;
+  String get insurerListSource;
+  List<String> get houseAreas;
+  List<String> itemSuggestions(bool vehicle);
 }

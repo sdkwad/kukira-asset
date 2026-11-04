@@ -1,5 +1,7 @@
 package app.kukira.kukira_asset
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.view.WindowManager
 import io.flutter.embedding.android.FlutterFragmentActivity
@@ -18,6 +20,27 @@ class MainActivity : FlutterFragmentActivity() {
                 }
                 else -> result.notImplemented()
             }
+        }
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "kukira/links").setMethodCallHandler { call, result ->
+            when (call.method) {
+                "openWeb" -> result.success(openWeb(call.arguments as String))
+                else -> result.notImplemented()
+            }
+        }
+    }
+
+    // A council's website opens in the phone's browser. The app itself has no internet
+    // permission and does not load the page.
+    private fun openWeb(url: String): Boolean {
+        val uri = Uri.parse(url)
+        if (uri.scheme != "https" && uri.scheme != "http") return false
+        val intent = Intent(Intent.ACTION_VIEW, uri).addCategory(Intent.CATEGORY_BROWSABLE)
+        return try {
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            // No browser, or one that refused the address.
+            false
         }
     }
 
