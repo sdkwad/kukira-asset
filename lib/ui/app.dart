@@ -20,16 +20,55 @@ import 'more.dart';
 import 'today.dart';
 
 ThemeData buildTheme(Brightness b) {
-  final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF1E6A4E), brightness: b);
+  final k = b == Brightness.light ? KukiraColors.light : KukiraColors.dark;
+  // The seed fills the roles the design system does not set (dialogs, menus, chips).
+  final scheme = ColorScheme.fromSeed(seedColor: const Color(0xFF1E6A4E), brightness: b).copyWith(
+    primary: k.primary,
+    onPrimary: k.onPrimary,
+    primaryContainer: k.tonal,
+    onPrimaryContainer: k.onTonal,
+    secondaryContainer: k.tonal,
+    onSecondaryContainer: k.onTonal,
+    surface: k.background,
+    onSurface: k.text,
+    onSurfaceVariant: k.textMuted,
+    outlineVariant: k.line,
+    error: k.overdue,
+    errorContainer: k.overdueBg,
+    onErrorContainer: k.overdue,
+  );
   return ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
-    scaffoldBackgroundColor: b == Brightness.light ? const Color(0xFFF6F8F6) : const Color(0xFF111714),
+    extensions: [k],
+    scaffoldBackgroundColor: k.background,
     cardTheme: CardTheme(
       elevation: 0,
-      color: b == Brightness.light ? Colors.white : const Color(0xFF19221D),
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16), side: BorderSide(color: scheme.outlineVariant)),
+      color: k.surface,
+      surfaceTintColor: Colors.transparent,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSpace.groupRadius), side: BorderSide(color: k.line)),
     ),
+    dividerTheme: DividerThemeData(color: k.divider, thickness: 1),
+    navigationBarTheme: NavigationBarThemeData(
+      height: 72,
+      elevation: 0,
+      backgroundColor: k.surface,
+      surfaceTintColor: Colors.transparent,
+      indicatorColor: k.tonal,
+      iconTheme: WidgetStateProperty.resolveWith((st) => IconThemeData(color: st.contains(WidgetState.selected) ? k.onTonal : k.label)),
+      labelTextStyle: WidgetStateProperty.resolveWith((st) => st.contains(WidgetState.selected)
+          ? TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: k.primary)
+          : TextStyle(fontSize: 12, color: k.label)),
+    ),
+    floatingActionButtonTheme: FloatingActionButtonThemeData(
+      backgroundColor: k.primary,
+      foregroundColor: k.onPrimary,
+      elevation: 2,
+      highlightElevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      extendedTextStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+    ),
+    bottomSheetTheme: BottomSheetThemeData(backgroundColor: k.background, surfaceTintColor: Colors.transparent),
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
   );
 }

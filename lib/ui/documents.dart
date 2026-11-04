@@ -201,17 +201,15 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
       return SafeScaffold(
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
-              child: Row(children: [
-                Expanded(child: Text(s.documentsTab, style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700))),
-                if (w.assets.isNotEmpty)
-                  FilledButton.tonalIcon(
-                    icon: const Icon(Icons.attach_file),
-                    label: Text(s.attach),
-                    onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DocumentFormScreen())),
-                  ),
-              ]),
+            PageTitle(
+              s.documentsTab,
+              trailing: w.assets.isEmpty
+                  ? null
+                  : FilledButton.tonalIcon(
+                      icon: const Icon(Icons.attach_file),
+                      label: Text(s.attach),
+                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DocumentFormScreen())),
+                    ),
             ),
             if (w.files.isEmpty)
               Card(
@@ -265,24 +263,21 @@ class DocTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    Widget? trailing;
+    Widget? status;
     if (d.expiry != null) {
       final n = daysBetween(today(), d.expiry!);
-      final st = n < 0 ? RStatus.overdue : (n <= 30 ? RStatus.dueSoon : RStatus.upcoming);
-      final (bg, fg) = statusColors(context, st);
-      trailing = Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
-        child: Text(n < 0 ? s.expired : s.expiresShort(s.dShort(d.expiry!)), style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700)),
-      );
+      // An expired document is history (an older policy kept for the record), not an alarm.
+      status = n < 0
+          ? StatusLabel(s.expired, Tone.expired)
+          : StatusLabel(s.expiresShort(s.dShort(d.expiry!)), n <= 30 ? Tone.dueSoon : Tone.upcoming);
     }
-    return ListTile(
+    return AppRow(
       leading: SecureFiles.isImage(d.filePath)
-          ? ClipRRect(borderRadius: BorderRadius.circular(8), child: SecureImage(d.filePath, size: 44, cacheWidth: 150))
-          : const SizedBox(width: 44, height: 44, child: Icon(Icons.picture_as_pdf_outlined, size: 32)),
-      title: Text(d.title),
-      subtitle: Text([s.docTypeName(d.docType), if (showAsset) w.asset(d.assetId)?.nickname ?? ''].join(' · ')),
-      trailing: trailing,
+          ? ClipRRect(borderRadius: BorderRadius.circular(KSpace.controlRadius), child: SecureImage(d.filePath, size: 36, cacheWidth: 150))
+          : const IconAvatar(Icons.picture_as_pdf_outlined),
+      title: d.title,
+      status: status,
+      meta: [s.docTypeName(d.docType), if (showAsset) w.asset(d.assetId)?.nickname ?? ''].join(' · '),
       onTap: () => showDocSheet(context, d.id),
     );
   }

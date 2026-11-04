@@ -46,7 +46,9 @@ Future<void> _loadFonts() async {
   final files = dir.listSync().whereType<File>().toList();
   Future<ByteData> bytes(File f) async => ByteData.view(f.readAsBytesSync().buffer);
   final roboto = FontLoader('Roboto');
-  for (final f in files.where((f) => f.path.contains('Roboto') && f.path.endsWith('.ttf'))) {
+  // Not RobotoCondensed: in the same family it replaced the regular weight, so body text
+  // was drawn narrower than on the phone.
+  for (final f in files.where((f) => f.path.contains('Roboto') && !f.path.contains('Condensed') && f.path.endsWith('.ttf'))) {
     roboto.addFont(bytes(f));
   }
   await roboto.load();

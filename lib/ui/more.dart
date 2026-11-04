@@ -29,10 +29,7 @@ class MoreScreen extends StatelessWidget {
       return SafeScaffold(
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
-              child: Text(s.moreTab, style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
-            ),
+            PageTitle(s.moreTab),
             CardList([
               ListTile(
                 leading: const Icon(Icons.save_alt_outlined),

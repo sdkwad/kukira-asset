@@ -4,6 +4,9 @@ import '../data/db.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
 import '../services/notifications.dart';
+import 'tokens.dart';
+
+export 'tokens.dart';
 
 // ---------------------------------------------------------------- scope
 
@@ -179,16 +182,24 @@ IconData catIcon(String category) => switch (category) {
       _ => Icons.home_outlined,
     };
 
-/// Background and foreground colour for each asset category.
-(Color, Color) catColors(BuildContext context, String category) {
-  final dark = Theme.of(context).brightness == Brightness.dark;
-  switch (category) {
-    case 'car':
-      return dark ? (const Color(0xFF1C2D44), const Color(0xFF9CC3F5)) : (const Color(0xFFDCE8F8), const Color(0xFF1F4C86));
-    case 'motorcycle':
-      return dark ? (const Color(0xFF3A2A12), const Color(0xFFF3B95A)) : (const Color(0xFFFBEBD0), const Color(0xFF8A4F00));
-    default:
-      return dark ? (const Color(0xFF173528), const Color(0xFF7FD3A8)) : (const Color(0xFFD9EEE3), const Color(0xFF1E6A4E));
+/// A neutral icon tile at the start of a row. Icons tell types apart; colour is kept for status.
+class IconAvatar extends StatelessWidget {
+  const IconAvatar(this.icon, {super.key, this.size = 36, this.tonal = false});
+  final IconData icon;
+  final double size;
+
+  /// The brand tint, for an action that creates something new.
+  final bool tonal;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = context.tokens;
+    return Container(
+      width: size,
+      height: size,
+      decoration: BoxDecoration(color: tonal ? k.tonal : k.iconBg, borderRadius: BorderRadius.circular(size * 0.28)),
+      child: Icon(icon, color: tonal ? k.onTonal : k.iconFg, size: size * 0.55),
+    );
   }
 }
 
@@ -198,55 +209,206 @@ class AssetAvatar extends StatelessWidget {
   final double size;
 
   @override
-  Widget build(BuildContext context) {
-    final (bg, fg) = catColors(context, category);
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(size * 0.28)),
-      child: Icon(catIcon(category), color: fg, size: size * 0.55),
-    );
-  }
+  Widget build(BuildContext context) => IconAvatar(catIcon(category), size: size);
 }
 
+/// Background and foreground for a status: tinted boxes (banners, the Today tiles) use both,
+/// rows use only the foreground through [StatusLabel].
 (Color, Color) statusColors(BuildContext context, RStatus st) {
-  final c = Theme.of(context).colorScheme;
-  final dark = Theme.of(context).brightness == Brightness.dark;
-  switch (st) {
-    case RStatus.overdue:
-      return (c.errorContainer, c.onErrorContainer);
-    case RStatus.dueSoon:
-      return dark ? (const Color(0xFF382B14), const Color(0xFFF0B550)) : (const Color(0xFFFAEDD3), const Color(0xFF7A4600));
-    case RStatus.upcoming:
-      return (c.secondaryContainer, c.onSecondaryContainer);
-    case RStatus.done:
-      return (c.primaryContainer, c.onPrimaryContainer);
-  }
+  final k = context.tokens;
+  return switch (st) {
+    RStatus.overdue => (k.overdueBg, k.overdue),
+    RStatus.dueSoon => (k.dueSoonBg, k.dueSoon),
+    RStatus.upcoming => (k.iconBg, k.textMuted),
+    RStatus.done => (k.tonal, k.onTonal),
+  };
 }
 
-class StatusPill extends StatelessWidget {
-  const StatusPill(this.status, {super.key});
-  final RStatus status;
+/// How a status reads: each has its own colour and icon, and always a word.
+/// [inProgress] is a defect the developer is repairing: neutral, like upcoming.
+enum Tone { overdue, dueSoon, upcoming, inProgress, done, expired }
+
+Tone toneOf(RStatus st) => switch (st) {
+      RStatus.overdue => Tone.overdue,
+      RStatus.dueSoon => Tone.dueSoon,
+      RStatus.upcoming => Tone.upcoming,
+      RStatus.done => Tone.done,
+    };
+
+/// A status as coloured text with an icon, never colour alone. [StatusLabel.of] uses the
+/// standard word for a reminder status; the main constructor takes any text ("Expires 12 Nov").
+/// Needs a bounded width (AppRow gives it one), so a long word wraps instead of overflowing.
+class StatusLabel extends StatelessWidget {
+  const StatusLabel(String this.text, this.tone, {super.key}) : status = null;
+  StatusLabel.of(RStatus this.status, {super.key})
+      : text = null,
+        tone = toneOf(status);
+
+  final String? text;
+  final RStatus? status;
+  final Tone tone;
 
   @override
   Widget build(BuildContext context) {
-    final (bg, fg) = statusColors(context, status);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(99)),
-      child: Text(context.s.statusLabel(status), style: TextStyle(color: fg, fontSize: 11, fontWeight: FontWeight.w700)),
+    final k = context.tokens;
+    final (color, icon) = switch (tone) {
+      Tone.overdue => (k.overdue, Icons.error_outline),
+      Tone.dueSoon => (k.dueSoon, Icons.schedule),
+      Tone.upcoming => (k.textMuted, Icons.event_outlined),
+      Tone.inProgress => (k.textMuted, Icons.pending_outlined),
+      Tone.done => (k.done, Icons.check_circle_outline),
+      Tone.expired => (k.expired, Icons.history),
+    };
+    return Row(mainAxisSize: MainAxisSize.min, children: [
+      Icon(icon, size: 16, color: color),
+      const SizedBox(width: 4),
+      Flexible(child: Text(text ?? context.s.statusLabel(status!), style: KText.status.copyWith(color: color))),
+    ]);
+  }
+}
+
+/// The list row of the design system. Line 1: the title, with the status on the right.
+/// Line 2: the context, full width. An optional action sits under both, shown only when
+/// there is something to do.
+class AppRow extends StatelessWidget {
+  const AppRow({
+    super.key,
+    this.leading,
+    required this.title,
+    this.titleTag,
+    this.status,
+    this.meta,
+    this.metaTag,
+    this.action,
+    this.trailing,
+    this.onTap,
+  });
+
+  final Widget? leading;
+  final String title;
+
+  /// A small tag right after the title, such as the estimate tag or a number plate.
+  final Widget? titleTag;
+  final Widget? status;
+  final String? meta;
+
+  /// A small tag before the context line, such as the estimate tag for an estimated date.
+  final Widget? metaTag;
+  final Widget? action;
+
+  /// At the far right, centred on the row (a button or a chevron).
+  final Widget? trailing;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = context.tokens;
+    final text = Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      LayoutBuilder(
+        builder: (context, box) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Flexible(child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text))),
+              if (titleTag != null) ...[const SizedBox(width: 6), Padding(padding: const EdgeInsets.only(top: 1), child: titleTag!)],
+            ]),
+          ),
+          if (status != null) ...[
+            const SizedBox(width: 8),
+            // Line heights 20 and 18: one pixel down puts both on the same line. With large
+            // text the status wraps rather than squeezing the title to nothing.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: box.maxWidth * 0.45),
+              child: Padding(padding: const EdgeInsets.only(top: 1), child: status!),
+            ),
+          ],
+        ]),
+      ),
+      if (meta != null && meta!.isNotEmpty)
+        Padding(
+          padding: const EdgeInsets.only(top: 2),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (metaTag != null) Padding(padding: const EdgeInsets.only(top: 2, right: 6), child: metaTag!),
+            Flexible(child: Text(meta!, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.meta.copyWith(color: k.textMuted))),
+          ]),
+        ),
+      if (action != null) Padding(padding: const EdgeInsets.only(top: 10), child: action!),
+    ]);
+    return MergeSemantics(
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: KSpace.rowMin),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(crossAxisAlignment: action == null ? CrossAxisAlignment.center : CrossAxisAlignment.start, children: [
+              if (leading != null) ...[leading!, const SizedBox(width: 12)],
+              Expanded(child: text),
+              if (trailing != null) ...[const SizedBox(width: 8), trailing!],
+            ]),
+          ),
+        ),
+      ),
     );
   }
 }
 
+/// A screen's own title at the top of a main tab.
+class PageTitle extends StatelessWidget {
+  const PageTitle(this.text, {super.key, this.trailing});
+  final String text;
+  final Widget? trailing;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+        padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
+        child: Row(children: [
+          Expanded(child: Text(text, style: KText.screenTitle.copyWith(color: context.tokens.text))),
+          if (trailing != null) trailing!,
+        ]),
+      );
+}
+
+/// Tabs that share the width equally when their labels fit, and scroll when they do not
+/// (a narrow phone with large text), so a label is never cut off.
+class FitTabBar extends StatelessWidget implements PreferredSizeWidget {
+  const FitTabBar({super.key, required this.tabs});
+  final List<String> tabs;
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kTextTabBarHeight);
+
+  @override
+  Widget build(BuildContext context) {
+    final style = Theme.of(context).textTheme.titleSmall ?? const TextStyle(fontSize: 14, fontWeight: FontWeight.w500);
+    final scaler = MediaQuery.textScalerOf(context);
+    const pad = 8.0;
+    return LayoutBuilder(builder: (context, box) {
+      var widest = 0.0;
+      for (final t in tabs) {
+        final p = TextPainter(text: TextSpan(text: t, style: style), textDirection: TextDirection.ltr, textScaler: scaler, maxLines: 1)..layout();
+        if (p.width > widest) widest = p.width;
+      }
+      final fits = widest + 2 * pad <= box.maxWidth / tabs.length;
+      return TabBar(
+        isScrollable: !fits,
+        tabAlignment: fits ? TabAlignment.fill : TabAlignment.start,
+        labelPadding: fits ? const EdgeInsets.symmetric(horizontal: pad) : null,
+        tabs: [for (final t in tabs) Tab(text: t)],
+      );
+    });
+  }
+}
+
+/// "estimated": the date is a preset to confirm, not a fact.
 class EstTag extends StatelessWidget {
-  const EstTag({super.key});
+  const EstTag({super.key, this.margin = const EdgeInsets.only(left: 6)});
+  final EdgeInsets margin;
 
   @override
   Widget build(BuildContext context) {
     final (_, fg) = statusColors(context, RStatus.dueSoon);
     return Container(
-      margin: const EdgeInsets.only(left: 6),
+      margin: margin,
       padding: const EdgeInsets.symmetric(horizontal: 5),
       decoration: BoxDecoration(border: Border.all(color: fg), borderRadius: BorderRadius.circular(5)),
       child: Text(context.s.estShort, style: TextStyle(color: fg, fontSize: 10, fontWeight: FontWeight.w600)),
@@ -261,17 +423,16 @@ class SectionTitle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final st = Theme.of(context).textTheme.labelLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-          letterSpacing: 0.6,
-          fontWeight: FontWeight.w700,
-        );
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(4, 20, 4, 8),
-      child: Row(children: [
-        Expanded(child: Text(text.toUpperCase(), style: st)),
-        if (count != null) Text('$count', style: st),
-      ]),
+    final st = KText.section.copyWith(color: context.tokens.label, fontFeatures: const [FontFeature.tabularFigures()]);
+    return Semantics(
+      header: true,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(4, 18, 4, 8),
+        child: Row(children: [
+          Expanded(child: Text(text, style: st)),
+          if (count != null) Text('$count', style: st),
+        ]),
+      ),
     );
   }
 }
@@ -317,36 +478,15 @@ class ReminderTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final st = remStatus(r, w);
     final a = w.asset(r.assetId);
-    final stripe = st == RStatus.overdue || st == RStatus.dueSoon ? statusColors(context, st).$2 : Colors.transparent;
-    return InkWell(
+    return AppRow(
+      leading: AssetAvatar(a?.category ?? 'house', size: 36),
+      title: r.title,
+      // The tag is about the date, which is on the second line.
+      metaTag: r.estimated ? const EstTag(margin: EdgeInsets.zero) : null,
+      status: showStatus ? StatusLabel.of(remStatus(r, w)) : null,
+      meta: showAsset ? '${a?.nickname ?? ''} · ${dueText(s, r, w)}' : dueText(s, r, w),
       onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(border: Border(left: BorderSide(color: stripe, width: 3))),
-        padding: const EdgeInsets.fromLTRB(12, 12, 12, 12),
-        child: Row(children: [
-          AssetAvatar(a?.category ?? 'house', size: 36),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Flexible(child: Text(r.title, style: const TextStyle(fontWeight: FontWeight.w600))),
-                if (r.estimated) const EstTag(),
-              ]),
-              const SizedBox(height: 2),
-              Text(
-                showAsset ? '${a?.nickname ?? ''} · ${dueText(s, r, w)}' : dueText(s, r, w),
-                style: TextStyle(fontSize: 13, color: Theme.of(context).colorScheme.onSurfaceVariant),
-              ),
-            ]),
-          ),
-          if (showStatus) ...[
-            const SizedBox(width: 8),
-            StatusPill(st),
-          ],
-        ]),
-      ),
     );
   }
 }

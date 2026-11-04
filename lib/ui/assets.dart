@@ -155,10 +155,7 @@ class _AssetsScreenState extends State<AssetsScreen> {
       return SafeScaffold(
         body: SafeArea(
           child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
-              child: Text(s.assetsTab, style: Theme.of(context).textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
-            ),
+            PageTitle(s.assetsTab),
             SearchBar(
               hintText: s.searchHint,
               leading: const Icon(Icons.search),
@@ -460,39 +457,55 @@ class _Overview extends StatelessWidget {
   }
 }
 
+IconData kindIcon(String kind) => switch (kind) {
+      'payment' => Icons.receipt_long_outlined,
+      'incident' => Icons.report_gmailerrorred_outlined,
+      'defect' => Icons.construction_outlined,
+      'renovation' => Icons.format_paint_outlined,
+      _ => Icons.build_outlined,
+    };
+
 class RecordTile extends StatelessWidget {
-  const RecordTile(this.r, this.w, {super.key, this.showAsset = false});
+  const RecordTile(this.r, this.w, {super.key, this.showAsset = false, this.showStatus = true});
   final UpkeepRecord r;
   final World w;
   final bool showAsset;
+
+  /// False in the defect list, which is already grouped by status.
+  final bool showStatus;
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
     final photos = w.photosOf(r.id);
+    final defect = r.kind == 'defect';
     final meta = [
-      s.dLong(r.date),
-      '${s.kindName(r.kind)}${r.category != null ? ' · ${s.catName(r.category!)}' : ''}',
-      if (r.cost != null) s.rm(r.cost!),
-      if (r.odometer != null) s.km(r.odometer!),
-      if (r.vendorName != null) r.vendorName!,
+      if (defect) ...[
+        if (r.area != null) r.area!,
+        s.foundOn(s.dShort(r.date)),
+        r.reportedToDeveloper == null ? s.notReportedYet : s.reportedOn(s.dShort(r.reportedToDeveloper!)),
+      ] else ...[
+        s.dLong(r.date),
+        '${s.kindName(r.kind)}${r.category != null ? ' · ${s.catName(r.category!)}' : ''}',
+        if (r.odometer != null) s.km(r.odometer!),
+        if (r.vendorName != null) r.vendorName!,
+      ],
       if (showAsset) w.asset(r.assetId)?.nickname ?? '',
     ].join(' · ');
-    return ListTile(
+    Widget? status;
+    if (defect && showStatus) {
+      final v = r.status ?? 'open';
+      status = StatusLabel(s.defectStatusName(v), switch (v) { 'done' => Tone.done, 'in_progress' => Tone.inProgress, _ => Tone.dueSoon });
+    } else if (r.cost != null) {
+      status = Text(s.rm(r.cost!), style: KText.status.copyWith(color: context.tokens.text));
+    }
+    return AppRow(
       leading: photos.isNotEmpty
-          ? ClipRRect(borderRadius: BorderRadius.circular(8), child: SecureImage(photos.first.filePath, size: 44, cacheWidth: 150))
-          : SizedBox(
-              width: 44,
-              child: Icon(r.kind == 'payment'
-                  ? Icons.receipt_long_outlined
-                  : r.kind == 'incident'
-                      ? Icons.report_gmailerrorred_outlined
-                      : r.kind == 'defect'
-                          ? Icons.construction_outlined
-                          : Icons.build_outlined),
-            ),
-      title: Text(r.title),
-      subtitle: Text(meta),
+          ? ClipRRect(borderRadius: BorderRadius.circular(KSpace.controlRadius), child: SecureImage(photos.first.filePath, size: 36, cacheWidth: 150))
+          : IconAvatar(kindIcon(r.kind)),
+      title: r.title,
+      status: status,
+      meta: meta,
       onTap: () => showRecordSheet(context, r.id),
     );
   }

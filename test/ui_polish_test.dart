@@ -18,28 +18,28 @@ void main() {
   final s = strFor('en');
 
   group('status is said once', () {
-    testWidgets('Today groups by status, so its rows have no status pill', (tester) async {
+    testWidgets('Today groups by status, so its rows have no status label', (tester) async {
       setPhone(tester, height: 1600);
       await tester.pumpWidget(harness(const TodayScreen(), fakeWorld(reminders: [fakeReminder(due: DateTime.now().subtract(const Duration(days: 3)))])));
       await tester.pumpAndSettle();
       expect(find.text(s.overdue), findsWidgets);
       expect(find.byType(ReminderTile), findsOneWidget);
-      expect(find.byType(StatusPill), findsNothing);
+      expect(find.byType(StatusLabel), findsNothing);
     });
 
-    testWidgets('mixed lists (All reminders) still show the pill', (tester) async {
+    testWidgets('mixed lists (All reminders) still show the status', (tester) async {
       setPhone(tester, height: 1600);
       await tester.pumpWidget(harness(const AllRemindersScreen(), fakeWorld(reminders: [fakeReminder(due: DateTime.now().subtract(const Duration(days: 3)))])));
       await tester.pumpAndSettle();
-      expect(find.byType(StatusPill), findsWidgets);
+      expect(find.byType(StatusLabel), findsWidgets);
     });
 
-    testWidgets('an asset card names its next reminder without a second pill', (tester) async {
+    testWidgets('an asset card names its next reminder without a second status', (tester) async {
       setPhone(tester, height: 1600);
       await tester.pumpWidget(harness(const AssetsScreen(), fakeWorld(reminders: [fakeReminder(due: DateTime.now().subtract(const Duration(days: 3)))])));
       await tester.pumpAndSettle();
       expect(find.text(s.overdueCount(1)), findsOneWidget);
-      expect(find.byType(StatusPill), findsNothing);
+      expect(find.byType(StatusLabel), findsNothing);
     });
   });
 

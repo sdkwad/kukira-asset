@@ -25,7 +25,7 @@ class TodayScreen extends StatelessWidget {
           Text(s.weekdayDate(t).toUpperCase(),
               style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant, letterSpacing: 0.8)),
           const SizedBox(height: 2),
-          Text(w.assets.isEmpty ? s.today : s.greeting(DateTime.now().hour), style: theme.textTheme.headlineLarge?.copyWith(fontWeight: FontWeight.w700)),
+          Text(w.assets.isEmpty ? s.today : s.greeting(DateTime.now().hour), style: KText.screenTitle.copyWith(color: context.tokens.text)),
         ]),
       );
 
