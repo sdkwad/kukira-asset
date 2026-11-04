@@ -475,6 +475,33 @@ Future<bool> restoreBackup(BuildContext context) async {
   return true;
 }
 
+/// Where a new backup file goes: a cloud drive (through Android's save dialog), another app
+/// (the share sheet) or a folder on the phone. Null when the owner backs out.
+Future<String?> chooseBackupPlace(BuildContext context) {
+  final s = context.s;
+  return showModalBottomSheet<String>(
+    context: context,
+    showDragHandle: true,
+    isScrollControlled: true,
+    builder: (c) => SafeArea(
+      child: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 8), child: Text(s.whereToSave, style: Theme.of(c).textTheme.titleMedium)),
+          ListTile(
+            leading: const Icon(Icons.cloud_upload_outlined),
+            title: Text(s.saveToCloud),
+            subtitle: Text(s.saveToCloudHint),
+            onTap: () => Navigator.pop(c, 'cloud'),
+          ),
+          ListTile(leading: const Icon(Icons.share_outlined), title: Text(s.shareToApp), subtitle: Text(s.shareToAppHint), onTap: () => Navigator.pop(c, 'share')),
+          ListTile(leading: const Icon(Icons.folder_outlined), title: Text(s.saveToFolder), subtitle: Text(s.saveToFolderHint), onTap: () => Navigator.pop(c, 'folder')),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    ),
+  );
+}
+
 class BackupScreen extends StatelessWidget {
   const BackupScreen({super.key});
 
@@ -487,21 +514,12 @@ class BackupScreen extends StatelessWidget {
     final bytes = backup.bytes;
     if (!context.mounted) return;
     final name = Backup.fileName(DateTime.now());
-    final where = await showModalBottomSheet<String>(
-      context: context,
-      showDragHandle: true,
-      builder: (c) => SafeArea(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Padding(padding: const EdgeInsets.fromLTRB(20, 0, 20, 8), child: Text(s.whereToSave, style: Theme.of(c).textTheme.titleMedium)),
-          ListTile(leading: const Icon(Icons.share_outlined), title: Text(s.shareToApp), subtitle: Text(s.shareToAppHint), onTap: () => Navigator.pop(c, 'share')),
-          ListTile(leading: const Icon(Icons.folder_outlined), title: Text(s.saveToFolder), subtitle: Text(s.saveToFolderHint), onTap: () => Navigator.pop(c, 'folder')),
-          const SizedBox(height: 8),
-        ]),
-      ),
-    );
+    final where = await chooseBackupPlace(context);
     if (where == null || !context.mounted) return;
     bool saved;
     try {
+      // Drive, OneDrive and Dropbox are places in Android's own save dialog: their app does
+      // the upload, so Kukira needs no internet permission for it.
       saved = where == 'share' ? await Backup.share(bytes, name) : await Backup.saveToFolder(bytes, name);
     } catch (e) {
       ErrorLog.record('backup.save', e);
@@ -510,6 +528,7 @@ class BackupScreen extends StatelessWidget {
     if (!context.mounted) return;
     if (saved) {
       await db.setSetting('lastBackup', DateTime.now().toIso8601String());
+      await db.setSetting('lastBackupTo', where);
       if (context.mounted) snack(context, backup.missing > 0 ? s.backupSavedMissing(name, backup.missing) : s.backupSaved(name));
     } else {
       snack(context, s.backupNotSaved);
@@ -533,16 +552,22 @@ class BackupScreen extends StatelessWidget {
                 Text(s.lastBackupLabel, style: Theme.of(context).textTheme.labelMedium),
                 const SizedBox(height: 4),
                 Text(last == null ? s.never : s.dLong(last), style: Theme.of(context).textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.w700)),
-                if (last != null) Text(s.ago(last)),
+                if (last != null) Text(w.settings['lastBackupTo'] == 'cloud' ? '${s.ago(last)} · ${s.backupInCloud}' : s.ago(last)),
                 const SizedBox(height: 10),
                 Text(s.backupExplainer),
               ]),
             ),
           ),
           const SizedBox(height: 16),
+          // A backup kept only on the phone is lost with the phone.
+          if (last != null && w.settings['lastBackupTo'] == 'folder') ...[
+            NoteBox(s.backupOnlyOnPhone, warn: true, icon: Icons.phone_android_outlined),
+            const SizedBox(height: 12),
+          ],
           FilledButton.icon(icon: const Icon(Icons.save_alt_outlined), label: Text(s.createBackup), onPressed: () => _create(context)),
           const SizedBox(height: 8),
           OutlinedButton.icon(icon: const Icon(Icons.restore), label: Text(s.restoreFromFile), onPressed: () => restoreBackup(context)),
+          Padding(padding: const EdgeInsets.fromLTRB(4, 6, 4, 0), child: Text(s.restoreFromCloudHint, style: Theme.of(context).textTheme.bodySmall)),
           const SizedBox(height: 16),
           NoteBox(s.passphraseWarning, warn: true, icon: Icons.key_outlined),
           const SizedBox(height: 8),

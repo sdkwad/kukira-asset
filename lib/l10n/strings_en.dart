@@ -855,7 +855,7 @@ class StrEn extends Str {
   @override
   String get shareToApp => 'Send to an app';
   @override
-  String get shareToAppHint => 'Google Drive, email, WhatsApp to yourself';
+  String get shareToAppHint => 'Email or WhatsApp to yourself, or another app';
   @override
   String get saveToFolder => 'Save in a phone folder';
   @override
@@ -1461,4 +1461,16 @@ class StrEn extends Str {
   String get coverPeriodWord => 'Period';
   @override
   String coverPeriod(String from, String to) => '$from – $to';
+
+  // ------------------------------------------------ Cloud backup
+  @override
+  String get saveToCloud => 'Google Drive, OneDrive or Dropbox';
+  @override
+  String get saveToCloudHint => 'Pick the cloud app among the places that open. That app does the upload; Kukira itself never goes online. The file is encrypted.';
+  @override
+  String get backupInCloud => 'saved to the cloud';
+  @override
+  String get backupOnlyOnPhone => 'The last backup is only on this phone. If the phone is lost or broken, the backup goes with it. Save one to Google Drive or OneDrive too.';
+  @override
+  String get restoreFromCloudHint => 'The backup file can be picked from Google Drive or OneDrive too.';
 }

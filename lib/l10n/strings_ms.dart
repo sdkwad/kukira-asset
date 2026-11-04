@@ -855,7 +855,7 @@ class StrMs extends Str {
   @override
   String get shareToApp => 'Hantar ke app';
   @override
-  String get shareToAppHint => 'Google Drive, e-mel, WhatsApp kepada diri sendiri';
+  String get shareToAppHint => 'E-mel atau WhatsApp kepada diri sendiri, atau app lain';
   @override
   String get saveToFolder => 'Simpan dalam folder telefon';
   @override
@@ -1458,4 +1458,16 @@ class StrMs extends Str {
   String get coverPeriodWord => 'Tempoh';
   @override
   String coverPeriod(String from, String to) => '$from – $to';
+
+  // ------------------------------------------------ Cloud backup
+  @override
+  String get saveToCloud => 'Google Drive, OneDrive atau Dropbox';
+  @override
+  String get saveToCloudHint => 'Pilih app awan dalam senarai lokasi yang dibuka. App itu yang memuat naik; Kukira sendiri tidak menyambung ke internet. Fail ini bersulit.';
+  @override
+  String get backupInCloud => 'disimpan ke awan';
+  @override
+  String get backupOnlyOnPhone => 'Sandaran terakhir hanya ada dalam telefon ini. Jika telefon hilang atau rosak, ia hilang bersamanya. Simpan juga ke Google Drive atau OneDrive.';
+  @override
+  String get restoreFromCloudHint => 'Fail sandaran boleh dipilih dari Google Drive atau OneDrive juga.';
 }

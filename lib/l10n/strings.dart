@@ -752,4 +752,11 @@ abstract class Str {
   String renewedUntil(String what, String date);
   String get coverPeriodWord;
   String coverPeriod(String from, String to);
+
+  // ------------------------------------------------ Cloud backup
+  String get saveToCloud;
+  String get saveToCloudHint;
+  String get backupInCloud;
+  String get backupOnlyOnPhone;
+  String get restoreFromCloudHint;
 }
