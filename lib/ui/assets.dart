@@ -190,30 +190,35 @@ class _SearchScreenState extends State<SearchScreen> {
   }
 }
 
-/// Covers the left of a photo with the card's own colour and lets it fade out towards the
-/// right, so text on the left always reads and the photo shows on the right. The text sits
-/// on the solid part (see [photoTextWidth]); the stops keep at least 94% cover under it.
+/// How much of the card's colour lies over a photo where text sits on it: the photo shows at
+/// a quarter of its strength there. At that cover the main text colour keeps at least 6:1
+/// contrast even over a black (light mode) or white (dark mode) photo; the muted and status
+/// colours do not, so text on a photo uses the main colour and statuses get their own chip.
+const photoVeil = 0.75;
+
+/// A photo across the whole card, under a veil of the card's colour that holds at
+/// [photoVeil] where the text is and thins out to nothing at the right edge: the photo shows
+/// at full strength on the right and at a quarter of it under the text.
 class PhotoFade extends StatelessWidget {
-  const PhotoFade({super.key, required this.photo, required this.color, this.photoWidth = 0.7, this.solidTo = 0.40});
+  const PhotoFade({super.key, required this.photo, required this.color, this.holdTo = 0.55});
   final String photo;
   final Color color;
-  final double photoWidth;
 
-  /// Fully covered up to this fraction of the width, 94% for 15% more, then fading out.
-  final double solidTo;
+  /// The veil holds its full cover up to this fraction of the width, then thins out.
+  final double holdTo;
+
+  /// The veil's cover at [x], a fraction of the width from the left.
+  double coverAt(double x) => x <= holdTo ? photoVeil : photoVeil * (1 - (x - holdTo) / (1 - holdTo));
 
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
         child: Stack(fit: StackFit.expand, children: [
-          Align(
-            alignment: Alignment.centerRight,
-            child: FractionallySizedBox(widthFactor: photoWidth, heightFactor: 1, child: SecureImage(photo, cacheWidth: 900)),
-          ),
+          SecureImage(photo, cacheWidth: 1080),
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [color, color, color.withValues(alpha: 0.94), color.withValues(alpha: 0)],
-                stops: [0, solidTo, solidTo + 0.15, (solidTo + 0.5).clamp(0.0, 1.0)],
+                colors: [color.withValues(alpha: photoVeil), color.withValues(alpha: photoVeil), color.withValues(alpha: 0)],
+                stops: [0, holdTo, 1],
               ),
             ),
           ),
@@ -221,7 +226,7 @@ class PhotoFade extends StatelessWidget {
       );
 }
 
-/// How much of a photo card's width the text may use: all of it on the solid part.
+/// How much of a photo card's width the text may use: all of it under the full veil.
 const photoTextWidth = 0.52;
 
 class _AssetCard extends StatelessWidget {
@@ -238,7 +243,9 @@ class _AssetCard extends StatelessWidget {
     final moreOverdue = live.where((r) => remStatus(r, w) == RStatus.overdue).length - (next != null && remStatus(next, w) == RStatus.overdue ? 1 : 0);
     final v = w.vehicles[a.id];
     final o = w.odometer[a.id];
-    final meta = KText.meta.copyWith(color: k.textMuted);
+    final photo = a.photoPath;
+    // Over a photo only the main text colour reads in every case (see photoVeil).
+    final meta = KText.meta.copyWith(color: photo == null ? k.textMuted : k.text);
     final makeYear = [v?.make, v?.year?.toString()].whereType<String>().join(' · ');
     final text = Column(crossAxisAlignment: CrossAxisAlignment.start, mainAxisSize: MainAxisSize.min, children: [
       Text(a.nickname, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.subtitle.copyWith(color: k.text)),
@@ -258,13 +265,12 @@ class _AssetCard extends StatelessWidget {
         const SizedBox(height: 2),
         Builder(builder: (context) {
           final (st, tone) = shortDue(s, next, w);
-          return StatusLabel(st, tone);
+          return StatusLabel(st, tone, boxed: photo != null);
         }),
         if (moreOverdue > 0) Text(s.moreOverdue(moreOverdue), style: meta),
       ],
       if (v != null && o != null) ...[const SizedBox(height: 4), Text('${s.km(o.km)} · ${s.ago(o.date)}', style: meta)],
     ]);
-    final photo = a.photoPath;
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
@@ -417,9 +423,9 @@ class _Hero extends StatelessWidget {
           child: Opacity(
             opacity: open,
             child: Stack(fit: StackFit.expand, children: [
-              PhotoFade(photo: a.photoPath!, color: k.background, photoWidth: 0.72, solidTo: 0.52),
-              // The text ends by 64% of the width, where the fade still covers 95%: a name such
-              // as "Rumah Setia Alam" fits one line on a 360 dp phone.
+              PhotoFade(photo: a.photoPath!, color: k.background, holdTo: 0.66),
+              // The text ends by 64% of the width, still under the full veil: a name such as
+              // "Rumah Setia Alam" fits one line on a 360 dp phone.
               Positioned(left: 20, right: box.maxWidth * 0.36, bottom: 14, child: _Identity(a, w, large: true)),
             ]),
           ),
@@ -460,7 +466,8 @@ class _Identity extends StatelessWidget {
     final k = context.tokens;
     final v = w.vehicles[a.id];
     final h = w.houses[a.id];
-    final meta = KText.meta.copyWith(color: k.textMuted);
+    // In the photo header the lines sit on the photo, where only the main colour reads.
+    final meta = KText.meta.copyWith(color: large ? k.text : k.textMuted);
     final String line1;
     final Widget line2;
     if (v != null) {

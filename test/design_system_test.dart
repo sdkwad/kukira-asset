@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/domain/rules.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/ui/app.dart';
+import 'package:kukira_asset/ui/assets.dart';
 import 'package:kukira_asset/ui/common.dart';
 
 import 'helpers.dart';
@@ -53,6 +54,24 @@ void main() {
         };
         for (final MapEntry(key: what, value: (fg, bg)) in pairs.entries) {
           expect(contrast(fg, bg), greaterThanOrEqualTo(4.5), reason: '$name: $what is ${contrast(fg, bg).toStringAsFixed(2)}:1');
+        }
+      });
+    }
+  });
+
+  group('text over a photo', () {
+    Color over(Color veil, Color photo) => Color.alphaBlend(veil.withValues(alpha: photoVeil), photo);
+    for (final (name, k, worst) in [('light', KukiraColors.light, Colors.black), ('dark', KukiraColors.dark, Colors.white)]) {
+      test('in $name mode the main text reads over the darkest or lightest photo', () {
+        // Cards are veiled with the card colour, the asset page header with the background.
+        for (final veil in [k.surface, k.background]) {
+          expect(contrast(k.text, over(veil, worst)), greaterThanOrEqualTo(4.5));
+        }
+      });
+
+      test('in $name mode a status on its chip reads as well as anywhere else', () {
+        for (final (fg, bg) in [(k.overdue, k.overdueBg), (k.dueSoon, k.dueSoonBg), (k.textMuted, k.surface), (k.done, k.surface), (k.expired, k.surface)]) {
+          expect(contrast(fg, bg), greaterThanOrEqualTo(4.5), reason: '$fg on $bg');
         }
       });
     }

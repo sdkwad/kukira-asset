@@ -288,6 +288,16 @@ Tone toneOf(RStatus st) => switch (st) {
       RStatus.done => Tone.done,
     };
 
+/// The chip behind a boxed status: its tinted background, or the card colour.
+Color toneBackground(BuildContext context, Tone tone) {
+  final k = context.tokens;
+  return switch (tone) {
+    Tone.overdue => k.overdueBg,
+    Tone.dueSoon => k.dueSoonBg,
+    _ => k.surface,
+  };
+}
+
 Color toneColor(BuildContext context, Tone tone) {
   final k = context.tokens;
   return switch (tone) {
@@ -321,14 +331,18 @@ class ProgressLine extends StatelessWidget {
 /// standard word for a reminder status; the main constructor takes any text ("Expires 12 Nov").
 /// Needs a bounded width (AppRow gives it one), so a long word wraps instead of overflowing.
 class StatusLabel extends StatelessWidget {
-  const StatusLabel(String this.text, this.tone, {super.key}) : status = null;
-  StatusLabel.of(RStatus this.status, {super.key})
+  const StatusLabel(String this.text, this.tone, {super.key, this.boxed = false}) : status = null;
+  StatusLabel.of(RStatus this.status, {super.key, this.boxed = false})
       : text = null,
         tone = toneOf(status);
 
   final String? text;
   final RStatus? status;
   final Tone tone;
+
+  /// On its own small chip, for a status drawn over a photo, where its colour alone would
+  /// not read.
+  final bool boxed;
 
   @override
   Widget build(BuildContext context) {
@@ -341,11 +355,16 @@ class StatusLabel extends StatelessWidget {
       Tone.done => Icons.check_circle_outline,
       Tone.expired => Icons.history,
     };
-    return Row(mainAxisSize: MainAxisSize.min, children: [
+    final row = Row(mainAxisSize: MainAxisSize.min, children: [
       Icon(icon, size: 16, color: color),
       const SizedBox(width: 4),
       Flexible(child: Text(text ?? context.s.statusLabel(status!), style: KText.status.copyWith(color: color))),
     ]);
+    if (!boxed) return row;
+    return DecoratedBox(
+      decoration: BoxDecoration(color: toneBackground(context, tone), borderRadius: BorderRadius.circular(6)),
+      child: Padding(padding: const EdgeInsets.fromLTRB(6, 2, 8, 2), child: row),
+    );
   }
 }
 
