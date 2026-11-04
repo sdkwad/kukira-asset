@@ -166,6 +166,15 @@ class _AllRemindersState extends State<AllRemindersScreen> {
 
 // ================================================================ health check
 
+/// Lets the owner pick the time of day reminders are notified.
+Future<void> pickNotifyTime(BuildContext context, World w) async {
+  final db = context.db;
+  final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: w.notifyHour, minute: w.notifyMinute));
+  if (t == null) return;
+  await db.setSetting('notifyHour', '${t.hour}');
+  await db.setSetting('notifyMinute', '${t.minute}');
+}
+
 class HealthScreen extends StatelessWidget {
   const HealthScreen({super.key});
 
@@ -194,13 +203,7 @@ class HealthScreen extends StatelessWidget {
                 title: Text(s.notifyTime),
                 subtitle: Text(s.hm(w.notifyHour, w.notifyMinute)),
                 trailing: const Icon(Icons.edit_outlined),
-                onTap: () async {
-                  final db = context.db;
-                  final t = await showTimePicker(context: context, initialTime: TimeOfDay(hour: w.notifyHour, minute: w.notifyMinute));
-                  if (t == null) return;
-                  await db.setSetting('notifyHour', '${t.hour}');
-                  await db.setSetting('notifyMinute', '${t.minute}');
-                },
+                onTap: () => pickNotifyTime(context, w),
               ),
               // The advice is long, so the button goes under it instead of squeezing it.
               ListTile(
@@ -452,6 +455,25 @@ Future<BackupContents?> pickAndOpenBackup(BuildContext context, Str s) async {
   return ok == true ? c : null;
 }
 
+/// Picks a backup file, checks it with the owner and replaces the records with it. True when
+/// the records were restored. Used by Backup and restore and by the first-run welcome.
+Future<bool> restoreBackup(BuildContext context) async {
+  final s = context.s;
+  final db = context.db;
+  final c = await pickAndOpenBackup(context, s);
+  if (c == null || !context.mounted) return false;
+  try {
+    await withProgress(context, s.restoring, () => Backup.restore(db, c));
+  } catch (e) {
+    ErrorLog.record('backup.restore', e);
+    // Backup.restore leaves the current records and files as they were.
+    if (context.mounted) snack(context, s.restoreFailed);
+    return false;
+  }
+  if (context.mounted) snack(context, s.restoredFrom(s.dLong(c.created)));
+  return true;
+}
+
 class BackupScreen extends StatelessWidget {
   const BackupScreen({super.key});
 
@@ -493,21 +515,6 @@ class BackupScreen extends StatelessWidget {
     }
   }
 
-  Future<void> _restore(BuildContext context) async {
-    final s = context.s;
-    final db = context.db;
-    final c = await pickAndOpenBackup(context, s);
-    if (c == null || !context.mounted) return;
-    try {
-      await withProgress(context, s.restoring, () => Backup.restore(db, c));
-    } catch (e) {
-      ErrorLog.record('backup.restore', e);
-      // Backup.restore leaves the current records and files as they were.
-      if (context.mounted) snack(context, s.restoreFailed);
-      return;
-    }
-    if (context.mounted) snack(context, s.restoredFrom(s.dLong(c.created)));
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -534,7 +541,7 @@ class BackupScreen extends StatelessWidget {
           const SizedBox(height: 16),
           FilledButton.icon(icon: const Icon(Icons.save_alt_outlined), label: Text(s.createBackup), onPressed: () => _create(context)),
           const SizedBox(height: 8),
-          OutlinedButton.icon(icon: const Icon(Icons.restore), label: Text(s.restoreFromFile), onPressed: () => _restore(context)),
+          OutlinedButton.icon(icon: const Icon(Icons.restore), label: Text(s.restoreFromFile), onPressed: () => restoreBackup(context)),
           const SizedBox(height: 16),
           NoteBox(s.passphraseWarning, warn: true, icon: Icons.key_outlined),
           const SizedBox(height: 8),

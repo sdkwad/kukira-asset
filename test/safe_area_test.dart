@@ -14,6 +14,7 @@ import 'package:kukira_asset/ui/lock.dart';
 import 'package:kukira_asset/ui/more.dart';
 import 'package:kukira_asset/ui/today.dart';
 import 'package:kukira_asset/ui/vendors.dart';
+import 'package:kukira_asset/ui/welcome.dart';
 
 import 'helpers.dart';
 
@@ -45,6 +46,8 @@ void main() {
     'More': (const MoreScreen(), find.text(s.privacyAbout)),
     'Privacy and about': (const AboutScreen(), find.text(s.aboutVersion('0.0.0', '0'))),
     'Today': (const TodayScreen(), find.textContaining(s.allReminders(1))),
+    'Welcome': (const WelcomeScreen(), find.text(s.restoreFromOldPhone)),
+    'Setup': (const SetupScreen(), find.text(s.notNow)),
   };
 
   for (final MapEntry(key: name, value: (screen, last)) in cases.entries) {

@@ -16,6 +16,7 @@ import 'documents.dart';
 import 'lock.dart';
 import 'more.dart';
 import 'today.dart';
+import 'welcome.dart';
 
 ThemeData buildTheme(Brightness b) {
   final k = b == Brightness.light ? KukiraColors.light : KukiraColors.dark;
@@ -184,7 +185,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
     final s = strFor(_lang);
     final Widget home;
     if (_db != null) {
-      home = const Shell();
+      home = const Home();
     } else if (widget.boot.state == BootState.locked && !_forgotPin) {
       home = LockScreen(
         s: s,
@@ -244,6 +245,14 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
       child: app,
     );
   }
+}
+
+/// The four main places, or the welcome on the very first run.
+class Home extends StatelessWidget {
+  const Home({super.key});
+
+  @override
+  Widget build(BuildContext context) => WorldView(builder: (context, w) => needsWelcome(w) ? const WelcomeScreen() : const Shell());
 }
 
 class Shell extends StatefulWidget {

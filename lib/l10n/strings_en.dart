@@ -1317,4 +1317,38 @@ class StrEn extends Str {
   String get tenancy => 'Tenancy';
   @override
   String tenancyPeriod(String? from, String? to) => from != null && to != null ? '$from to $to' : (to != null ? 'Ends $to' : 'From $from');
+
+  // ------------------------------------------------ First run
+  @override
+  String get welcomeTagline => 'Your house, car and motorcycle, in one place.';
+  @override
+  String get welcomeDueTitle => 'Know what is late and what is coming up';
+  @override
+  String get welcomeDueBody => 'Road tax, insurance, servicing, quit rent and the DLP.';
+  @override
+  String get welcomeRecordsTitle => 'Service records, costs and documents';
+  @override
+  String get welcomeRecordsBody => 'Receipts, policies and grants, kept with each asset.';
+  @override
+  String get welcomePrivateTitle => 'Stays on this phone';
+  @override
+  String get welcomePrivateBody => 'Encrypted. No account, no internet, no ads.';
+  @override
+  String get start => 'Get started';
+  @override
+  String get restoreFromOldPhone => 'Moving from an old phone? Restore a backup';
+  @override
+  String get setupTitle => 'Set up Kukira';
+  @override
+  String get setupSub => 'You can change all of this later in More.';
+  @override
+  String get notifPitchShort => 'Remind me before something expires or is late.';
+  @override
+  String everyDayAt(String time) => 'Every day at $time';
+  @override
+  String get change => 'Change';
+  @override
+  String get pinRecommended => 'Recommended. The PIN protects the key that opens your records.';
+  @override
+  String get setupBackupNote => 'Your records are only on this phone. Kukira reminds you to make a backup file every 30 days.';
 }

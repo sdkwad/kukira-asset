@@ -315,6 +315,36 @@ Future<bool> confirmPin(BuildContext context) async {
   return ok ?? false;
 }
 
+/// Asks for a new PIN, offers the fingerprint where the phone has one, and turns the lock
+/// on. True when the lock is on. Used by the App lock screen and the first-run setup.
+Future<bool> turnLockOn(BuildContext context) async {
+  final s = context.s;
+  final pin = await setNewPin(context);
+  if (pin == null || !context.mounted) return false;
+  final bioAvailable = await Vault.bioAvailable();
+  if (!context.mounted) return false;
+  final bio = bioAvailable && await confirm(context, title: s.alsoFingerprintQ, body: s.alsoFingerprintBody, ok: s.yesUseIt);
+  if (!context.mounted) return false;
+  final ok = await withProgress(context, s.securing, () => Vault.enableLock(pin, bio: bio, title: s.unlockTitle, cancel: s.cancel));
+  if (context.mounted) {
+    snack(context, ok ? s.lockOn : s.lockFailed);
+    context.app.lockChanged();
+  }
+  return ok;
+}
+
+/// Turns the lock off after the current PIN is entered. True when it is off.
+Future<bool> turnLockOff(BuildContext context) async {
+  final s = context.s;
+  if (!await confirmPin(context)) return false;
+  await Vault.disableLock();
+  if (context.mounted) {
+    snack(context, s.lockOff);
+    context.app.lockChanged();
+  }
+  return true;
+}
+
 class SecurityScreen extends StatefulWidget {
   const SecurityScreen({super.key});
 
@@ -344,24 +374,12 @@ class _SecurityState extends State<SecurityScreen> {
   }
 
   Future<void> _toggleLock(bool on) async {
-    final s = context.s;
     if (on) {
-      final pin = await setNewPin(context);
-      if (pin == null || !mounted) return;
-      var bio = false;
-      if (_bioAvailable) {
-        bio = await confirm(context, title: s.alsoFingerprintQ, body: s.alsoFingerprintBody, ok: s.yesUseIt);
-      }
-      if (!mounted) return;
-      final ok = await withProgress(context, s.securing, () => Vault.enableLock(pin, bio: bio, title: s.unlockTitle, cancel: s.cancel));
-      if (mounted) snack(context, ok ? s.lockOn : s.lockFailed);
+      await turnLockOn(context);
     } else {
-      if (!await confirmPin(context)) return;
-      await Vault.disableLock();
-      if (mounted) snack(context, s.lockOff);
+      await turnLockOff(context);
     }
     await _load();
-    if (mounted) context.app.lockChanged();
   }
 
   Future<void> _toggleBio(bool on) async {

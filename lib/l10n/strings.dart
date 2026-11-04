@@ -671,4 +671,22 @@ abstract class Str {
   String get contactShort;
   String get tenancy;
   String tenancyPeriod(String? from, String? to);
+
+  // ------------------------------------------------ First run
+  String get welcomeTagline;
+  String get welcomeDueTitle;
+  String get welcomeDueBody;
+  String get welcomeRecordsTitle;
+  String get welcomeRecordsBody;
+  String get welcomePrivateTitle;
+  String get welcomePrivateBody;
+  String get start;
+  String get restoreFromOldPhone;
+  String get setupTitle;
+  String get setupSub;
+  String get notifPitchShort;
+  String everyDayAt(String time);
+  String get change;
+  String get pinRecommended;
+  String get setupBackupNote;
 }

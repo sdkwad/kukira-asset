@@ -1314,4 +1314,38 @@ class StrMs extends Str {
   String get tenancy => 'Tempoh sewa';
   @override
   String tenancyPeriod(String? from, String? to) => from != null && to != null ? '$from hingga $to' : (to != null ? 'Tamat $to' : 'Mula $from');
+
+  // ------------------------------------------------ First run
+  @override
+  String get welcomeTagline => 'Rumah, kereta dan motosikal anda, dalam satu tempat.';
+  @override
+  String get welcomeDueTitle => 'Tahu apa yang lewat dan hampir tiba';
+  @override
+  String get welcomeDueBody => 'Cukai jalan, insurans, servis, cukai tanah dan DLP.';
+  @override
+  String get welcomeRecordsTitle => 'Rekod servis, kos dan dokumen';
+  @override
+  String get welcomeRecordsBody => 'Resit, polisi dan geran disusun ikut aset.';
+  @override
+  String get welcomePrivateTitle => 'Kekal dalam telefon ini';
+  @override
+  String get welcomePrivateBody => 'Disulitkan. Tiada akaun, tiada internet, tiada iklan.';
+  @override
+  String get start => 'Mula';
+  @override
+  String get restoreFromOldPhone => 'Pindah dari telefon lama? Pulihkan sandaran';
+  @override
+  String get setupTitle => 'Sediakan Kukira';
+  @override
+  String get setupSub => 'Semua boleh diubah kemudian dalam Lagi.';
+  @override
+  String get notifPitchShort => 'Ingatkan saya sebelum sesuatu tamat atau lewat.';
+  @override
+  String everyDayAt(String time) => 'Setiap hari, $time';
+  @override
+  String get change => 'Tukar';
+  @override
+  String get pinRecommended => 'Disyorkan. PIN melindungi kunci yang membuka rekod anda.';
+  @override
+  String get setupBackupNote => 'Rekod hanya ada dalam telefon ini. Kukira akan ingatkan anda buat fail sandaran setiap 30 hari.';
 }
