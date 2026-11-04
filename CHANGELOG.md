@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.7 (phase a, build 9)
+
+The foundation of the approved 0.2.7 design: navigation, Tambah and the design system. No database change; encryption, backups, documents and notifications work as before.
+
+- **Changed:** four real tabs: Today, Assets, Documents, More. The "+" in the middle of the bar, which opened a sheet instead of a page, is now a floating Tambah button on Today, Assets and each asset's page.
+- **Changed:** Tambah follows where you are. On an asset's page it offers that asset's actions (service or repair, payment, incident, odometer, reminder, document; for a house also defect and renovation). With one asset it goes straight to it; with several it asks which one first, and "New asset" is in the same list. With no asset yet the button is not shown; "Add your first asset" is the one action.
+- **Fixed:** a record, reminder or document started without an asset (from All reminders or Documents) was quietly put on the first asset. With several assets the form now asks which one.
+- **Changed:** a record's title is optional. Left empty, the record takes the name of the reminder it marks done ("Tukar minyak enjin"), or else its category ("Cukai jalan"). The form shows that name under the field before saving.
+- **Changed:** every asset has the same four tabs: Overview, Records, Reminders, Documents. The Defects tab, which came and went with the DLP, is gone. Defects are records: Records lists them with the rest and filters by kind, and the Defects filter shows them by repair status with the DLP note, as the old tab did. The overview's defect button opens it.
+- **Fixed:** after the DLP ended, defects were not shown anywhere. They now stay under Records.
+- **Changed:** colours, type and spacing come from one set of design tokens for light and dark (`lib/ui/tokens.dart`). List rows share one layout (title with its status on the right, context below), a status always has a word and an icon as well as a colour, and asset icons are neutral. Section titles are no longer in capitals, and the estimate tag sits by the date it is about.
+- **Tests:** Tambah with no asset, one asset and several, from Today and from an asset's page; forms asking for the asset; saving a record without a title; the fixed tabs and defects after the DLP; the contrast of every text colour in both modes; rows and tabs at 130% text on a 360 dp phone. Screenshots now also cover Tambah (light and dark), the asset choice and 130% text, and are drawn with regular Roboto (Roboto Condensed had been mixed into the font, making text look narrower than on the phone).
+
 ## 0.2.6
 
 Error audit: static checks, test coverage per file, and a line-by-line review of the least tested code.

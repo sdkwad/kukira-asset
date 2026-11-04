@@ -2,7 +2,20 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.6 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.7 fasa a, build 9 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.2.7 (fasa a)
+
+Asas reka bentuk baharu yang diluluskan. Tiada perubahan pangkalan data.
+
+- Empat tab sebenar: Hari ini, Aset, Dokumen, Lagi. Butang Tambah kini terapung di Hari ini, Aset dan halaman aset.
+- Tambah ikut konteks: dari halaman aset terus ke tindakan aset itu; dengan beberapa aset, ia bertanya aset mana dahulu.
+- Borang tidak lagi memilih aset pertama secara senyap.
+- Tajuk rekod tidak wajib; jika kosong, ia ikut nama peringatan atau kategori.
+- Halaman aset sentiasa ada empat tab. Kecacatan kini dalam tab Rekod (dengan penapis), dan kekal selepas DLP tamat.
+- Warna, teks dan jarak ikut sistem reka bentuk, untuk mod cerah dan gelap.
+
+Pasang terus di atas 0.2.6.
 
 ## Baharu dalam 0.2.6
 
