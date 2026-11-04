@@ -961,7 +961,7 @@ class StrMs extends Str {
   @override
   String get changesSaved => 'Perubahan disimpan.';
   @override
-  String get choosePin => 'Pilih PIN 4 digit';
+  String choosePinN(int n) => 'Pilih PIN $n digit';
   @override
   String get chooseSource => 'Dari mana?';
   @override
@@ -1480,4 +1480,16 @@ class StrMs extends Str {
   String get fileNotOpened => 'Fail ini tidak dapat dibuka. Cuba lagi; jika masih gagal, tambah semula fail itu.';
   @override
   String backupOnPhoneNotCloud(String name) => 'Sandaran disimpan dalam telefon ini, bukan dalam awan: $name. Untuk awan, buat sandaran semula dan pilih Drive atau OneDrive dalam menu di kiri atas dialog simpan.';
+
+  // ------------------------------------------------ PIN length
+  @override
+  String pinDigits(int n) => '$n digit';
+  @override
+  String get pinLengthHint => 'PIN 6 digit 100 kali lebih sukar diteka daripada PIN 4 digit.';
+  @override
+  String get changePin => 'Tukar PIN';
+  @override
+  String pinIsShort(int n) => 'PIN $n digit. Tukar kepada 6 digit supaya lebih sukar diteka.';
+  @override
+  String get pinChanged => 'PIN ditukar.';
 }

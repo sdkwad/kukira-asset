@@ -8,7 +8,7 @@ import '../domain/pin_throttle.dart';
 import '../l10n/strings.dart';
 import 'common.dart';
 
-/// Four dots and a number pad.
+/// One dot per digit of the PIN, and a number pad.
 class PinPad extends StatelessWidget {
   const PinPad({super.key, required this.value, required this.onChanged, this.length = 4, this.extra});
   final String value;
@@ -101,24 +101,31 @@ class _LockScreenState extends State<LockScreen> {
   // app never gives free tries during a wait.
   bool _loaded = false;
   PinThrottle _throttle = PinThrottle.none;
+  // How many digits the PIN has; the PIN is checked once that many are entered.
+  int _length = 4;
   Timer? _tick;
 
   @override
   void initState() {
     super.initState();
-    Vault.pinThrottle().then((t) {
-      if (!mounted) return;
-      setState(() {
-        _throttle = t;
-        _loaded = true;
-      });
-      _startWait();
-    });
+    _load();
     Vault.lockMode().then((m) {
       if (!mounted) return;
       setState(() => _bio = m == 'pin_bio');
       if (_bio) _tryBio();
     });
+  }
+
+  Future<void> _load() async {
+    final t = await Vault.pinThrottle();
+    final length = await Vault.pinLength();
+    if (!mounted) return;
+    setState(() {
+      _throttle = t;
+      _length = length;
+      _loaded = true;
+    });
+    _startWait();
   }
 
   @override
@@ -221,12 +228,13 @@ class _LockScreenState extends State<LockScreen> {
                 else
                   PinPad(
                     value: _pin,
+                    length: _length,
                     onChanged: (v) {
                       setState(() {
                         _pin = v;
                         _error = null;
                       });
-                      if (v.length == 4) _submit(v);
+                      if (v.length == _length) _submit(v);
                     },
                     extra: _bio ? IconButton(iconSize: 32, icon: const Icon(Icons.fingerprint), tooltip: s.useFingerprint, onPressed: _tryBio) : null,
                   ),
@@ -258,6 +266,7 @@ class _NewPinState extends State<_NewPinScreen> {
   String _pin = '';
   String? _first;
   String? _error;
+  int _length = Vault.pinLengths.first;
 
   @override
   Widget build(BuildContext context) {
@@ -268,18 +277,33 @@ class _NewPinState extends State<_NewPinScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Text(_first == null ? s.choosePin : s.pinAgain, style: Theme.of(context).textTheme.titleLarge),
+            Text(_first == null ? s.choosePinN(_length) : s.pinAgain, style: Theme.of(context).textTheme.titleLarge, textAlign: TextAlign.center),
+            if (_first == null) ...[
+              const SizedBox(height: 12),
+              SegmentedButton<int>(
+                segments: [for (final n in Vault.pinLengths) ButtonSegment(value: n, label: Text(s.pinDigits(n)))],
+                selected: {_length},
+                onSelectionChanged: (v) => setState(() {
+                  _length = v.first;
+                  _pin = '';
+                  _error = null;
+                }),
+              ),
+              const SizedBox(height: 8),
+              Text(s.pinLengthHint, textAlign: TextAlign.center, style: Theme.of(context).textTheme.bodySmall),
+            ],
             const SizedBox(height: 8),
             if (_error != null) Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             const SizedBox(height: 16),
             PinPad(
               value: _pin,
+              length: _length,
               onChanged: (v) {
                 setState(() {
                   _pin = v;
                   _error = null;
                 });
-                if (v.length < 4) return;
+                if (v.length < _length) return;
                 if (_first == null) {
                   setState(() {
                     _first = v;
@@ -333,6 +357,18 @@ Future<bool> turnLockOn(BuildContext context) async {
   return ok;
 }
 
+/// Asks for the current PIN, then a new one (of either length), and wraps the key with it.
+/// True when the PIN was changed.
+Future<bool> changePin(BuildContext context) async {
+  final s = context.s;
+  if (!await confirmPin(context) || !context.mounted) return false;
+  final pin = await setNewPin(context);
+  if (pin == null || !context.mounted) return false;
+  final ok = await withProgress(context, s.securing, () => Vault.changePin(pin));
+  if (context.mounted) snack(context, ok ? s.pinChanged : s.lockFailed);
+  return ok;
+}
+
 /// Turns the lock off after the current PIN is entered. True when it is off.
 Future<bool> turnLockOff(BuildContext context) async {
   final s = context.s;
@@ -355,6 +391,7 @@ class SecurityScreen extends StatefulWidget {
 class _SecurityState extends State<SecurityScreen> {
   String _mode = 'none';
   bool _bioAvailable = false;
+  int _pinLength = 4;
 
   @override
   void initState() {
@@ -364,13 +401,17 @@ class _SecurityState extends State<SecurityScreen> {
 
   Future<void> _load() async {
     final m = await Vault.lockMode();
-    final b = await Vault.bioAvailable();
+    final len = await Vault.pinLength();
     if (mounted) {
       setState(() {
         _mode = m;
-        _bioAvailable = b;
+        _pinLength = len;
       });
     }
+    // Asking the phone about its fingerprint sensor can take a while; the lock itself is
+    // shown without waiting for it.
+    final b = await Vault.bioAvailable();
+    if (mounted) setState(() => _bioAvailable = b);
   }
 
   Future<void> _toggleLock(bool on) async {
@@ -405,6 +446,17 @@ class _SecurityState extends State<SecurityScreen> {
             subtitle: Text(_bioAvailable ? s.fingerprintSub : s.fingerprintUnavailable),
             onChanged: on && _bioAvailable ? _toggleBio : null,
           ),
+          if (on)
+            ListTile(
+              leading: const Icon(Icons.dialpad),
+              title: Text(s.changePin),
+              subtitle: Text(_pinLength < Vault.pinLengths.first ? s.pinIsShort(_pinLength) : s.pinDigits(_pinLength)),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () async {
+                await changePin(context);
+                await _load();
+              },
+            ),
         ]),
         const SizedBox(height: 12),
         NoteBox(s.lockExplainer, icon: Icons.shield_outlined),

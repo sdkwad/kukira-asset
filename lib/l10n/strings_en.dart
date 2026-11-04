@@ -961,7 +961,7 @@ class StrEn extends Str {
   @override
   String get changesSaved => 'Changes saved.';
   @override
-  String get choosePin => 'Choose a 4-digit PIN';
+  String choosePinN(int n) => 'Choose a $n-digit PIN';
   @override
   String get chooseSource => 'Where from?';
   @override
@@ -1483,4 +1483,16 @@ class StrEn extends Str {
   String get fileNotOpened => 'This file could not be opened. Try again; if it still fails, add the file again.';
   @override
   String backupOnPhoneNotCloud(String name) => 'The backup was saved on this phone, not in the cloud: $name. For the cloud, make the backup again and pick Drive or OneDrive in the menu at the top left of the save dialog.';
+
+  // ------------------------------------------------ PIN length
+  @override
+  String pinDigits(int n) => '$n digits';
+  @override
+  String get pinLengthHint => 'A 6-digit PIN is 100 times harder to guess than a 4-digit one.';
+  @override
+  String get changePin => 'Change PIN';
+  @override
+  String pinIsShort(int n) => '$n-digit PIN. Change to 6 digits so it is harder to guess.';
+  @override
+  String get pinChanged => 'PIN changed.';
 }

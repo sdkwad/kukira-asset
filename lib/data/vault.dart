@@ -44,6 +44,10 @@ class Vault {
   static const _bioName = 'kukira_bio_key_v1';
   static const _failsName = 'kukira_pin_fails';
   static const _pinIterations = 120000;
+
+  /// The PIN lengths the lock takes, the default for a new PIN first. Every PIN set before
+  /// 0.2.8 build 16 has four digits.
+  static const pinLengths = [6, 4];
   static bool _ready = false;
   static String? _currentKey;
 
@@ -175,7 +179,28 @@ class Vault {
     final salt = List<int>.generate(16, (_) => r.nextInt(256));
     final kek = await _kek(pin, salt);
     final box = await AesGcm.with256bits().encrypt(utf8.encode(hex), secretKey: SecretKey(kek));
-    return jsonEncode({'salt': base64Encode(salt), 'box': base64Encode(box.concatenation())});
+    // The PIN's length goes in the same entry as the wrapped key, so the lock screen and the
+    // key can never disagree about it, whatever stops the app part way.
+    return jsonEncode({'salt': base64Encode(salt), 'box': base64Encode(box.concatenation()), 'len': pin.length});
+  }
+
+  @visibleForTesting
+  static Future<String> wrapKey(String hex, String pin) => _wrap(hex, pin);
+
+  @visibleForTesting
+  static void debugUseKey(String? hex) => _currentKey = hex;
+
+  /// How many digits the PIN has: what was stored with the wrapped key, or 4 for a PIN set
+  /// before lengths were stored (and when nothing can be read).
+  static Future<int> pinLength() async {
+    try {
+      final wrapped = await _read(_wrappedName);
+      if (wrapped == null) return 4;
+      final len = (jsonDecode(wrapped) as Map<String, dynamic>)['len'];
+      return len is int && pinLengths.contains(len) ? len : 4;
+    } catch (_) {
+      return 4;
+    }
   }
 
   static Future<String> _unwrap(String wrapped, String pin) async {
@@ -281,6 +306,22 @@ class Vault {
     }
     await _storage.write(key: _modeName, value: mode);
     await _storage.delete(key: _keyName);
+    return true;
+  }
+
+  /// Replaces the PIN, and its length, while the records are open. The key is wrapped again
+  /// with the new PIN in one write, so a stopped app keeps either the old PIN or the new one,
+  /// never a mix. The fingerprint entry holds the key itself and is not touched.
+  static Future<bool> changePin(String pin) async {
+    final hex = _currentKey;
+    if (hex == null) return false;
+    try {
+      await _storage.write(key: _wrappedName, value: await _wrap(hex, pin));
+    } catch (e) {
+      ErrorLog.record('vault.changePin', e);
+      return false;
+    }
+    await savePinThrottle(PinThrottle.none);
     return true;
   }
 

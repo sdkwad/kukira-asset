@@ -483,7 +483,7 @@ abstract class Str {
   String get attachDocument;
   String get camera;
   String get changesSaved;
-  String get choosePin;
+  String choosePinN(int n);
   String get chooseSource;
   String contactsCount(int n);
   String get copied;
@@ -766,4 +766,11 @@ abstract class Str {
   // ------------------------------------------------ Audit 2
   String get fileNotOpened;
   String backupOnPhoneNotCloud(String name);
+
+  // ------------------------------------------------ PIN length
+  String pinDigits(int n);
+  String get pinLengthHint;
+  String get changePin;
+  String pinIsShort(int n);
+  String get pinChanged;
 }
