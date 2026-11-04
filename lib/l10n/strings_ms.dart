@@ -1354,4 +1354,20 @@ class StrMs extends Str {
   String get assetPhotoHint => 'Ditunjuk pada kad dan halaman aset';
   @override
   String get photoNotSaved => 'Aset disimpan, tetapi gambarnya tidak. Cuba lagi dalam Ubah butiran.';
+
+  // ------------------------------------------------ Tambah suggestions
+  @override
+  String get suggested => 'Dicadangkan';
+  @override
+  String get orPickAsset => 'Atau pilih aset';
+  @override
+  String otherForAsset(String name) => 'Rekod lain untuk $name';
+  @override
+  String recordThis(String title) => 'Rekod ${lowerFirst(title)}';
+  @override
+  String get renewRoadTax => 'Perbaharui cukai jalan';
+  @override
+  String get renewInsurance => 'Perbaharui insurans';
+  @override
+  String get marksReminderDone => 'peringatan ditanda selesai';
 }

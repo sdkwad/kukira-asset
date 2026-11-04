@@ -32,6 +32,10 @@ abstract class Str {
   }
 
   String km(int n) => '${_group(n)} km';
+
+  /// "Tukar minyak enjin" to "tukar minyak enjin" inside a sentence; a name or short form
+  /// that starts with two capitals ("MBSA", "Y15ZR") is left as it is.
+  String lowerFirst(String t) => RegExp(r'^[A-Z][a-z]').hasMatch(t) ? t[0].toLowerCase() + t.substring(1) : t;
   String rm(double v) {
     final cents = (v * 100).round();
     return 'RM ${_group(cents ~/ 100)}.${(cents % 100).abs().toString().padLeft(2, '0')}';
@@ -693,4 +697,13 @@ abstract class Str {
   // ------------------------------------------------ Asset photo row
   String get assetPhotoHint;
   String get photoNotSaved;
+
+  // ------------------------------------------------ Tambah suggestions
+  String get suggested;
+  String get orPickAsset;
+  String otherForAsset(String name);
+  String recordThis(String title);
+  String get renewRoadTax;
+  String get renewInsurance;
+  String get marksReminderDone;
 }

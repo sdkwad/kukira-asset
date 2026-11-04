@@ -5,6 +5,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
+import '../domain/rules.dart';
+import '../l10n/strings.dart';
 import 'add_asset.dart';
 import 'assets.dart';
 import 'common.dart';
@@ -44,11 +46,110 @@ Future<void> runAddAction(BuildContext context, AddKind k, int assetId) async {
   }
 }
 
-/// What the user chose in the sheet: an action on an asset, or (both null) a new asset.
+// ---------------------------------------------------------------- suggestions
+
+/// The reminders worth acting on from Tambah: overdue, then due soon, in Today's order, at
+/// most [max]. With [assetId], only that asset's.
+List<Reminder> addSuggestions(World w, {int? assetId, int max = 3}) {
+  final due = w.reminders.where((r) {
+    if (r.done || (assetId != null && r.assetId != assetId)) return false;
+    final st = remStatus(r, w);
+    return st == RStatus.overdue || st == RStatus.dueSoon;
+  }).toList()
+    ..sort(remOrder(w));
+  return due.take(max).toList();
+}
+
+/// How a suggestion is acted on. A date the asset page keeps (road tax, insurance, the DLP)
+/// and the monthly odometer reading open the reminder itself, which knows how to update
+/// them; anything else opens a record that marks the reminder done when saved.
+enum SuggestionAction { record, reminder }
+
+SuggestionAction suggestionAction(Reminder r) =>
+    r.autoSource != null || r.category == 'odometer' ? SuggestionAction.reminder : SuggestionAction.record;
+
+/// "Rekod tukar minyak enjin", "Perbaharui cukai jalan".
+String suggestionTitle(Str s, Reminder r) => switch (r.autoSource) {
+      'roadTax' => s.renewRoadTax,
+      'insurance' => s.renewInsurance,
+      _ => suggestionAction(r) == SuggestionAction.record ? s.recordThis(r.title) : r.title,
+    };
+
+IconData _suggestionIcon(Reminder r) => switch (r.autoSource) {
+      'roadTax' || 'insurance' => Icons.sell_outlined,
+      'dlp' => Icons.construction_outlined,
+      _ => r.category == 'odometer' ? Icons.speed_outlined : Icons.build_outlined,
+    };
+
+/// Opens what a suggestion leads to, from the screen the sheet was opened on.
+Future<void> runSuggestion(BuildContext context, Reminder r) async {
+  if (suggestionAction(r) == SuggestionAction.reminder) {
+    await showReminderSheet(context, r.id);
+  } else {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(assetId: r.assetId, completesReminderId: r.id)));
+  }
+}
+
+/// One suggestion: what to do, for which asset (when the sheet is for everything) and how
+/// late or near it is, in its colour.
+class _SuggestionRow extends StatelessWidget {
+  const _SuggestionRow(this.r, this.w, {required this.showAsset, required this.onTap});
+  final Reminder r;
+  final World w;
+  final bool showAsset;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    final (status, tone) = shortDue(s, r, w);
+    final (bg, fg) = tone == Tone.overdue ? (k.overdueBg, k.overdue) : (k.dueSoonBg, k.dueSoon);
+    final muted = KText.meta.copyWith(color: k.textMuted);
+    return MergeSemantics(
+      child: InkWell(
+        onTap: onTap,
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: KSpace.rowMin),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10)),
+                child: Icon(_suggestionIcon(r), size: 20, color: fg),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Text(suggestionTitle(s, r), maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text)),
+                  const SizedBox(height: 2),
+                  Text.rich(
+                    TextSpan(children: [
+                      if (showAsset) TextSpan(text: '${w.asset(r.assetId)?.nickname ?? ''} · '),
+                      TextSpan(text: status, style: TextStyle(color: fg, fontWeight: FontWeight.w500)),
+                      if (!showAsset && suggestionAction(r) == SuggestionAction.record) TextSpan(text: ' · ${s.marksReminderDone}'),
+                    ]),
+                    style: muted,
+                  ),
+                ]),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// What the user chose in the sheet: an action on an asset, a suggestion, or (all null) a
+/// new asset.
 class _Choice {
-  const _Choice(this.kind, this.assetId);
+  const _Choice(this.kind, this.assetId, [this.suggestion]);
   final AddKind? kind;
   final int? assetId;
+  final Reminder? suggestion;
 }
 
 /// Opens "Tambah" for [assetId] (an asset's page) or for everything. With no asset yet the
@@ -68,7 +169,9 @@ Future<void> showAddSheet(BuildContext context, {int? assetId}) async {
     builder: (_) => _AddSheet(start: addStartAsset(w, assetId)),
   );
   if (c == null || !context.mounted) return;
-  if (c.kind == null) {
+  if (c.suggestion != null) {
+    await runSuggestion(context, c.suggestion!);
+  } else if (c.kind == null) {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAssetScreen()));
   } else {
     await runAddAction(context, c.kind!, c.assetId!);
@@ -117,13 +220,19 @@ class _AddSheetState extends State<_AddSheet> {
       valueListenable: context.app.world,
       builder: (context, w, _) {
         final a = w == null || _asset == null ? null : w.asset(_asset!);
+        final suggested = w == null ? const <Reminder>[] : addSuggestions(w, assetId: a?.id);
+        Widget suggestions() => CardList([
+              for (final r in suggested)
+                _SuggestionRow(r, w!, showAsset: a == null, onTap: () => Navigator.pop(context, _Choice(null, null, r))),
+            ]);
         return SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text(s.add, style: KText.title.copyWith(color: k.text))),
               if (w != null && a == null) ...[
-                SectionTitle(s.whichAsset),
+                if (suggested.isNotEmpty) ...[SectionTitle(s.suggested), suggestions()],
+                SectionTitle(suggested.isEmpty ? s.whichAsset : s.orPickAsset),
                 AssetChoice(
                   w: w,
                   onPick: (id) => setState(() => _asset = id),
@@ -138,7 +247,12 @@ class _AddSheetState extends State<_AddSheet> {
                 ),
               ] else if (a != null) ...[
                 _ForAsset(a: a, w: w!, onChange: () => setState(() => _asset = null)),
-                const SizedBox(height: 8),
+                if (suggested.isNotEmpty) ...[
+                  SectionTitle(s.suggested),
+                  suggestions(),
+                  SectionTitle(s.otherForAsset(a.nickname)),
+                ] else
+                  const SizedBox(height: 8),
                 _ActionGrid(
                   category: a.category,
                   onPick: (kind) => Navigator.pop(context, _Choice(kind, a.id)),

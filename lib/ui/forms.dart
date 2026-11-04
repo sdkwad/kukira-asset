@@ -467,10 +467,16 @@ class _ReminderFormState extends State<ReminderFormScreen> {
 // ================================================================ record form
 
 class RecordFormScreen extends StatefulWidget {
-  const RecordFormScreen({super.key, this.assetId, this.kind = 'maintenance', this.linkedReminderId, this.editId});
+  const RecordFormScreen({super.key, this.assetId, this.kind = 'maintenance', this.linkedReminderId, this.completesReminderId, this.editId});
   final int? assetId;
   final String kind;
+
+  /// A reminder already marked done that this record adds the details of.
   final int? linkedReminderId;
+
+  /// A reminder this record is for (a Tambah suggestion): the form starts from it and, unless
+  /// the box is unticked, saving marks it done.
+  final int? completesReminderId;
   final int? editId;
 
   @override
@@ -561,7 +567,8 @@ class _RecordFormState extends State<RecordFormScreen> {
       return;
     }
     _assetId = addStartAsset(w, widget.assetId);
-    final link = widget.linkedReminderId == null ? null : w.reminders.where((r) => r.id == widget.linkedReminderId).firstOrNull;
+    final from = widget.linkedReminderId ?? widget.completesReminderId;
+    final link = from == null ? null : w.reminders.where((r) => r.id == from).firstOrNull;
     if (link != null) {
       _title.text = link.title;
       final a = w.asset(link.assetId);
@@ -580,6 +587,7 @@ class _RecordFormState extends State<RecordFormScreen> {
   Reminder? _match(World w) {
     if (widget.editId != null) return null;
     if (widget.linkedReminderId != null) return w.reminders.where((r) => r.id == widget.linkedReminderId).firstOrNull;
+    if (widget.completesReminderId != null) return w.reminders.where((r) => r.id == widget.completesReminderId && !r.done).firstOrNull;
     if (_kind == 'defect' || _cat == null) return null;
     return w.reminders
         .where((r) => !r.done && r.assetId == _assetId && r.category == _cat && remStatus(r, w) != RStatus.upcoming)

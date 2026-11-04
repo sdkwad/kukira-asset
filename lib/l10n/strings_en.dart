@@ -1357,4 +1357,20 @@ class StrEn extends Str {
   String get assetPhotoHint => 'Shown on the card and the asset page';
   @override
   String get photoNotSaved => 'The asset is saved, but its photo is not. Try again in Edit details.';
+
+  // ------------------------------------------------ Tambah suggestions
+  @override
+  String get suggested => 'Suggested';
+  @override
+  String get orPickAsset => 'Or choose an asset';
+  @override
+  String otherForAsset(String name) => 'Other records for $name';
+  @override
+  String recordThis(String title) => 'Record ${lowerFirst(title)}';
+  @override
+  String get renewRoadTax => 'Renew road tax';
+  @override
+  String get renewInsurance => 'Renew insurance';
+  @override
+  String get marksReminderDone => 'marks the reminder done';
 }

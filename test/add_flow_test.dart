@@ -121,7 +121,8 @@ void main() {
 
     testWidgets('with several assets it asks which one first, and can go back', (tester) async {
       setPhone(tester);
-      await tester.pumpWidget(harness(const Shell(), fakeWorld()));
+      // Nothing due, so no suggestions above the list (see add_suggestions_test.dart).
+      await tester.pumpWidget(harness(const Shell(), fakeWorld(reminders: [])));
       await tester.pumpAndSettle();
       await openAdd(tester);
       final inSheet = find.byType(BottomSheet);
