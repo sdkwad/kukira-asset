@@ -695,10 +695,14 @@ class _DocumentFormState extends State<DocumentFormScreen> {
             await db.deleteReminder(remId);
             remId = null;
           } else if (remId != null) {
-            await db.updateReminder(remId, RemindersCompanion(title: Value(s.docExpires(title)), dueDate: Value(_expiry), done: const Value(false)));
+            // The reminder follows the document, also to another asset.
+            await db.updateReminder(
+              remId,
+              RemindersCompanion(assetId: Value(_assetId!), title: Value(s.docExpires(title)), dueDate: Value(_expiry), done: const Value(false)),
+            );
           } else if (_expiry != null && _remind) {
             remId = await db.addReminder(RemindersCompanion(
-              assetId: Value(d.assetId),
+              assetId: Value(_assetId!),
               title: Value(s.docExpires(title)),
               ruleType: const Value('fixed'),
               dueDate: Value(_expiry),
@@ -712,6 +716,8 @@ class _DocumentFormState extends State<DocumentFormScreen> {
             docType: Value(_type),
             expiry: Value(_expiry),
             linkedReminderId: Value(remId),
+            // A record belongs to its asset: moved to another one, the document leaves it.
+            linkedRecordId: _assetId == d.assetId ? const Value.absent() : const Value(null),
           ));
         }
       });

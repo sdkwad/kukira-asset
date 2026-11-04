@@ -654,8 +654,20 @@ class _RecordFormState extends State<RecordFormScreen> {
     return any ? t : null;
   }
 
+  /// A typed amount that is not a valid cost: not a number, or below zero. Empty is fine.
+  static bool _badAmount(String text) {
+    final t = text.replaceAll(',', '').trim();
+    if (t.isEmpty) return false;
+    final v = double.tryParse(t);
+    return v == null || v < 0 || v.isNaN || v.isInfinite;
+  }
+
   Future<void> _save(World w) async {
     final s = context.s;
+    if (_kind != 'defect' && (_itemised ? _items.any((i) => _badAmount(i.amount.text)) : _badAmount(_cost.text))) {
+      snack(context, s.costInvalid);
+      return;
+    }
     setState(() => _saving = true);
     final db = context.db;
     final defect = _kind == 'defect';

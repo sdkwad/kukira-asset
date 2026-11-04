@@ -3,6 +3,7 @@ import 'dart:typed_data';
 import 'package:drift/drift.dart' show Value;
 
 import '../data/db.dart';
+import '../domain/rules.dart';
 import '../l10n/strings.dart';
 import 'auto_reminders.dart';
 import 'files.dart';
@@ -136,7 +137,10 @@ Future<int> saveRecord(AppDb db, Str s, World w, RecordInput r,
     }
     final done = r.completes;
     if (done != null) {
-      final n = await db.completeReminder(done, today: today, odometer: odo);
+      // Done on the record's date (a service from 1 Oct entered on 20 Oct), so the next one
+      // counts from when it was really done; never from a date still to come.
+      final on = dayOnly(r.date).isAfter(dayOnly(today)) ? today : r.date;
+      final n = await db.completeReminder(done, today: on, odometer: odo);
       msgs.add(s.alsoMarkedDone(done.title, n.done ? null : (n.due != null ? s.dLong(n.due!) : s.km(n.dueKm ?? 0))));
     }
     return recordId;

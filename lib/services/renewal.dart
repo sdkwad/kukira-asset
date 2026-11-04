@@ -74,6 +74,10 @@ Future<List<String>> applyRenewal(AppDb db, Str s, World w, int assetId, List<Re
         final start = dayOnly(i.start);
         final end = dayOnly(i.end);
         final insurer = i.insurer?.trim();
+        // As saved now: the form may have been open while something else changed them.
+        final saved = await (db.select(db.vehicleProfiles)..where((x) => x.assetId.equals(assetId))).getSingleOrNull();
+        final oldEnd = coverEndOf(saved ?? v, i.kind);
+        final reminders = await (db.select(db.reminders)..where((r) => r.assetId.equals(assetId))).get();
         final recordId = await db.addRecord(RecordsCompanion(
           assetId: Value(assetId),
           kind: const Value('payment'),
@@ -95,7 +99,7 @@ Future<List<String>> applyRenewal(AppDb db, Str s, World w, int assetId, List<Re
                 ),
         );
         final source = road ? autoRoadTax : autoInsurance;
-        final change = planChange(w.reminders, assetId, source, oldDate: coverEndOf(v, i.kind), newDate: end, today: t);
+        final change = planChange(reminders, assetId, source, oldDate: oldEnd, newDate: end, today: t);
         await applyAuto(db, s, assetId, [change]);
         final linked = await (db.select(db.reminders)..where((r) => r.assetId.equals(assetId) & r.autoSource.equals(source))).get();
         for (final r in linked) {

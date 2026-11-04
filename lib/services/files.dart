@@ -90,6 +90,16 @@ class SecureFiles {
     return '$id.${clean.isEmpty ? 'bin' : clean}';
   }
 
+  /// A name the app could have made: letters, digits, dashes and underscores, an optional
+  /// extension, nothing that could point outside the files folder ("../"). Names come from
+  /// the database and from backups, and a backup can be made by someone else.
+  static bool isSafeName(String name) => RegExp(r'^[A-Za-z0-9_-]{1,80}(\.[A-Za-z0-9]{1,16})?$').hasMatch(name);
+
+  static String _checked(String name) {
+    if (!isSafeName(name)) throw ArgumentError.value(name, 'name', 'not a stored file name');
+    return name;
+  }
+
   static String extOf(String name) {
     final i = name.lastIndexOf('.');
     return i < 0 ? '' : name.substring(i + 1).toLowerCase();
@@ -105,6 +115,7 @@ class SecureFiles {
   }
 
   static Future<void> saveNamed(AppDb db, String name, Uint8List bytes) async {
+    _checked(name);
     final key = await _fileKey(db);
     final sealed = await Isolate.run(() async {
       final box = await AesGcm.with256bits().encrypt(bytes, secretKey: SecretKey(key));
@@ -123,6 +134,7 @@ class SecureFiles {
   static Uint8List? cached(String name) => _cache[name];
 
   static Future<Uint8List> read(AppDb db, String name) async {
+    _checked(name);
     final hit = _cache[name];
     if (hit != null) return hit;
     final key = await _fileKey(db);
@@ -140,6 +152,7 @@ class SecureFiles {
   }
 
   static Future<void> delete(String name) async {
+    if (!isSafeName(name)) return;
     _cache.remove(name);
     final f = File(p.join((await _dir()).path, '$name.enc'));
     if (await f.exists()) await f.delete();

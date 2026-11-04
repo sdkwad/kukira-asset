@@ -468,6 +468,11 @@ class AppDb extends _$AppDb {
 
   Future<void> deleteRecord(int id) => (delete(records)..where((t) => t.id.equals(id))).go();
 
+  /// Keeps the documents filed with a record (a policy, an e-LKM) when the record goes,
+  /// as documents of the asset. Photos of the record are deleted with it instead.
+  Future<void> unlinkDocuments(int recordId) => (update(documents)..where((t) => t.linkedRecordId.equals(recordId) & t.docType.equals('photo').not()))
+      .write(const DocumentsCompanion(linkedRecordId: Value(null)));
+
   Future<void> setCostItems(int recordId, List<(String, double)> items) => transaction(() async {
         await (delete(costItems)..where((t) => t.recordId.equals(recordId))).go();
         for (final (label, amount) in items) {

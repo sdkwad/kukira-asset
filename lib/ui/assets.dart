@@ -351,6 +351,10 @@ class _AssetDetailState extends State<AssetDetailScreen> {
   // open the defect list there.
   final _recordKind = ValueNotifier<String?>(null);
 
+  /// The photo header has shrunk to a plain title bar, where the menu button needs no
+  /// backdrop of its own.
+  bool _shrunk = false;
+
   @override
   void dispose() {
     _recordKind.dispose();
@@ -396,7 +400,16 @@ class _AssetDetailState extends State<AssetDetailScreen> {
           // The tabs keep their own readable width, in two columns where there is room.
           maxWidth: null,
           floatingActionButton: AddButton(assetId: a.id),
-          body: NestedScrollView(
+          body: NotificationListener<ScrollUpdateNotification>(
+            // The page's own scroll (depth 0), not a tab's list: shrunk once the header is.
+            onNotification: (n) {
+              if (n.depth == 0 && photo != null) {
+                final shrunk = n.metrics.pixels >= n.metrics.maxScrollExtent - 1;
+                if (shrunk != _shrunk) setState(() => _shrunk = shrunk);
+              }
+              return false;
+            },
+            child: NestedScrollView(
             headerSliverBuilder: (context, scrolled) => [
               SliverOverlapAbsorber(
                 handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context),
@@ -413,7 +426,7 @@ class _AssetDetailState extends State<AssetDetailScreen> {
                       padding: const EdgeInsets.only(right: 4),
                       // Over a photo the button gets a backdrop so it can be seen.
                       child: DecoratedBox(
-                        decoration: BoxDecoration(shape: BoxShape.circle, color: photo == null ? null : k.surface.withValues(alpha: 0.88)),
+                        decoration: BoxDecoration(shape: BoxShape.circle, color: photo == null || _shrunk ? null : k.surface.withValues(alpha: 0.88)),
                         child: menu,
                       ),
                     ),
@@ -428,6 +441,7 @@ class _AssetDetailState extends State<AssetDetailScreen> {
               _Reminders(a, w),
               _Documents(a, w),
             ]),
+            ),
           ),
         ),
       );
@@ -994,6 +1008,7 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
                         await db.deleteDocument(p.id);
                         files.remove(p.filePath);
                       }
+                      await db.unlinkDocuments(r.id);
                       await db.deleteRecord(r.id);
                       if (r.warrantyReminderId != null) await db.deleteReminder(r.warrantyReminderId!);
                     });
@@ -1763,6 +1778,10 @@ class _HouseEditState extends State<HouseEditScreen> {
           SaveButton(
             onPressed: () async {
               if (_name.text.trim().isEmpty) return;
+              if (_tenancyStart != null && _tenancyEnd != null && _tenancyEnd!.isBefore(_tenancyStart!)) {
+                snack(context, s.endBeforeStart);
+                return;
+              }
               final db = context.db;
               final t = today();
               final vp = _asksVp ? _vp : null;

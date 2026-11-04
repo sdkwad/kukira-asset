@@ -62,6 +62,28 @@ class Backup {
   static String fileName(DateTime d) =>
       'kukira-backup-${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}.kukira';
 
+  /// The most key-stretching rounds a backup may ask for. The header is read before the
+  /// passphrase is checked, so a made-up file must not be able to ask for days of work.
+  /// (Kukira itself uses [iterations]; older test files used fewer, which is still allowed.)
+  static const maxIterations = 2000000;
+
+  static int _iterationsOf(Object? v) {
+    if (v is! int || v < 1 || v > maxIterations) throw NotABackup();
+    return v;
+  }
+
+  /// Every file a backup brings or names must be one the app could have made.
+  static void _checkNames(Map<String, dynamic> tables, Iterable<String> files) {
+    final named = [
+      for (final d in (tables['documents'] as List?) ?? const []) (d as Map)['filePath'],
+      for (final a in (tables['assets'] as List?) ?? const []) (a as Map)['photoPath'],
+    ];
+    for (final n in [...files, ...named]) {
+      if (n == null) continue;
+      if (n is! String || !SecureFiles.isSafeName(n)) throw NotABackup();
+    }
+  }
+
   static Future<List<int>> _derive(String pass, List<int> salt, int iter) => Isolate.run(() async {
         final kdf = Pbkdf2(macAlgorithm: Hmac.sha256(), iterations: iter, bits: 256);
         final k = await kdf.deriveKeyFromPassword(password: pass, nonce: salt);
@@ -152,12 +174,20 @@ class Backup {
       throw NotABackup();
     }
     if (h['format'] != format) throw NotABackup();
-    final key = await _derive(pass, base64Decode(h['salt'] as String), h['iterations'] as int);
-    final box = SecretBox(
-      Uint8List.sublistView(bytes, nl + 1),
-      nonce: base64Decode(h['nonce'] as String),
-      mac: Mac(base64Decode(h['mac'] as String)),
-    );
+    final iterations = _iterationsOf(h['iterations']);
+    final List<int> salt;
+    final SecretBox box;
+    try {
+      salt = base64Decode(h['salt'] as String);
+      box = SecretBox(
+        Uint8List.sublistView(bytes, nl + 1),
+        nonce: base64Decode(h['nonce'] as String),
+        mac: Mac(base64Decode(h['mac'] as String)),
+      );
+    } catch (_) {
+      throw NotABackup();
+    }
+    final key = await _derive(pass, salt, iterations);
     List<int> clear;
     try {
       clear = await Isolate.run(() => AesGcm.with256bits().decrypt(box, secretKey: SecretKey(key)));
@@ -165,26 +195,37 @@ class Backup {
       throw WrongPassphrase();
     }
     final data = clear is Uint8List ? clear : Uint8List.fromList(clear);
-    final view = ByteData.sublistView(data);
-    var o = 0;
-    final jsonLen = view.getUint32(o);
-    o += 4;
-    final body = jsonDecode(utf8.decode(gzip.decode(data.sublist(o, o + jsonLen)))) as Map<String, dynamic>;
-    o += jsonLen;
+    final Map<String, dynamic> body;
     final files = <String, Uint8List>{};
-    while (o < data.length) {
-      final nLen = view.getUint16(o);
-      o += 2;
-      final name = utf8.decode(data.sublist(o, o + nLen));
-      o += nLen;
-      final len = view.getUint32(o);
+    try {
+      final view = ByteData.sublistView(data);
+      var o = 0;
+      final jsonLen = view.getUint32(o);
       o += 4;
-      files[name] = Uint8List.sublistView(data, o, o + len);
-      o += len;
+      body = jsonDecode(utf8.decode(gzip.decode(data.sublist(o, o + jsonLen)))) as Map<String, dynamic>;
+      o += jsonLen;
+      while (o < data.length) {
+        final nLen = view.getUint16(o);
+        o += 2;
+        final name = utf8.decode(data.sublist(o, o + nLen));
+        o += nLen;
+        final len = view.getUint32(o);
+        o += 4;
+        files[name] = Uint8List.sublistView(data, o, o + len);
+        o += len;
+      }
+    } catch (_) {
+      // Opened with the right passphrase but not laid out as a backup.
+      throw NotABackup();
     }
-    final schema = body['schema'] as int?;
-    if (schema != null && schema > AppDb.latestSchema) throw NewerBackup();
-    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>, files, schema: schema);
+    final schema = body['schema'];
+    if (schema != null && schema is! int) throw NotABackup();
+    if (schema is int && schema > AppDb.latestSchema) throw NewerBackup();
+    final tables = body['tables'];
+    final created = DateTime.tryParse('${body['created']}');
+    if (tables is! Map<String, dynamic> || created == null) throw NotABackup();
+    _checkNames(tables, files.keys);
+    return BackupContents(created, tables, files, schema: schema as int?);
   }
 
   static Future<BackupContents> _openV1(Uint8List bytes, String pass) async {
@@ -195,7 +236,7 @@ class Backup {
       throw NotABackup();
     }
     if (env['format'] != format) throw NotABackup();
-    final key = SecretKey(await _derive(pass, base64Decode(env['salt'] as String), env['iterations'] as int));
+    final key = SecretKey(await _derive(pass, base64Decode(env['salt'] as String), _iterationsOf(env['iterations'])));
     final box = SecretBox(
       base64Decode(env['data'] as String),
       nonce: base64Decode(env['nonce'] as String),
@@ -207,8 +248,17 @@ class Backup {
     } on SecretBoxAuthenticationError {
       throw WrongPassphrase();
     }
-    final body = jsonDecode(utf8.decode(gzip.decode(clear))) as Map<String, dynamic>;
-    return BackupContents(DateTime.parse(body['created'] as String), body['tables'] as Map<String, dynamic>, const {});
+    final Map<String, dynamic> body;
+    try {
+      body = jsonDecode(utf8.decode(gzip.decode(clear))) as Map<String, dynamic>;
+    } catch (_) {
+      throw NotABackup();
+    }
+    final tables = body['tables'];
+    final created = DateTime.tryParse('${body['created']}');
+    if (tables is! Map<String, dynamic> || created == null) throw NotABackup();
+    _checkNames(tables, const []);
+    return BackupContents(created, tables, const {});
   }
 
   /// Replaces everything on the phone with the backup, files included.
