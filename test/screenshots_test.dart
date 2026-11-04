@@ -353,6 +353,18 @@ void main() {
     await t.tap(find.descendant(of: find.byType(NavigationRail), matching: find.text(ms.documentsTab)));
   });
   shot('87-sandaran-telefon', () => const BackupScreen(), world: _backupOnPhone(), height: 1100);
+
+  // 0.2.8 build 16: a 6-digit PIN, changing the PIN, and notifications without details.
+  shot('88-pin-baharu', () => Builder(builder: (c) => TextButton(onPressed: () => setNewPin(c), child: const Text('pin'))), height: 900, act: (t) async {
+    await t.tap(find.text('pin'));
+  });
+  shot('89-kunci-app-hidup', () {
+    // A lock set before build 16: four digits, so changing to six is suggested.
+    FlutterSecureStorage.setMockInitialValues({'kukira_lock_mode': 'pin', 'kukira_db_key_wrapped_v1': '{"salt":"AAAA","box":"AAAA"}'});
+    return const SecurityScreen();
+  }, height: 1100, act: (t) async {
+    FlutterSecureStorage.setMockInitialValues({});
+  });
 }
 
 /// The demo with nothing overdue or due in 30 days, and a backup two days ago.

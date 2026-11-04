@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.8 (build 16)
+
+The three items the audit left open. No schema change; install over any 0.2.8 build or over 0.2.7 phase d. The app still has no internet permission.
+
+- **Security:** a new PIN has six digits by default (four can still be picked). A 4-digit PIN has 10,000 combinations, which someone who copied the phone's secure storage (a rooted phone, a forensic tool) could all try away from the app's wait between tries. PINs set before keep working. App lock has Change PIN, which suggests six digits to a 4-digit PIN. The PIN's length is stored in the same entry as the wrapped key, so the two can never disagree, whatever stops the app.
+- **Privacy:** "Hide details in notifications", under App lock and in the reminder health check. Notifications show on the lock screen and on a paired watch, where the app lock does not reach; with this on they only say there is a reminder, and notifications already in the tray are replaced quietly. Until the owner chooses, it follows the app lock. Notifications are also marked private, so a phone that hides sensitive content on its lock screen hides theirs.
+- **Fixed:** a large backup (many photos) had to fit in memory whole, both when made and when restored, and passed through Android's smaller Java memory when saved or picked; on a phone with little memory it could fail or close the app. Backups are now format 3: cut into 1 MB chunks, each sealed on its own (AES-256-GCM, its number in the nonce, the last one marked), written to a file a document and a chunk at a time and copied from that file by Android. A picked backup is read from storage: the records for the check before restoring, then the documents and photos chunk by chunk while restoring. Every chunk is checked before it is used, and the records are only replaced once the whole file has proved good, so a damaged, cut-short or altered backup is refused with its own message and the phone's records stay as they were. A wrong passphrase is told at once. Format 1 and 2 backups still restore. Making a backup no longer fills the picture cache.
+- **Tests:** the PIN length and Change PIN, the lock screen and new-PIN screen, the notification choice and hidden texts, format 3 across chunk edges (including ending exactly on one), wrong passphrase, damaged and cut-short files leaving the phone unchanged, forged headers and file names, older formats, and the backup file's clean-up.
+
 ## 0.2.8 (build 15)
 
 - **Fixed:** on a wide screen the side rail's labels had no font of their own, so on a phone with its own system font (such as some Samsung phones) they could show in a different font from the rest of Kukira, and in the test screenshots they showed as boxes. They now use the app's font, like the bottom bar's labels.
