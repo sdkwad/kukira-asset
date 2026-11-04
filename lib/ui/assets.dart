@@ -261,21 +261,35 @@ class _AssetCard extends StatelessWidget {
 
 // ================================================================ detail
 
-class AssetDetailScreen extends StatelessWidget {
+class AssetDetailScreen extends StatefulWidget {
   const AssetDetailScreen({super.key, required this.assetId});
   final int assetId;
+
+  @override
+  State<AssetDetailScreen> createState() => _AssetDetailState();
+}
+
+class _AssetDetailState extends State<AssetDetailScreen> {
+  // The kind of record the Records tab shows (null: all). Held here so the overview can
+  // open the defect list there.
+  final _recordKind = ValueNotifier<String?>(null);
+
+  @override
+  void dispose() {
+    _recordKind.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return WorldView(builder: (context, w) {
       final s = context.s;
-      final a = w.asset(assetId);
+      final a = w.asset(widget.assetId);
       if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.assetDeleted)));
-      final end = dlpEnd(w, a.id);
-      final showDefects = a.category == 'house' && end != null && daysBetween(today(), end) > 0;
-      final tabs = [s.overviewTab, s.upkeepTab, s.remindersTab, s.documentsTab, if (showDefects) s.defectsTab];
+      // The same four tabs for every asset and every stage, so they never move. Defects are
+      // records: they are listed under Records, and the overview links to them while the DLP runs.
+      final tabs = [s.overviewTab, s.upkeepTab, s.remindersTab, s.documentsTab];
       return DefaultTabController(
-        key: ValueKey(tabs.length),
         length: tabs.length,
         child: SafeScaffold(
           floatingActionButton: AddButton(assetId: a.id),
@@ -304,14 +318,13 @@ class AssetDetailScreen extends StatelessWidget {
                 ],
               ),
             ],
-            bottom: TabBar(isScrollable: true, tabAlignment: TabAlignment.start, tabs: [for (final t in tabs) Tab(text: t)]),
+            bottom: FitTabBar(tabs: tabs),
           ),
           body: TabBarView(children: [
-            _Overview(a, w),
-            _Upkeep(a, w),
+            _Overview(a, w, _recordKind),
+            _Records(a, w, _recordKind),
             _Reminders(a, w),
             _Documents(a, w),
-            if (showDefects) _Defects(a, w),
           ]),
         ),
       );
@@ -323,9 +336,10 @@ class AssetDetailScreen extends StatelessWidget {
 const _tabPadding = EdgeInsets.fromLTRB(16, 16, 16, KSpace.fabClearance);
 
 class _Overview extends StatelessWidget {
-  const _Overview(this.a, this.w);
+  const _Overview(this.a, this.w, this.recordKind);
   final Asset a;
   final World w;
+  final ValueNotifier<String?> recordKind;
 
   @override
   Widget build(BuildContext context) {
@@ -386,7 +400,10 @@ class _Overview extends StatelessWidget {
                 TextButton.icon(
                   icon: const Icon(Icons.construction_outlined),
                   label: Text(s.openDefectList(w.records.where((r) => r.assetId == a.id && r.kind == 'defect' && r.status != 'done').length)),
-                  onPressed: () => DefaultTabController.of(context).animateTo(4),
+                  onPressed: () {
+                    recordKind.value = 'defect';
+                    DefaultTabController.of(context).animateTo(1);
+                  },
                 ),
               ]),
             ),
@@ -618,29 +635,50 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
   );
 }
 
-class _Upkeep extends StatelessWidget {
-  const _Upkeep(this.a, this.w);
+/// Every record of the asset, defects included, with a filter by kind once there is more
+/// than one kind. Defects show as their own list, grouped by repair status.
+class _Records extends StatelessWidget {
+  const _Records(this.a, this.w, this.kind);
   final Asset a;
   final World w;
+  final ValueNotifier<String?> kind;
 
   @override
-  Widget build(BuildContext context) {
-    final s = context.s;
-    final rs = w.records.where((r) => r.assetId == a.id && r.kind != 'defect').toList();
-    final year = today().year;
-    final spent = rs.where((r) => r.date.year == year).fold<double>(0, (t, r) => t + (r.cost ?? 0));
-    return ListView(padding: _tabPadding, children: [
-      Row(children: [Expanded(child: Text(s.spentThisYear(year))), Text(s.rm(spent), style: const TextStyle(fontWeight: FontWeight.w700))]),
-      const SizedBox(height: 12),
-      CardList([for (final r in rs) RecordTile(r, w)], empty: s.noRecordsYet),
-      const SizedBox(height: 12),
-      OutlinedButton.icon(
-        icon: const Icon(Icons.add),
-        label: Text(s.addRecord),
-        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(assetId: a.id))),
-      ),
-    ]);
-  }
+  Widget build(BuildContext context) => ValueListenableBuilder<String?>(
+        valueListenable: kind,
+        builder: (context, k, _) {
+          final s = context.s;
+          final all = w.records.where((r) => r.assetId == a.id).toList();
+          final present = [for (final x in kindsFor(a.category)) if (x == k || all.any((r) => r.kind == x)) x];
+          final filter = present.length > 1 || k != null
+              ? Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: ChoiceRow<String?>(
+                    options: [null, ...present],
+                    value: k,
+                    label: (v) => v == null ? s.all : s.kindName(v),
+                    onChanged: (v) => kind.value = v,
+                  ),
+                )
+              : null;
+          if (k == 'defect') return _DefectList(a, w, filter: filter);
+          final rs = k == null ? all : all.where((r) => r.kind == k).toList();
+          final year = today().year;
+          final spent = rs.where((r) => r.date.year == year).fold<double>(0, (t, r) => t + (r.cost ?? 0));
+          return ListView(padding: _tabPadding, children: [
+            if (filter != null) filter,
+            Row(children: [Expanded(child: Text(s.spentThisYear(year))), Text(s.rm(spent), style: const TextStyle(fontWeight: FontWeight.w700))]),
+            const SizedBox(height: 12),
+            CardList([for (final r in rs) RecordTile(r, w)], empty: s.noRecordsYet),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              icon: const Icon(Icons.add),
+              label: Text(s.addRecord),
+              onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(assetId: a.id, kind: k ?? 'maintenance'))),
+            ),
+          ]);
+        },
+      );
 }
 
 class _Reminders extends StatelessWidget {
@@ -685,59 +723,33 @@ class _Documents extends StatelessWidget {
   }
 }
 
-class _Defects extends StatelessWidget {
-  const _Defects(this.a, this.w);
+/// Defects grouped by repair status, with the DLP reminder while it runs.
+class _DefectList extends StatelessWidget {
+  const _DefectList(this.a, this.w, {this.filter});
   final Asset a;
   final World w;
+  final Widget? filter;
 
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final end = dlpEnd(w, a.id)!;
-    final h = w.houses[a.id]!;
-    final left = daysBetween(today(), end);
-    final total = daysBetween(h.vpDate!, end);
-    final gone = daysBetween(h.vpDate!, today()).clamp(0, total);
+    final end = dlpEnd(w, a.id);
+    final left = end == null ? null : daysBetween(today(), end);
     final ds = w.records.where((r) => r.assetId == a.id && r.kind == 'defect').toList();
     Widget group(String status, String label) {
       final g = ds.where((r) => (r.status ?? 'open') == status).toList();
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         SectionTitle(label, count: g.length),
-        CardList([
-          for (final r in g)
-            ListTile(
-              leading: w.photosOf(r.id).isNotEmpty
-                  ? ClipRRect(borderRadius: BorderRadius.circular(8), child: SecureImage(w.photosOf(r.id).first.filePath, size: 44, cacheWidth: 150))
-                  : const SizedBox(width: 44, child: Icon(Icons.construction_outlined)),
-              title: Text(r.title),
-              subtitle: Text([
-                if (r.area != null) r.area!,
-                s.foundOn(s.dShort(r.date)),
-                r.reportedToDeveloper == null ? s.notReportedYet : s.reportedOn(s.dShort(r.reportedToDeveloper!)),
-              ].join(' · ')),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => showRecordSheet(context, r.id),
-            ),
-        ], empty: s.none),
+        CardList([for (final r in g) RecordTile(r, w, showStatus: false)], empty: s.none),
       ]);
     }
 
     return ListView(padding: _tabPadding, children: [
-      Card(
-        margin: EdgeInsets.zero,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            Row(children: [
-              DlpRing(left: left, fraction: total == 0 ? 1.0 : gone / total, size: 88),
-              const SizedBox(width: 16),
-              Expanded(child: Text(s.dlpDaysLeftEnds(s.dLong(end)))),
-            ]),
-            const SizedBox(height: 10),
-            NoteBox(s.defectReportNote, warn: true),
-          ]),
-        ),
-      ),
+      if (filter != null) filter!,
+      if (end != null && left! > 0)
+        NoteBox('$left ${s.dlpDaysLeftEnds(s.dLong(end))}. ${s.defectReportNote}', warn: true)
+      else if (end != null)
+        NoteBox(s.dlpEnded(s.dLong(end))),
       group('open', s.defectOpen),
       group('in_progress', s.defectInProgress),
       group('done', s.defectFixed),

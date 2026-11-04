@@ -435,8 +435,6 @@ class StrMs extends Str {
   @override
   String get upkeepTab => 'Rekod';
   @override
-  String get defectsTab => 'Kecacatan';
-  @override
   String deleteAssetQ(String name) => 'Padam $name?';
   @override
   String get deleteAssetBody => 'Semua peringatan dan rekod untuk aset ini akan dipadam. Ini tidak boleh dibatalkan.';
@@ -483,7 +481,7 @@ class StrMs extends Str {
   @override
   String get dlpSubsaleNote => 'Pembeli subsale mungkin mewarisi baki waranti. Semak dengan peguam anda.';
   @override
-  String dlpEnded(String date) => 'DLP anggaran tamat pada $date. Senarai kecacatan disembunyikan, tetapi rekod anda disimpan.';
+  String dlpEnded(String date) => 'DLP anggaran tamat pada $date. Rekod kecacatan anda kekal di sini.';
   @override
   String get addVpForDlp => 'Tambah tarikh milikan kosong (VP) untuk melihat kiraan DLP dan senarai kecacatan.';
   @override

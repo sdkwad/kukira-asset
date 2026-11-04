@@ -209,7 +209,6 @@ abstract class Str {
   String get assetDeleted;
   String get overviewTab;
   String get upkeepTab;
-  String get defectsTab;
   String deleteAssetQ(String name);
   String get deleteAssetBody;
   String get editDetails;

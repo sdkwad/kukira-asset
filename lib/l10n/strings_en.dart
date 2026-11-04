@@ -435,8 +435,6 @@ class StrEn extends Str {
   @override
   String get upkeepTab => 'Upkeep';
   @override
-  String get defectsTab => 'Defects';
-  @override
   String deleteAssetQ(String name) => 'Delete $name?';
   @override
   String get deleteAssetBody => 'All reminders and records for this asset are deleted too. This cannot be undone.';
@@ -483,7 +481,7 @@ class StrEn extends Str {
   @override
   String get dlpSubsaleNote => 'Subsale buyers may inherit the remaining warranty. Check with your lawyer.';
   @override
-  String dlpEnded(String date) => 'The estimated DLP ended on $date. The defect list is hidden, but your records are kept.';
+  String dlpEnded(String date) => 'The estimated DLP ended on $date. Your defect records stay here.';
   @override
   String get addVpForDlp => 'Add the vacant possession (VP) date to see the DLP countdown and defect list.';
   @override

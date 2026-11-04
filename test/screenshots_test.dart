@@ -230,7 +230,13 @@ void main() {
       };
   shot('17-kereta-rekod', () => const AssetDetailScreen(assetId: 2), act: tap(ms.upkeepTab));
   shot('18-kereta-peringatan', () => const AssetDetailScreen(assetId: 2), act: tap(ms.remindersTab), height: 1100);
-  shot('19-rumah-kecacatan', () => const AssetDetailScreen(assetId: 1), act: tap(ms.defectsTab));
+  // Defects are records now: the Records tab, filtered to defects.
+  shot('19-rumah-kecacatan', () => const AssetDetailScreen(assetId: 1), act: (t) async {
+    await tap(ms.upkeepTab)(t);
+    await t.pumpAndSettle();
+    await tap(ms.kindName('defect'))(t);
+  });
+  shot('45-rumah-rekod', () => const AssetDetailScreen(assetId: 1), act: tap(ms.upkeepTab));
   shot('23-lembaran-peringatan', () => const Shell(), act: tap('Tukar minyak enjin'));
   shot('24-lembaran-rekod', () => const AssetDetailScreen(assetId: 2), act: (t) async {
     await tap(ms.upkeepTab)(t);
@@ -252,6 +258,13 @@ void main() {
   shot('42-tambah-rumah', () => const AssetDetailScreen(assetId: 1), act: openAdd);
   shot('43-rekod-pilih-aset', () => const RecordFormScreen());
   shot('44-gelap-tambah-kereta', () => const AssetDetailScreen(assetId: 2), brightness: Brightness.dark, act: openAdd);
+  // Android font size at 130% on the same 360 dp phone.
+  shot('50-besar-hari-ini', () => const Shell(), textScale: 1.3);
+  shot('51-besar-kereta', () => const AssetDetailScreen(assetId: 2), textScale: 1.3);
+  shot('52-besar-tambah-kereta', () => const AssetDetailScreen(assetId: 2), textScale: 1.3, act: openAdd);
+  shot('53-besar-rekod-baharu', () => const RecordFormScreen(assetId: 2), textScale: 1.3, height: 2000);
+  shot('54-besar-semua-peringatan', () => const AllRemindersScreen(), textScale: 1.3, height: 1600);
+  shot('55-besar-tambah-pilih-aset', () => const Shell(), textScale: 1.3, act: openAdd);
   shot('30-en-today', () => const Shell(), lang: 'en');
   shot('31-en-car', () => const AssetDetailScreen(assetId: 2), lang: 'en');
   shot('32-en-more', () => const MoreScreen(), lang: 'en', height: 1100);
