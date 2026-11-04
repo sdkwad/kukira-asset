@@ -205,6 +205,7 @@ class HealthScreen extends StatelessWidget {
                 trailing: const Icon(Icons.edit_outlined),
                 onTap: () => pickNotifyTime(context, w),
               ),
+              const NoteDetailsTile(),
               // The advice is long, so the button goes under it instead of squeezing it.
               ListTile(
                 leading: const Icon(Icons.battery_alert_outlined),

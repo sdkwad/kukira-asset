@@ -50,15 +50,40 @@ class Notifier {
     }
   }
 
-  static NotificationDetails _details(Str s) => NotificationDetails(
+  /// [quiet]: replaces a notification already in the tray without sounding again.
+  static NotificationDetails _details(Str s, {bool quiet = false}) => NotificationDetails(
         android: AndroidNotificationDetails(
           'reminders',
           s.channelName,
           channelDescription: s.channelDescription,
           importance: Importance.high,
           priority: Priority.high,
+          visibility: NotificationVisibility.private,
+          onlyAlertOnce: quiet,
         ),
       );
+
+  /// Whether notifications leave out what the reminder is (its title and asset): the owner's
+  /// choice ('noteDetails'), or, until they choose, whenever the app lock is on. A notification
+  /// shows on the lock screen and on a paired watch, where the app lock does not reach.
+  static bool hidesDetails(Map<String, String> settings, String lockMode) => switch (settings['noteDetails']) {
+        'hide' => true,
+        'show' => false,
+        _ => lockMode != 'none',
+      };
+
+  /// The title and text of a reminder's notification of [kind] (see PlannedNote.kind). With
+  /// [hide], only that there is a reminder.
+  static (String, String) reminderNote(Str s, {required String title, required String asset, required String kind, DateTime? due, required bool hide}) {
+    if (hide) return (s.noteHiddenTitle, s.noteHiddenBody);
+    final body = switch (kind) {
+      'lead' when due != null => s.noteLead(asset, s.dShort(due)),
+      'due' => s.noteDue(asset),
+      'overdue' => s.noteOverdue(asset),
+      _ => s.noteSnooze(asset),
+    };
+    return (title, body);
+  }
 
   /// Reminder notifications scheduled at a time; the refresh notice and the backup nudge
   /// make 50.
@@ -102,7 +127,7 @@ class Notifier {
   /// Schedules the next notifications from the database, then cancels scheduled ones that
   /// are no longer wanted. Notifications already in the tray stay, unless [keepShown] says
   /// their reminder has been dealt with.
-  static Future<RebuildInfo> rebuild(World w, Str s) async {
+  static Future<RebuildInfo> rebuild(World w, Str s, {bool hideDetails = false}) async {
     final now = DateTime.now();
     final live = w.reminders.where((r) => !r.done).toList();
     final infos = live.map((r) => r.info).toList();
@@ -113,16 +138,10 @@ class Notifier {
     final wanted = <int>{};
     for (final n in plan) {
       final r = live[n.index];
-      final name = w.asset(r.assetId)?.nickname ?? '';
-      final body = switch (n.kind) {
-        'lead' => s.noteLead(name, s.dShort(r.dueDate!)),
-        'due' => s.noteDue(name),
-        'overdue' => s.noteOverdue(name),
-        _ => s.noteSnooze(name),
-      };
+      final (title, body) = reminderNote(s, title: r.title, asset: w.asset(r.assetId)?.nickname ?? '', kind: n.kind, due: r.dueDate, hide: hideDetails);
       final id = noteId(r.id, n.slot);
       wanted.add(id);
-      await _schedule(id, r.title, body, n.at, details, pending);
+      await _schedule(id, title, body, n.at, details, pending);
     }
     var scheduled = plan.length;
     // More reminders than fit: ask to open the app the day after the last one.
@@ -145,7 +164,7 @@ class Notifier {
         backupDue = true;
       }
     }
-    await _cancelStale(w, wanted, pending, today: now, keepBackupNudge: backupDue);
+    await _cancelStale(w, wanted, pending, today: now, keepBackupNudge: backupDue, hideIn: hideDetails ? s : null);
     return RebuildInfo(
       at: now,
       count: scheduled,
@@ -165,7 +184,10 @@ class Notifier {
     }
   }
 
-  static Future<void> _cancelStale(World w, Set<int> wanted, Set<int> pending, {required DateTime today, required bool keepBackupNudge}) async {
+  /// With [hideIn], notifications already in the tray that still show what the reminder is
+  /// are replaced, quietly, by ones that do not.
+  static Future<void> _cancelStale(World w, Set<int> wanted, Set<int> pending,
+      {required DateTime today, required bool keepBackupNudge, Str? hideIn}) async {
     try {
       for (final id in pending) {
         if (!wanted.contains(id) && id != _testId && id != _mileageId) {
@@ -179,7 +201,11 @@ class Notifier {
         final rid = reminderOfNote(id);
         final r = rid == null ? null : w.reminders.where((x) => x.id == rid).firstOrNull;
         final drop = rid != null ? !keepShown(r, today: today, odometer: r == null ? null : w.odoOf(r.assetId)) : id == _backupId && !keepBackupNudge;
-        if (drop) await plugin.cancel(id);
+        if (drop) {
+          await plugin.cancel(id);
+        } else if (hideIn != null && (rid != null || id == _mileageId) && a.title != hideIn.noteHiddenTitle) {
+          await plugin.show(id, hideIn.noteHiddenTitle, hideIn.noteHiddenBody, _details(hideIn, quiet: true));
+        }
       }
     } catch (e) {
       ErrorLog.record('notifications.cancel', e);
@@ -208,5 +234,6 @@ class Notifier {
 
   static Future<void> test(Str s) => plugin.show(_testId, s.testNoteTitle, s.testNoteBody, _details(s));
 
-  static Future<void> mileage(Str s, String title, String body) => plugin.show(_mileageId, title, body, _details(s));
+  static Future<void> mileage(Str s, String title, String body, {bool hide = false}) =>
+      plugin.show(_mileageId, hide ? s.noteHiddenTitle : title, hide ? s.noteHiddenBody : body, _details(s));
 }

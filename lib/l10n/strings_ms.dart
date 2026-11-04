@@ -1492,4 +1492,16 @@ class StrMs extends Str {
   String pinIsShort(int n) => 'PIN $n digit. Tukar kepada 6 digit supaya lebih sukar diteka.';
   @override
   String get pinChanged => 'PIN ditukar.';
+
+  // ------------------------------------------------ Notification details
+  @override
+  String get noteHiddenTitle => 'Kukira';
+  @override
+  String get noteHiddenBody => 'Ada peringatan untuk anda. Buka Kukira untuk melihatnya.';
+  @override
+  String get hideNoteDetails => 'Sembunyikan butiran dalam notifikasi';
+  @override
+  String get hideNoteDetailsOn => 'Notifikasi hanya berkata ada peringatan. Nama aset, nombor plat dan tajuk tidak keluar pada skrin kunci atau jam pintar.';
+  @override
+  String get hideNoteDetailsOff => 'Notifikasi menunjukkan peringatan dan asetnya, juga pada skrin kunci jika telefon membenarkannya.';
 }

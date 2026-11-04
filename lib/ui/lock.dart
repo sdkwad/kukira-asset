@@ -6,6 +6,7 @@ import '../data/db.dart';
 import '../data/vault.dart';
 import '../domain/pin_throttle.dart';
 import '../l10n/strings.dart';
+import '../services/notifications.dart';
 import 'common.dart';
 
 /// One dot per digit of the PIN, and a number pad.
@@ -61,6 +62,24 @@ class PinPad extends StatelessWidget {
       ]),
     ]);
   }
+}
+
+/// Whether notifications say what the reminder is ([Notifier.hidesDetails]). Under App lock
+/// and in the reminder health check.
+class NoteDetailsTile extends StatelessWidget {
+  const NoteDetailsTile({super.key});
+
+  @override
+  Widget build(BuildContext context) => WorldView(builder: (context, w) {
+        final s = context.s;
+        final hide = Notifier.hidesDetails(w.settings, context.app.lockMode);
+        return SwitchListTile(
+          value: hide,
+          title: Text(s.hideNoteDetails),
+          subtitle: Text(hide ? s.hideNoteDetailsOn : s.hideNoteDetailsOff),
+          onChanged: (v) => context.db.setSetting('noteDetails', v ? 'hide' : 'show'),
+        );
+      });
 }
 
 /// Puts [lock] over the app while [locked]. What is underneath is also hidden from screen
@@ -458,6 +477,8 @@ class _SecurityState extends State<SecurityScreen> {
               },
             ),
         ]),
+        const SizedBox(height: 12),
+        CardList([const NoteDetailsTile()]),
         const SizedBox(height: 12),
         NoteBox(s.lockExplainer, icon: Icons.shield_outlined),
         const SizedBox(height: 8),

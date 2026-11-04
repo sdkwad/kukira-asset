@@ -1408,7 +1408,7 @@ Future<bool> showOdometerDialog(BuildContext context, int assetId) async {
   } else {
     snack(context, changed.join(' '));
     if (context.app.notif.value == true) {
-      await Notifier.mileage(s, s.mileageNoteTitle(a.nickname), changed.first);
+      await Notifier.mileage(s, s.mileageNoteTitle(a.nickname), changed.first, hide: Notifier.hidesDetails(w.settings, context.app.lockMode));
     }
   }
   return true;

@@ -773,4 +773,11 @@ abstract class Str {
   String get changePin;
   String pinIsShort(int n);
   String get pinChanged;
+
+  // ------------------------------------------------ Notification details
+  String get noteHiddenTitle;
+  String get noteHiddenBody;
+  String get hideNoteDetails;
+  String get hideNoteDetailsOn;
+  String get hideNoteDetailsOff;
 }

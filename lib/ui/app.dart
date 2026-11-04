@@ -127,6 +127,8 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
     final m = await Vault.lockMode();
     await Privacy.applyLockMode(m);
     if (mounted) setState(() => _lockMode = m);
+    // Whether notifications show details follows the lock until the owner chooses.
+    if (_db != null) _scheduleRebuild();
   }
 
   @override
@@ -160,7 +162,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
   Future<void> _rebuildNow() async {
     final w = _world.value;
     if (w == null) return;
-    _rebuild.value = await Notifier.rebuild(w, strFor(_lang));
+    _rebuild.value = await Notifier.rebuild(w, strFor(_lang), hideDetails: Notifier.hidesDetails(w.settings, _lockMode));
   }
 
   Future<void> _refreshNotif() async => _notif.value = await Notifier.enabled();
