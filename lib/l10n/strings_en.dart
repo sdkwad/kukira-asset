@@ -779,6 +779,18 @@ class StrEn extends Str {
   @override
   String get moreOptions => 'More options';
 
+  // ------------------------------------------------ Record history
+  @override
+  String get searchItemsVehicle => 'Search items, e.g. battery, filter';
+  @override
+  String get searchItemsHouse => 'Search items, e.g. pipe, aircond';
+  @override
+  String yearCount(int year, int n) => n == 1 ? '$year · 1 record' : '$year · $n records';
+  @override
+  String moreItems(int n) => '+$n more';
+  @override
+  String get markReportedShort => 'Mark reported today';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Backup and restore';

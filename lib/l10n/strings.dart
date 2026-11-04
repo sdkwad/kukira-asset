@@ -383,6 +383,13 @@ abstract class Str {
   // ------------------------------------------------ Asset page
   String get moreOptions;
 
+  // ------------------------------------------------ Record history
+  String get searchItemsVehicle;
+  String get searchItemsHouse;
+  String yearCount(int year, int n);
+  String moreItems(int n);
+  String get markReportedShort;
+
   // ------------------------------------------------ more
   String get backupRestore;
   String get noBackupYet;

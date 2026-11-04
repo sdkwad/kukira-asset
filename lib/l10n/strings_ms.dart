@@ -779,6 +779,18 @@ class StrMs extends Str {
   @override
   String get moreOptions => 'Pilihan lain';
 
+  // ------------------------------------------------ Record history
+  @override
+  String get searchItemsVehicle => 'Cari item, cth. bateri, penapis';
+  @override
+  String get searchItemsHouse => 'Cari item, cth. paip, aircond';
+  @override
+  String yearCount(int year, int n) => '$year · $n rekod';
+  @override
+  String moreItems(int n) => '+$n lagi';
+  @override
+  String get markReportedShort => 'Tanda dilapor hari ini';
+
   // ------------------------------------------------ more
   @override
   String get backupRestore => 'Sandaran & pemulihan';

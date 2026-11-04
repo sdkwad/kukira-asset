@@ -763,13 +763,10 @@ IconData kindIcon(String kind) => switch (kind) {
     };
 
 class RecordTile extends StatelessWidget {
-  const RecordTile(this.r, this.w, {super.key, this.showAsset = false, this.showStatus = true});
+  const RecordTile(this.r, this.w, {super.key, this.showAsset = false});
   final UpkeepRecord r;
   final World w;
   final bool showAsset;
-
-  /// False in the defect list, which is already grouped by status.
-  final bool showStatus;
 
   @override
   Widget build(BuildContext context) {
@@ -790,7 +787,7 @@ class RecordTile extends StatelessWidget {
       if (showAsset) w.asset(r.assetId)?.nickname ?? '',
     ].join(' · ');
     Widget? status;
-    if (defect && showStatus) {
+    if (defect) {
       final v = r.status ?? 'open';
       status = StatusLabel(s.defectStatusName(v), switch (v) { 'done' => Tone.done, 'in_progress' => Tone.inProgress, _ => Tone.dueSoon });
     } else if (r.cost != null) {
@@ -909,42 +906,84 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
   );
 }
 
-/// Every record of the asset, defects included, with a filter by kind once there is more
-/// than one kind. Defects show as their own list, grouped by repair status.
-class _Records extends StatelessWidget {
+/// Every record of the asset, defects included, as a history: newest first, a line down the
+/// left, each year with its count and total, and each record with what was bought or done.
+/// A search finds a record by its items too ("battery"). Defects have their own list,
+/// grouped by repair status.
+class _Records extends StatefulWidget {
   const _Records(this.a, this.w, this.kind);
   final Asset a;
   final World w;
   final ValueNotifier<String?> kind;
 
   @override
+  State<_Records> createState() => _RecordsState();
+}
+
+class _RecordsState extends State<_Records> {
+  String _q = '';
+
+  @override
   Widget build(BuildContext context) => ValueListenableBuilder<String?>(
-        valueListenable: kind,
+        valueListenable: widget.kind,
         builder: (context, k, _) {
           final s = context.s;
-          final all = w.records.where((r) => r.assetId == a.id).toList();
+          final a = widget.a;
+          final w = widget.w;
+          final all = w.records.where((r) => r.assetId == a.id).toList()..sort((x, y) => y.date.compareTo(x.date));
           final present = [for (final x in kindsFor(a.category)) if (x == k || all.any((r) => r.kind == x)) x];
           final filter = present.length > 1 || k != null
               ? Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
+                  padding: const EdgeInsets.only(bottom: 4),
                   child: ChoiceRow<String?>(
                     options: [null, ...present],
                     value: k,
                     label: (v) => v == null ? s.all : s.kindName(v),
-                    onChanged: (v) => kind.value = v,
+                    onChanged: (v) => widget.kind.value = v,
                   ),
                 )
               : null;
           if (k == 'defect') return _DefectList(a, w, filter: filter);
-          final rs = k == null ? all : all.where((r) => r.kind == k).toList();
-          final year = today().year;
-          final spent = rs.where((r) => r.date.year == year).fold<double>(0, (t, r) => t + (r.cost ?? 0));
+          final q = _q.trim().toLowerCase();
+          bool matches(UpkeepRecord r) => [
+                r.title,
+                r.vendorName ?? '',
+                r.area ?? '',
+                r.notes ?? '',
+                if (r.category != null) s.catName(r.category!),
+                for (final i in w.costItems[r.id] ?? const <CostItem>[]) i.label,
+              ].join(' ').toLowerCase().contains(q);
+          final rs = all.where((r) => (k == null || r.kind == k) && (q.isEmpty || matches(r))).toList();
+          final years = <int, List<UpkeepRecord>>{};
+          for (final r in rs) {
+            years.putIfAbsent(r.date.year, () => []).add(r);
+          }
           return _TabScroll('records', [
+            if (all.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 12),
+                child: TextField(
+                  textInputAction: TextInputAction.search,
+                  onChanged: (v) => setState(() => _q = v),
+                  decoration: InputDecoration(
+                    hintText: a.category == 'house' ? s.searchItemsHouse : s.searchItemsVehicle,
+                    prefixIcon: const Icon(Icons.search),
+                    isDense: true,
+                    border: const OutlineInputBorder(),
+                  ),
+                ),
+              ),
             if (filter != null) filter,
-            Row(children: [Expanded(child: Text(s.spentThisYear(year))), Text(s.rm(spent), style: const TextStyle(fontWeight: FontWeight.w700))]),
-            const SizedBox(height: 12),
-            CardList([for (final r in rs) RecordTile(r, w)], empty: s.noRecordsYet),
-            const SizedBox(height: 12),
+            if (rs.isEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 12, 4, 0),
+                child: Text(all.isEmpty ? s.noRecordsYet : s.noMatch, style: KText.meta.copyWith(color: context.tokens.textMuted)),
+              ),
+            for (final MapEntry(key: year, value: list) in years.entries) ...[
+              _YearMark(year: year, count: list.length, total: list.fold<double>(0, (t, r) => t + (r.cost ?? 0))),
+              for (final r in list) _OnRail(child: RecordCard(r, w)),
+            ],
+            const SizedBox(height: 16),
             OutlinedButton.icon(
               icon: const Icon(Icons.add),
               label: Text(s.addRecord),
@@ -953,6 +992,155 @@ class _Records extends StatelessWidget {
           ]);
         },
       );
+}
+
+const _railWidth = 24.0;
+
+/// The line down the left of the history, with a dot for each record.
+class _OnRail extends StatelessWidget {
+  const _OnRail({required this.child});
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = context.tokens;
+    return Stack(children: [
+      Positioned(left: 7, top: 0, bottom: 0, child: Container(width: 2, color: k.line)),
+      Positioned(
+        left: 3,
+        top: 22,
+        child: Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: k.background, shape: BoxShape.circle, border: Border.all(color: Theme.of(context).colorScheme.outline, width: 2)),
+        ),
+      ),
+      Padding(padding: const EdgeInsets.only(left: _railWidth, top: 10), child: child),
+    ]);
+  }
+}
+
+/// A year on the history line: how many records and what they cost.
+class _YearMark extends StatelessWidget {
+  const _YearMark({required this.year, required this.count, required this.total});
+  final int year;
+  final int count;
+  final double total;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final st = KText.section.copyWith(color: context.tokens.label, fontFeatures: const [FontFeature.tabularFigures()]);
+    return Stack(children: [
+      Positioned(left: 7, top: 20, bottom: 0, child: Container(width: 2, color: context.tokens.line)),
+      Positioned(left: 4, top: 21, child: Container(width: 8, height: 8, decoration: BoxDecoration(color: context.tokens.label, shape: BoxShape.circle))),
+      Padding(
+        padding: const EdgeInsets.fromLTRB(_railWidth, 16, 4, 0),
+        child: Semantics(
+          header: true,
+          child: Row(children: [
+            Expanded(child: Text(s.yearCount(year, count), style: st)),
+            if (total > 0) Text(s.rm(total), style: st),
+          ]),
+        ),
+      ),
+    ]);
+  }
+}
+
+/// One record in the history: its name and cost, when and where, and what was bought or done.
+/// An unreported defect during the DLP can be marked reported from here.
+class RecordCard extends StatelessWidget {
+  const RecordCard(this.r, this.w, {super.key, this.showStatus = true});
+  final UpkeepRecord r;
+  final World w;
+
+  /// False in the defect list, which is already grouped by status.
+  final bool showStatus;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    final defect = r.kind == 'defect';
+    final photos = w.photosOf(r.id).length;
+    final items = w.costItems[r.id] ?? const <CostItem>[];
+    final meta = [
+      // A payment or a defect says what it is; repairs and services are the usual case.
+      if (r.kind == 'payment' || defect) s.kindName(r.kind),
+      if (defect) ...[if (r.area != null) r.area!, s.foundOn(s.dShort(r.date))] else s.dShort(r.date),
+      if (!defect && r.odometer != null) s.km(r.odometer!),
+      if (!defect && r.area != null) r.area!,
+      if (r.vendorName != null) r.vendorName!,
+      if (photos > 0) s.photosCount(photos),
+    ].join(' · ');
+    Widget? status;
+    if (defect && showStatus) {
+      final v = r.status ?? 'open';
+      final unreported = r.reportedToDeveloper == null && v == 'open';
+      status = StatusLabel(unreported ? s.notReportedYet : s.defectStatusName(v), switch (v) { 'done' => Tone.done, 'in_progress' => Tone.inProgress, _ => Tone.dueSoon });
+    } else if (r.cost != null) {
+      status = Text(s.rm(r.cost!), style: KText.row.copyWith(color: k.text, fontFeatures: const [FontFeature.tabularFigures()]));
+    }
+    final end = dlpEnd(w, r.assetId);
+    final canReport = defect && r.reportedToDeveloper == null && r.status != 'done' && end != null && daysBetween(today(), end) > 0;
+    final shown = items.length <= 3 ? items : items.take(2).toList();
+    return Card(
+      margin: EdgeInsets.zero,
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => showRecordSheet(context, r.id),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            LayoutBuilder(
+              builder: (context, box) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Expanded(child: Text(r.title, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text))),
+                if (status != null) ...[
+                  const SizedBox(width: 8),
+                  ConstrainedBox(constraints: BoxConstraints(maxWidth: box.maxWidth * 0.45), child: Padding(padding: const EdgeInsets.only(top: 1), child: status)),
+                ],
+              ]),
+            ),
+            if (meta.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 2),
+                child: Text(meta, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.meta.copyWith(color: k.textMuted)),
+              ),
+            if (items.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Divider(height: 1, color: k.divider),
+              const SizedBox(height: 6),
+              for (final i in shown)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 1),
+                  child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    Padding(padding: const EdgeInsets.fromLTRB(2, 9, 8, 0), child: Container(width: 4, height: 4, decoration: BoxDecoration(color: k.textMuted, shape: BoxShape.circle))),
+                    Expanded(child: Text(i.label, maxLines: 1, overflow: TextOverflow.ellipsis, style: TextStyle(fontSize: 14, height: 22 / 14, color: k.text))),
+                  ]),
+                ),
+              if (items.length > 3) Text(s.moreItems(items.length - 2), style: TextStyle(fontSize: 14, height: 22 / 14, color: k.textMuted)),
+            ],
+            if (canReport)
+              Padding(
+                padding: const EdgeInsets.only(top: 10),
+                child: FilledButton.tonal(
+                  onPressed: () async {
+                    // As in the record sheet: reported today, and being repaired unless already further on.
+                    await context.db.updateRecord(r.id, RecordsCompanion(
+                      reportedToDeveloper: Value(today()),
+                      status: Value(r.status == null || r.status == 'open' ? 'in_progress' : r.status),
+                    ));
+                    if (context.mounted) snack(context, s.reportedToday);
+                  },
+                  child: Text(s.markReportedShort),
+                ),
+              ),
+          ]),
+        ),
+      ),
+    );
+  }
 }
 
 class _Reminders extends StatelessWidget {
@@ -1014,7 +1202,10 @@ class _DefectList extends StatelessWidget {
       final g = ds.where((r) => (r.status ?? 'open') == status).toList();
       return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
         SectionTitle(label, count: g.length),
-        CardList([for (final r in g) RecordTile(r, w, showStatus: false)], empty: s.none),
+        if (g.isEmpty)
+          Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text(s.none, style: KText.meta.copyWith(color: context.tokens.textMuted)))
+        else
+          for (final r in g) Padding(padding: const EdgeInsets.only(bottom: 10), child: RecordCard(r, w, showStatus: false)),
       ]);
     }
 
