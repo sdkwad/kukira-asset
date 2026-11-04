@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.2.8 (build 14)
+
+A second pass of the 0.2.8 audit. No schema change; install over build 13 or over 0.2.7 phase d. The app still has no internet permission.
+
+- **Fixed:** build 13 checked stored file names more strictly than older versions made them. 0.2.0 to 0.2.7 stored a file picked without an extension (often a PDF from a cloud drive, named only "Geran kenderaan Myvi WXY4821") with the end of its name as its extension. In build 13 such a file would not open, was left out of new backups, and an older backup holding one was refused. Those names are accepted again (still nothing like "/" or ".."). A new file without an extension is stored by its type (PDF and the picture types are told from their first bytes) or as "bin", so it no longer fails to save.
+- **Fixed:** the copy handed to a viewer gets the extension of its type, so those older files open in a PDF app, and a very long title no longer makes an invalid file name.
+- **Fixed:** a document that could not be opened or shared did nothing at all; it now says so. That message and "no app on this phone can open this file" showed behind the document sheet, where they could not be seen; the sheet now closes first.
+- **Fixed:** "saved to the cloud" followed the choice in Kukira, not where the file went. Android's save dialog often opens at Downloads, so tapping Save kept the backup on the phone while Kukira said it was in the cloud (the file picker only answered a made-up path). Backups are now saved through Android's save dialog directly (MainActivity.kt), which answers the place that took the file: a folder on the phone, Google Drive, OneDrive or Dropbox, or another app. The label and the "only on this phone" warning follow that answer, and choosing the cloud but saving on the phone says how to pick Drive.
+- **Security:** the file picker copied every picked file (a geran, a policy, a backup) into the app's cache and the photo picker every photo, unencrypted, and neither removed them; the share sheet kept each shared document until the next share. Those copies are now removed as soon as the picked bytes are read and at every start, and shared copies are cleared like the viewer's (after 5 minutes while the app is in use, all at start).
+- **Tests:** older long names open and restore while unsafe names are still refused, file types from their first bytes, the viewer copy, the document messages, where a backup went from the dialog's answer, and the cache clean-up.
+
 ## 0.2.8 (build 13)
 
 Renewing road tax and insurance (planned as 0.2.7e), wide screens, backups to a cloud drive, and the fixes from a full audit. The database moves to schema 5; it upgrades on its own and older backups still restore. The app still has no internet permission.

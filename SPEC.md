@@ -32,7 +32,9 @@ Road tax expiry, insurance expiry (vehicles) and the DLP end (house, from the VP
 ## Backups and stored files
 
 - A backup file is the only way records leave the phone. Saving one to Google Drive, OneDrive or Dropbox goes through Android's own save dialog (the cloud app uploads it); never add a cloud API or the internet permission for it.
-- Every stored file name, from the database or from a backup, must pass `SecureFiles.isSafeName`; a backup that names any other file is refused. A backup header may ask for at most `Backup.maxIterations` rounds.
+- Where a backup went is what the save dialog answers (`kukira/save` in MainActivity.kt, `Backup.placeOf`), never the choice made in Kukira. Say "in the cloud" only for a known cloud provider and "only on this phone" only for a known phone folder.
+- Every stored file name, from the database or from a backup, must pass `SecureFiles.isSafeName`; a backup that names any other file is refused. It must keep accepting every name an older version made (`<32 hex>.<letters and digits>`, any length that fits). A backup header may ask for at most `Backup.maxIterations` rounds.
+- Nothing readable is left outside the encrypted store: the pickers' copies in the cache are removed once read and at start (`SecureFiles.clearPickerCopies`), and copies handed to a viewer or the share sheet are cleared (`SecureFiles.clearTemp`, `handOverFolders`). A new plugin that copies files must be added there.
 
 ## Wide screens
 

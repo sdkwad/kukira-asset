@@ -2,7 +2,7 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.8, build 13 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.2.8, build 14 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
 
 ## Baharu dalam 0.2.8
 
@@ -12,6 +12,7 @@ Pangkalan data naik ke skema 5 secara automatik; sandaran lama masih boleh dipul
 - Skrin lebar (tablet, telefon lipat, telefon mendatar): bar navigasi di tepi, Hari ini dan Aset sebagai senarai dan butiran sebelah-menyebelah, Ringkasan aset dua lajur.
 - Sandaran ke Google Drive, OneDrive atau Dropbox melalui dialog simpan Android; app awan itu yang memuat naik. Amaran jika sandaran terakhir hanya dalam telefon.
 - Audit: sandaran palsu tidak lagi boleh menulis di luar folder Kukira atau membuat app tersangkut; dokumen rekod yang dipadam kekal; kos dan tarikh sewa yang salah ditolak.
+- Audit kedua (build 14): fail lama tanpa sambungan dibuka dan dipulihkan semula; label "disimpan ke awan" kini ikut tempat sebenar fail disimpan; tiada lagi salinan tidak bersulit fail yang dipilih atau dikongsi tertinggal dalam cache.
 
 Pasang terus di atas 0.2.7 fasa d.
 
