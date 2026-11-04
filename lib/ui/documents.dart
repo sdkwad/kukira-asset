@@ -7,9 +7,11 @@ import 'package:image_picker/image_picker.dart';
 
 import '../data/db.dart';
 import '../domain/rules.dart';
+import '../l10n/strings.dart';
 import '../services/error_log.dart';
 import '../services/files.dart';
 import 'add_actions.dart';
+import 'assets.dart';
 import 'common.dart';
 
 const docTypes = ['spa', 'geran', 'vp_letter', 'dlp', 'tax_bill', 'insurance', 'receipt', 'other'];
@@ -227,6 +229,9 @@ class PhotoEditor extends StatelessWidget {
 
 // ================================================================ list
 
+/// Every document, by asset: the three that matter most of each (those about to end first),
+/// and "See N more". A search looks in names, types and assets, and in records too, where a
+/// policy number is often kept in the notes.
 class DocumentsScreen extends StatefulWidget {
   const DocumentsScreen({super.key});
 
@@ -234,40 +239,184 @@ class DocumentsScreen extends StatefulWidget {
   State<DocumentsScreen> createState() => _DocumentsScreenState();
 }
 
+/// How many documents of an asset show before "See N more".
+const docsPerAsset = 3;
+
+/// Documents about to end first (soonest), then the rest newest first.
+int compareDocs(AssetDocument a, AssetDocument b, DateTime today) {
+  bool live(AssetDocument d) => d.expiry != null && !dayOnly(d.expiry!).isBefore(today);
+  if (live(a) != live(b)) return live(a) ? -1 : 1;
+  final byExpiry = live(a) ? a.expiry!.compareTo(b.expiry!) : 0;
+  return byExpiry != 0 ? byExpiry : b.addedAt.compareTo(a.addedAt);
+}
+
+/// A record the search found, with where it was found when that is not its name.
+typedef RecordHit = (UpkeepRecord record, String? where);
+
+/// The records whose name, notes, shop, area or items contain [q].
+List<RecordHit> searchRecords(Str s, World w, String q, {int? assetId}) {
+  final needle = q.trim().toLowerCase();
+  if (needle.isEmpty) return const [];
+  String? excerpt(String text) {
+    final at = text.toLowerCase().indexOf(needle);
+    if (at < 0) return null;
+    final start = (at - 18).clamp(0, text.length);
+    final end = (at + needle.length + 24).clamp(0, text.length);
+    return '${start > 0 ? '…' : ''}${text.substring(start, end).replaceAll('\n', ' ')}${end < text.length ? '…' : ''}';
+  }
+
+  final hits = <RecordHit>[];
+  for (final r in w.records) {
+    if (assetId != null && r.assetId != assetId) continue;
+    if (r.title.toLowerCase().contains(needle)) {
+      hits.add((r, null));
+      continue;
+    }
+    final fields = <(String, String?)>[
+      (s.notes, r.notes),
+      (s.vendor, r.vendorName),
+      (s.area, r.area),
+      for (final i in w.costItems[r.id] ?? const <CostItem>[]) (s.item, i.label),
+    ];
+    for (final (label, text) in fields) {
+      final e = text == null ? null : excerpt(text);
+      if (e != null) {
+        hits.add((r, s.foundIn(label, e)));
+        break;
+      }
+    }
+  }
+  return hits;
+}
+
 class _DocumentsScreenState extends State<DocumentsScreen> {
-  String _q = '';
+  final _search = TextEditingController();
   String _type = 'all';
+  int? _asset;
+  final Set<int> _open = {};
+
+  @override
+  void dispose() {
+    _search.dispose();
+    super.dispose();
+  }
+
+  /// A filter as a button that opens its choices, instead of a long row of chips.
+  Widget _filter<T>(String label, T value, List<(T, String)> options, ValueChanged<T> onPick) {
+    final k = context.tokens;
+    return OutlinedButton(
+      style: OutlinedButton.styleFrom(
+        foregroundColor: k.text,
+        side: BorderSide(color: k.line),
+        padding: const EdgeInsets.fromLTRB(14, 8, 8, 8),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSpace.controlRadius)),
+      ),
+      onPressed: () async {
+        final v = await showModalBottomSheet<(T,)>(
+          context: context,
+          showDragHandle: true,
+          isScrollControlled: true,
+          builder: (c) => SafeArea(
+            child: ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: MediaQuery.of(c).size.height * 0.7),
+              child: ListView(shrinkWrap: true, children: [
+                for (final (o, name) in options)
+                  ListTile(
+                    title: Text(name),
+                    selected: o == value,
+                    trailing: o == value ? Icon(Icons.check, color: k.primary) : null,
+                    onTap: () => Navigator.pop(c, (o,)),
+                  ),
+              ]),
+            ),
+          ),
+        );
+        if (v != null) onPick(v.$1);
+      },
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Flexible(child: Text(label, maxLines: 1, overflow: TextOverflow.ellipsis)),
+        const SizedBox(width: 4),
+        const Icon(Icons.expand_more, size: 20),
+      ]),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return WorldView(builder: (context, w) {
       final s = context.s;
+      final k = context.tokens;
       final theme = Theme.of(context);
-      final q = _q.trim().toLowerCase();
+      final t = today();
+      final q = _search.text.trim();
+      if (_asset != null && w.asset(_asset!) == null) _asset = null;
       final docs = w.files
-          .where((d) => _type == 'all' || d.docType == _type)
-          .where((d) => q.isEmpty || '${d.title} ${s.docTypeName(d.docType)} ${w.asset(d.assetId)?.nickname ?? ''}'.toLowerCase().contains(q))
+          .where((d) => (_type == 'all' || d.docType == _type) && (_asset == null || d.assetId == _asset))
+          .where((d) => q.isEmpty || '${d.title} ${s.docTypeName(d.docType)} ${w.asset(d.assetId)?.nickname ?? ''}'.toLowerCase().contains(q.toLowerCase()))
           .toList()
-        ..sort((a, b) => b.addedAt.compareTo(a.addedAt));
-      final groups = <Widget>[];
-      for (final a in w.assets) {
-        final g = docs.where((d) => d.assetId == a.id).toList();
-        if (g.isEmpty) continue;
-        groups.add(SectionTitle(a.nickname, count: g.length));
-        groups.add(CardList([for (final d in g) DocTile(d, w)]));
+        ..sort((a, b) => compareDocs(a, b, t));
+
+      final body = <Widget>[];
+      if (q.isNotEmpty) {
+        // Search: one list across assets, then the records that mention it.
+        final records = searchRecords(s, w, q, assetId: _asset);
+        if (docs.isNotEmpty) {
+          body.addAll([SectionTitle(s.documentsTab, count: docs.length), CardList([for (final d in docs) DocTile(d, w, showAsset: true, highlight: q)])]);
+        }
+        if (records.isNotEmpty) {
+          body.addAll([
+            SectionTitle(s.alsoInRecords, count: records.length),
+            CardList([
+              for (final (r, where) in records)
+                AppRow(
+                  title: r.title,
+                  highlight: q,
+                  status: r.cost == null ? null : Text(s.rm(r.cost!), style: KText.row.copyWith(color: k.text, fontFeatures: const [FontFeature.tabularFigures()])),
+                  meta: [w.asset(r.assetId)?.nickname ?? '', where ?? s.dShort(r.date)].join(' · '),
+                  onTap: () => showRecordSheet(context, r.id),
+                ),
+            ]),
+          ]);
+        }
+        if (body.isEmpty) body.add(Padding(padding: const EdgeInsets.fromLTRB(4, 16, 4, 0), child: Text(s.noMatch)));
+      } else {
+        for (final a in w.assets) {
+          final g = docs.where((d) => d.assetId == a.id).toList();
+          if (g.isEmpty) continue;
+          final all = _open.contains(a.id) || _asset != null || g.length <= docsPerAsset;
+          body.addAll([
+            SectionTitle(a.nickname, count: g.length),
+            CardList([for (final d in all ? g : g.take(docsPerAsset)) DocTile(d, w)]),
+            if (!all)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(onPressed: () => setState(() => _open.add(a.id)), child: Text(s.seeMore(g.length - docsPerAsset))),
+              ),
+          ]);
+        }
+        if (body.isEmpty) body.add(Padding(padding: const EdgeInsets.fromLTRB(4, 16, 4, 0), child: Text(s.noMatch)));
       }
+
       return SafeScaffold(
+        floatingActionButton: w.assets.isEmpty
+            ? null
+            : FloatingActionButton.extended(
+                heroTag: null,
+                icon: const Icon(Icons.add),
+                label: Text(s.addDocument),
+                onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => DocumentFormScreen(assetId: _asset))),
+              ),
         body: SafeArea(
-          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
-            PageTitle(
-              s.documentsTab,
-              trailing: w.assets.isEmpty
-                  ? null
-                  : FilledButton.tonalIcon(
-                      icon: const Icon(Icons.attach_file),
-                      label: Text(s.attach),
-                      onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const DocumentFormScreen())),
-                    ),
+          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(4, 16, 4, 12),
+              child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Semantics(header: true, child: Text(s.documentsTab, style: KText.screenTitle.copyWith(color: k.text))),
+                if (w.files.isNotEmpty) ...[
+                  const SizedBox(height: 2),
+                  Text(s.docsCountEncrypted(w.files.length), style: KText.meta.copyWith(color: k.textMuted)),
+                ],
+              ]),
             ),
             if (w.files.isEmpty)
               Card(
@@ -284,24 +433,39 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
                 ),
               )
             else ...[
-              SearchBar(
-                hintText: s.searchDocs,
-                leading: const Icon(Icons.search),
-                elevation: const WidgetStatePropertyAll(0),
-                onChanged: (v) => setState(() => _q = v),
+              TextField(
+                controller: _search,
+                textInputAction: TextInputAction.search,
+                onChanged: (_) => setState(() {}),
+                decoration: InputDecoration(
+                  hintText: s.searchDocsHint,
+                  prefixIcon: const Icon(Icons.search),
+                  suffixIcon: q.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: s.clear,
+                          icon: const Icon(Icons.close),
+                          onPressed: () => setState(_search.clear),
+                        ),
+                  border: const OutlineInputBorder(),
+                ),
               ),
               const SizedBox(height: 10),
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(children: [
-                  for (final t in ['all', ...docTypes])
-                    Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(label: Text(t == 'all' ? s.all : s.docTypeName(t)), selected: _type == t, onSelected: (_) => setState(() => _type = t)),
-                    ),
-                ]),
-              ),
-              if (groups.isEmpty) Padding(padding: const EdgeInsets.only(top: 16), child: Text(s.noMatch)) else ...groups,
+              Wrap(spacing: 8, runSpacing: 8, children: [
+                _filter<int?>(
+                  s.assetFilter(_asset == null ? s.all : w.asset(_asset!)!.nickname),
+                  _asset,
+                  [(null, s.all), for (final a in w.assets) (a.id, a.nickname)],
+                  (v) => setState(() => _asset = v),
+                ),
+                _filter<String>(
+                  s.typeFilter(_type == 'all' ? s.all : s.docTypeName(_type)),
+                  _type,
+                  [('all', s.all), for (final d in docTypes) (d, s.docTypeName(d))],
+                  (v) => setState(() => _type = v),
+                ),
+              ]),
+              ...body,
             ],
             const SizedBox(height: 16),
             Text(s.docsPrivacyNote, style: theme.textTheme.bodySmall),
@@ -313,10 +477,13 @@ class _DocumentsScreenState extends State<DocumentsScreen> {
 }
 
 class DocTile extends StatelessWidget {
-  const DocTile(this.d, this.w, {super.key, this.showAsset = false});
+  const DocTile(this.d, this.w, {super.key, this.showAsset = false, this.highlight});
   final AssetDocument d;
   final World w;
   final bool showAsset;
+
+  /// Search text to mark in the name.
+  final String? highlight;
 
   @override
   Widget build(BuildContext context) {
@@ -329,13 +496,20 @@ class DocTile extends StatelessWidget {
           ? StatusLabel(s.expired, Tone.expired)
           : StatusLabel(s.expiresShort(s.dShort(d.expiry!)), n <= 30 ? Tone.dueSoon : Tone.upcoming);
     }
+    final image = SecureFiles.isImage(d.filePath);
     return AppRow(
-      leading: SecureFiles.isImage(d.filePath)
+      leading: image
           ? ClipRRect(borderRadius: BorderRadius.circular(KSpace.controlRadius), child: SecureImage(d.filePath, size: 36, cacheWidth: 150))
-          : const IconAvatar(Icons.picture_as_pdf_outlined),
+          : const IconAvatar(Icons.description_outlined),
       title: d.title,
+      highlight: highlight,
       status: status,
-      meta: [s.docTypeName(d.docType), if (showAsset) w.asset(d.assetId)?.nickname ?? ''].join(' · '),
+      meta: [
+        if (showAsset) w.asset(d.assetId)?.nickname ?? '',
+        s.docTypeName(d.docType),
+        image ? s.fileImage : s.filePdf,
+        if (!showAsset) d.linkedRecordId != null ? s.linkedToRecord : s.addedOn(s.dShort(d.addedAt)),
+      ].join(' · '),
       onTap: () => showDocSheet(context, d.id),
     );
   }

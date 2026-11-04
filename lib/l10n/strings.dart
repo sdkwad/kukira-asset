@@ -562,7 +562,6 @@ abstract class Str {
   String ruleEveryDays(int n, bool fromDue);
   String get saveDocument;
   String get saveToVendorBook;
-  String get searchDocs;
   String get securing;
   String get shareCopy;
   String get splitCost;
@@ -706,4 +705,18 @@ abstract class Str {
   String get renewRoadTax;
   String get renewInsurance;
   String get marksReminderDone;
+
+  // ------------------------------------------------ Documents
+  String docsCountEncrypted(int n);
+  String get searchDocsHint;
+  String assetFilter(String v);
+  String typeFilter(String v);
+  String seeMore(int n);
+  String get alsoInRecords;
+  String get addDocument;
+  String get filePdf;
+  String get fileImage;
+  String get linkedToRecord;
+  String addedOn(String date);
+  String foundIn(String field, String text);
 }

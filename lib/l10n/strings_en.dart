@@ -1119,8 +1119,6 @@ class StrEn extends Str {
   @override
   String get saveToVendorBook => 'Save to vendor book';
   @override
-  String get searchDocs => 'Search documents';
-  @override
   String get securing => 'Securing your records…';
   @override
   String get shareCopy => 'Share a copy';
@@ -1373,4 +1371,30 @@ class StrEn extends Str {
   String get renewInsurance => 'Renew insurance';
   @override
   String get marksReminderDone => 'marks the reminder done';
+
+  // ------------------------------------------------ Documents
+  @override
+  String docsCountEncrypted(int n) => n == 1 ? '1 document · encrypted on this phone' : '$n documents · encrypted on this phone';
+  @override
+  String get searchDocsHint => 'Search names, types or assets';
+  @override
+  String assetFilter(String v) => 'Asset: $v';
+  @override
+  String typeFilter(String v) => 'Type: $v';
+  @override
+  String seeMore(int n) => 'See $n more';
+  @override
+  String get alsoInRecords => 'Also in records';
+  @override
+  String get addDocument => 'Add document';
+  @override
+  String get filePdf => 'PDF';
+  @override
+  String get fileImage => 'Image';
+  @override
+  String get linkedToRecord => 'linked to a record';
+  @override
+  String addedOn(String date) => 'added $date';
+  @override
+  String foundIn(String field, String text) => '${field.toLowerCase()}: $text';
 }

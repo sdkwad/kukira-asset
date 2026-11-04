@@ -368,6 +368,18 @@ class StatusLabel extends StatelessWidget {
   }
 }
 
+/// [text] with the first place [query] appears marked, for search results.
+TextSpan highlighted(String text, String? query, KukiraColors k) {
+  final q = query?.trim() ?? '';
+  final at = q.isEmpty ? -1 : text.toLowerCase().indexOf(q.toLowerCase());
+  if (at < 0) return TextSpan(text: text);
+  return TextSpan(children: [
+    TextSpan(text: text.substring(0, at)),
+    TextSpan(text: text.substring(at, at + q.length), style: TextStyle(backgroundColor: k.dueSoonBg, fontWeight: FontWeight.w700)),
+    TextSpan(text: text.substring(at + q.length)),
+  ]);
+}
+
 /// The list row of the design system. Line 1: the title, with the status on the right.
 /// Line 2: the context, full width. An optional action sits under both, shown only when
 /// there is something to do.
@@ -383,10 +395,14 @@ class AppRow extends StatelessWidget {
     this.action,
     this.trailing,
     this.onTap,
+    this.highlight,
   });
 
   final Widget? leading;
   final String title;
+
+  /// Search text to mark in the title, where it appears.
+  final String? highlight;
 
   /// A small tag right after the title, such as the estimate tag or a number plate.
   final Widget? titleTag;
@@ -409,7 +425,7 @@ class AppRow extends StatelessWidget {
         builder: (context, box) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Expanded(
             child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Flexible(child: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text))),
+              Flexible(child: Text.rich(highlighted(title, highlight, k), maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text))),
               if (titleTag != null) ...[const SizedBox(width: 6), Padding(padding: const EdgeInsets.only(top: 1), child: titleTag!)],
             ]),
           ),

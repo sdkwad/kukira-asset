@@ -84,11 +84,16 @@ void main() {
       await tester.tap(find.widgetWithText(NavigationDestination, s.assetsTab));
       await tester.pumpAndSettle();
       expect(fab, findsOneWidget);
+      final tambah = find.widgetWithText(FloatingActionButton, s.add).hitTestable();
       for (final tab in [s.documentsTab, s.moreTab]) {
         await tester.tap(find.widgetWithText(NavigationDestination, tab));
         await tester.pumpAndSettle();
-        expect(fab, findsNothing, reason: tab);
+        expect(tambah, findsNothing, reason: tab);
       }
+      // Documents has its own button, for a document only (0.2.7d).
+      await tester.tap(find.widgetWithText(NavigationDestination, s.documentsTab));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(FloatingActionButton, s.addDocument).hitTestable(), findsOneWidget);
     });
   });
 

@@ -1119,8 +1119,6 @@ class StrMs extends Str {
   @override
   String get saveToVendorBook => 'Simpan dalam buku vendor';
   @override
-  String get searchDocs => 'Cari dokumen';
-  @override
   String get securing => 'Mengunci rekod anda…';
   @override
   String get shareCopy => 'Kongsi salinan';
@@ -1370,4 +1368,30 @@ class StrMs extends Str {
   String get renewInsurance => 'Perbaharui insurans';
   @override
   String get marksReminderDone => 'peringatan ditanda selesai';
+
+  // ------------------------------------------------ Documents
+  @override
+  String docsCountEncrypted(int n) => '$n dokumen · disulitkan dalam telefon ini';
+  @override
+  String get searchDocsHint => 'Cari nama, jenis atau aset';
+  @override
+  String assetFilter(String v) => 'Aset: $v';
+  @override
+  String typeFilter(String v) => 'Jenis: $v';
+  @override
+  String seeMore(int n) => 'Lihat $n lagi';
+  @override
+  String get alsoInRecords => 'Juga dalam rekod';
+  @override
+  String get addDocument => 'Tambah dokumen';
+  @override
+  String get filePdf => 'PDF';
+  @override
+  String get fileImage => 'Gambar';
+  @override
+  String get linkedToRecord => 'dipaut ke rekod';
+  @override
+  String addedOn(String date) => 'ditambah $date';
+  @override
+  String foundIn(String field, String text) => '${field.toLowerCase()}: $text';
 }
