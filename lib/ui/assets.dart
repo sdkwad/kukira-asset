@@ -5,18 +5,21 @@ import '../data/db.dart';
 import '../domain/auto_sync.dart';
 import '../domain/lists.dart';
 import '../domain/presets.dart';
+import '../domain/renewal.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
 import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
+import '../services/renewal.dart';
 import 'add_actions.dart';
 import 'add_asset.dart';
 import 'combo.dart';
 import 'common.dart';
 import 'documents.dart';
 import 'forms.dart';
+import 'renew.dart';
 
 String assetSubtitle(BuildContext context, Asset a, World w) {
   final s = context.s;
@@ -681,15 +684,30 @@ class _Overview extends StatelessWidget {
   /// A date the asset carries (road tax, insurance), with the reminder that follows it.
   Widget _expiry(BuildContext context, String title, IconData icon, DateTime? date, String source, String? extra, VoidCallback edit) {
     final s = context.s;
-    if (date == null) return AppRow(leading: IconAvatar(icon), title: title, meta: s.notSet, trailing: const Icon(Icons.chevron_right), onTap: edit);
+    final kind = source == autoRoadTax ? RenewKind.roadTax : RenewKind.insurance;
+    final v = w.vehicles[a.id];
+    final both = v != null && renewTogether(v.roadTaxExpiry, v.insuranceExpiry);
+    if (date == null) {
+      return AppRow(
+        leading: IconAvatar(icon),
+        title: title,
+        meta: s.notSet,
+        trailing: TextButton(onPressed: () => openRenewal(context, a.id, kind), child: Text(s.renew)),
+        onTap: edit,
+      );
+    }
     final r = w.reminders.where((x) => x.assetId == a.id && x.autoSource == source && !x.done).firstOrNull;
     final days = daysBetween(today(), date);
     final (st, tone) = r != null ? shortDue(s, r, w) : (days < 0 ? (s.expired, Tone.expired) : (s.inDays(days), Tone.upcoming));
+    final cover = currentCoverRecord(w, a.id, kind);
+    final ends = extra == null ? s.endsCap(s.dLong(date)) : '$extra · ${s.endsOn(s.dLong(date))}';
     return AppRow(
       leading: IconAvatar(icon),
       title: title,
       status: StatusLabel(st, tone),
-      meta: extra == null ? s.endsCap(s.dLong(date)) : '$extra · ${s.endsOn(s.dLong(date))}',
+      meta: cover == null ? ends : '$ends · ${s.monthsCount(coverMonths(cover.coverStart!, cover.coverEnd!))}',
+      // Renew shows once the end is near; until then it is in the reminder.
+      action: days <= renewSoonDays ? FilledButton.tonal(onPressed: () => openRenewal(context, a.id, kind, both: both), child: Text(s.renew)) : null,
       onTap: r != null ? () => showReminderSheet(context, r.id) : edit,
     );
   }
@@ -861,6 +879,7 @@ Future<void> showRecordSheet(BuildContext context, int recordId) {
               (s.kind, s.kindName(r.kind)),
               if (r.category != null) (s.category, s.catName(r.category!)),
               for (final i in items) (i.label, s.rm(i.amount)),
+              if (r.coverStart != null && r.coverEnd != null) (s.coverPeriodWord, s.coverPeriod(s.dLong(r.coverStart!), s.dLong(r.coverEnd!))),
               if (r.cost != null) (s.totalCost, s.rm(r.cost!)),
               if (r.vendorName != null) (s.vendor, r.vendorName!),
               if (r.area != null) (s.area, r.area!),
@@ -1101,6 +1120,7 @@ class RecordCard extends StatelessWidget {
       // A payment or a defect says what it is; repairs and services are the usual case.
       if (r.kind == 'payment' || defect) s.kindName(r.kind),
       if (defect) ...[if (r.area != null) r.area!, s.foundOn(s.dShort(r.date))] else s.dShort(r.date),
+      if (r.coverStart != null && r.coverEnd != null) s.coverPeriod(s.dShort(r.coverStart!), s.dShort(r.coverEnd!)),
       if (!defect && r.odometer != null) s.km(r.odometer!),
       if (!defect && r.area != null) r.area!,
       if (r.vendorName != null) r.vendorName!,

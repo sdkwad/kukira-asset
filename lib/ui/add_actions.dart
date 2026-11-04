@@ -5,6 +5,8 @@
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
+import '../domain/auto_sync.dart';
+import '../domain/renewal.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
 import 'add_asset.dart';
@@ -12,6 +14,7 @@ import 'assets.dart';
 import 'common.dart';
 import 'documents.dart';
 import 'forms.dart';
+import 'renew.dart';
 
 enum AddKind { maintenance, defect, payment, renovation, incident, odometer, reminder, document }
 
@@ -60,13 +63,42 @@ List<Reminder> addSuggestions(World w, {int? assetId, int max = 3}) {
   return due.take(max).toList();
 }
 
-/// How a suggestion is acted on. A date the asset page keeps (road tax, insurance, the DLP)
-/// and the monthly odometer reading open the reminder itself, which knows how to update
-/// them; anything else opens a record that marks the reminder done when saved.
-enum SuggestionAction { record, reminder }
+/// How a suggestion is acted on: road tax and insurance open their renewal; the DLP and the
+/// monthly odometer reading open the reminder itself, which knows how to update them;
+/// anything else opens a record that marks the reminder done when saved.
+enum SuggestionAction { record, reminder, renew }
 
-SuggestionAction suggestionAction(Reminder r) =>
-    r.autoSource != null || r.category == 'odometer' ? SuggestionAction.reminder : SuggestionAction.record;
+SuggestionAction suggestionAction(Reminder r) => switch (r.autoSource) {
+      autoRoadTax || autoInsurance => SuggestionAction.renew,
+      null when r.category != 'odometer' => SuggestionAction.record,
+      _ => SuggestionAction.reminder,
+    };
+
+/// The suggestions as rows, at most [max]: road tax and insurance of the same vehicle that
+/// end close together share one row, which renews both.
+List<(Reminder, Reminder?)> suggestionRows(World w, List<Reminder> list, {int max = 3}) {
+  final rows = <(Reminder, Reminder?)>[];
+  final used = <int>{};
+  for (final r in list) {
+    if (used.contains(r.id)) continue;
+    used.add(r.id);
+    Reminder? pair;
+    if (suggestionAction(r) == SuggestionAction.renew) {
+      final want = r.autoSource == autoRoadTax ? autoInsurance : autoRoadTax;
+      final v = w.vehicles[r.assetId];
+      final p = list.where((x) => x.assetId == r.assetId && x.autoSource == want && !used.contains(x.id)).firstOrNull;
+      if (p != null && v != null && renewTogether(v.roadTaxExpiry, v.insuranceExpiry)) {
+        pair = p;
+        used.add(p.id);
+      }
+    }
+    rows.add((r, pair));
+    if (rows.length == max) break;
+  }
+  return rows;
+}
+
+RenewKind _renewKind(Reminder r) => r.autoSource == autoRoadTax ? RenewKind.roadTax : RenewKind.insurance;
 
 /// "Rekod tukar minyak enjin", "Perbaharui cukai jalan".
 String suggestionTitle(Str s, Reminder r) => switch (r.autoSource) {
@@ -81,20 +113,27 @@ IconData _suggestionIcon(Reminder r) => switch (r.autoSource) {
       _ => r.category == 'odometer' ? Icons.speed_outlined : Icons.build_outlined,
     };
 
-/// Opens what a suggestion leads to, from the screen the sheet was opened on.
-Future<void> runSuggestion(BuildContext context, Reminder r) async {
-  if (suggestionAction(r) == SuggestionAction.reminder) {
-    await showReminderSheet(context, r.id);
-  } else {
-    await Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(assetId: r.assetId, completesReminderId: r.id)));
+/// Opens what a suggestion leads to, from the screen the sheet was opened on. With a [pair]
+/// (road tax and insurance together) the renewal starts with both.
+Future<void> runSuggestion(BuildContext context, Reminder r, {Reminder? pair}) async {
+  switch (suggestionAction(r)) {
+    case SuggestionAction.renew:
+      await openRenewal(context, r.assetId, _renewKind(r), both: pair != null);
+    case SuggestionAction.reminder:
+      await showReminderSheet(context, r.id);
+    case SuggestionAction.record:
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(assetId: r.assetId, completesReminderId: r.id)));
   }
 }
 
 /// One suggestion: what to do, for which asset (when the sheet is for everything) and how
 /// late or near it is, in its colour.
 class _SuggestionRow extends StatelessWidget {
-  const _SuggestionRow(this.r, this.w, {required this.showAsset, required this.onTap});
+  const _SuggestionRow(this.r, this.w, {this.pair, required this.showAsset, required this.onTap});
   final Reminder r;
+
+  /// The other cover, when road tax and insurance are renewed together.
+  final Reminder? pair;
   final World w;
   final bool showAsset;
   final VoidCallback onTap;
@@ -103,7 +142,10 @@ class _SuggestionRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final k = context.tokens;
-    final (status, tone) = shortDue(s, r, w);
+    final (status0, tone) = shortDue(s, r, w);
+    final p = pair;
+    final sameDay = p != null && r.dueDate != null && p.dueDate != null && dayOnly(r.dueDate!) == dayOnly(p.dueDate!);
+    final status = sameDay ? '$status0 · ${s.bothEndOn(s.dShort(r.dueDate!))}' : status0;
     final (bg, fg) = tone == Tone.overdue ? (k.overdueBg, k.overdue) : (k.dueSoonBg, k.dueSoon);
     final muted = KText.meta.copyWith(color: k.textMuted);
     return MergeSemantics(
@@ -123,7 +165,7 @@ class _SuggestionRow extends StatelessWidget {
               const SizedBox(width: 12),
               Expanded(
                 child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                  Text(suggestionTitle(s, r), maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text)),
+                  Text(p == null ? suggestionTitle(s, r) : s.renewBoth, maxLines: 2, overflow: TextOverflow.ellipsis, style: KText.row.copyWith(color: k.text)),
                   const SizedBox(height: 2),
                   Text.rich(
                     TextSpan(children: [
@@ -143,13 +185,14 @@ class _SuggestionRow extends StatelessWidget {
   }
 }
 
-/// What the user chose in the sheet: an action on an asset, a suggestion, or (all null) a
-/// new asset.
+/// What the user chose in the sheet: an action on an asset, a suggestion (with the other
+/// cover when renewing both), or (all null) a new asset.
 class _Choice {
-  const _Choice(this.kind, this.assetId, [this.suggestion]);
+  const _Choice(this.kind, this.assetId, [this.suggestion, this.pair]);
   final AddKind? kind;
   final int? assetId;
   final Reminder? suggestion;
+  final Reminder? pair;
 }
 
 /// Opens "Tambah" for [assetId] (an asset's page) or for everything. With no asset yet the
@@ -170,7 +213,7 @@ Future<void> showAddSheet(BuildContext context, {int? assetId}) async {
   );
   if (c == null || !context.mounted) return;
   if (c.suggestion != null) {
-    await runSuggestion(context, c.suggestion!);
+    await runSuggestion(context, c.suggestion!, pair: c.pair);
   } else if (c.kind == null) {
     await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAssetScreen()));
   } else {
@@ -220,10 +263,11 @@ class _AddSheetState extends State<_AddSheet> {
       valueListenable: context.app.world,
       builder: (context, w, _) {
         final a = w == null || _asset == null ? null : w.asset(_asset!);
-        final suggested = w == null ? const <Reminder>[] : addSuggestions(w, assetId: a?.id);
+        // One more than shown, so a road tax and insurance pair still leaves room for others.
+        final suggested = w == null ? const <(Reminder, Reminder?)>[] : suggestionRows(w, addSuggestions(w, assetId: a?.id, max: 4));
         Widget suggestions() => CardList([
-              for (final r in suggested)
-                _SuggestionRow(r, w!, showAsset: a == null, onTap: () => Navigator.pop(context, _Choice(null, null, r))),
+              for (final (r, pair) in suggested)
+                _SuggestionRow(r, w!, pair: pair, showAsset: a == null, onTap: () => Navigator.pop(context, _Choice(null, null, r, pair))),
             ]);
         return SafeArea(
           child: SingleChildScrollView(

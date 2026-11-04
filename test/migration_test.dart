@@ -1,5 +1,5 @@
-// Upgrades databases made by 0.1.0 (schema 1), 0.2.0 (schema 2) and 0.2.1/0.2.2 (schema 3)
-// and checks that they
+// Upgrades databases made by 0.1.0 (schema 1), 0.2.0 (schema 2), 0.2.1/0.2.2 (schema 3) and
+// 0.2.3 to 0.2.7d (schema 4) and checks that they
 // end up with the same columns as a new install, with every row kept.
 
 import 'package:drift/drift.dart' hide isNull, isNotNull;
@@ -58,6 +58,11 @@ const schema3Additions = [
   'ALTER TABLE reminders ADD COLUMN auto_source TEXT NULL',
 ];
 
+/// What 0.2.3 added.
+const schema4Additions = [
+  'ALTER TABLE records ADD COLUMN warranty_reminder_id INTEGER NULL REFERENCES reminders (id) ON DELETE SET NULL',
+];
+
 /// One car with a road tax and an insurance reminder made by onboarding (no link yet),
 /// a house, a record, a record with a warranty and its reminder (no link yet) and a setting.
 const sampleRows = [
@@ -92,6 +97,11 @@ AppDb openAt(int version, {bool withRows = true}) => AppDb(NativeDatabase.memory
           db.execute(s);
         }
       }
+      if (version >= 4) {
+        for (final s in schema4Additions) {
+          db.execute(s);
+        }
+      }
       if (withRows) {
         for (final s in sampleRows) {
           db.execute(s);
@@ -113,7 +123,7 @@ Future<Map<String, Set<String>>> columns(AppDb db) async {
 void main() {
   setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
 
-  for (final from in [1, 2, 3]) {
+  for (final from in [1, 2, 3, 4]) {
     group('upgrade from schema $from', () {
       test('ends with the same tables and columns as a new install', () async {
         final fresh = AppDb(NativeDatabase.memory());
@@ -131,6 +141,10 @@ void main() {
         expect(w.houses[1]!.vpDate, DateTime.fromMillisecondsSinceEpoch(1700000000 * 1000));
         expect(w.records.firstWhere((r) => r.id == 1).cost, 180.5);
         expect(w.settings['lang'], 'ms');
+        // Schema 5: old records have no cover period.
+        expect(w.records.every((r) => r.coverStart == null && r.coverEnd == null), isTrue);
+        // Linking runs only for databases from before it existed (schema 3 and older).
+        if (from >= 4) return db.close();
         final byId = {for (final r in w.reminders) r.id: r};
         expect(byId[1]!.autoSource, 'roadTax');
         expect(byId[2]!.autoSource, 'insurance');

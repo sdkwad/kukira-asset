@@ -1394,4 +1394,68 @@ class StrMs extends Str {
   String addedOn(String date) => 'ditambah $date';
   @override
   String foundIn(String field, String text) => '${field.toLowerCase()}: $text';
+
+  // ------------------------------------------------ Renewal
+  @override
+  String get renew => 'Perbaharui';
+  @override
+  String get renewBoth => 'Perbaharui cukai jalan dan insurans';
+  @override
+  String bothEndOn(String date) => 'kedua-dua tamat $date';
+  @override
+  String get markDoneOnly => 'Tanda selesai sahaja, tanpa tarikh baharu';
+  @override
+  String currentEnds(String date) => 'Tamat sekarang $date';
+  @override
+  String get coverLength => 'Tempoh';
+  @override
+  String monthsCount(int n) => '$n bulan';
+  @override
+  String get otherLength => 'Lain';
+  @override
+  String suggestedFromLast(int n) => 'Dicadang kerana kali lepas $n bulan.';
+  @override
+  String get coverStartLabel => 'Mula';
+  @override
+  String get coverNewEnd => 'Tamat baharu';
+  @override
+  String get renewHelpRoadTax => 'Mula sehari selepas tamat lama. Semak dengan e-LKM atau MyJPJ.';
+  @override
+  String get renewHelpInsurance => 'Mula sehari selepas tamat lama. Semak tarikh pada polisi baharu.';
+  @override
+  String get costOptional => 'Kos (pilihan)';
+  @override
+  String get addProof => 'Bukti (pilihan): e-LKM, polisi atau resit';
+  @override
+  String get proofAttached => 'Bukti dilampirkan';
+  @override
+  String renewAlsoQ(String what) => 'Perbaharui ${lowerFirst(what)} sekali';
+  @override
+  String alsoEndsOn(String what, String asset, String date) => '$what $asset juga tamat $date';
+  @override
+  String renewKeepsPeriod(String from, String to) => 'Tempoh lama ($from hingga $to) kekal dalam Rekod. Peringatan akan ikut tarikh tamat baharu.';
+  @override
+  String renewReplacesEnd(String date) => 'Tarikh tamat lama, $date, digantikan. Pembaharuan ini disimpan dalam Rekod, dan peringatan akan ikut tarikh tamat baharu.';
+  @override
+  String get renewFirst => 'Pembaharuan ini disimpan dalam Rekod, dan peringatan akan ikut tarikh tamat.';
+  @override
+  String saveEndsOn(String date) => 'Simpan · tamat $date';
+  @override
+  String get endBeforeStart => 'Tarikh tamat mesti selepas tarikh mula.';
+  @override
+  String get costInvalid => 'Kos itu bukan nombor yang sah.';
+  @override
+  String get roadTaxRenewal => 'Pembaharuan cukai jalan';
+  @override
+  String get insuranceRenewal => 'Pembaharuan insurans';
+  @override
+  String roadTaxProofTitle(int from, int to) => from == to ? 'Bukti cukai jalan $from' : 'Bukti cukai jalan $from–$to';
+  @override
+  String insurancePolicyTitle(int from, int to) => from == to ? 'Polisi insurans $from' : 'Polisi insurans $from–$to';
+  @override
+  String renewedUntil(String what, String date) => '$what diperbaharui hingga $date.';
+  @override
+  String get coverPeriodWord => 'Tempoh';
+  @override
+  String coverPeriod(String from, String to) => '$from – $to';
 }

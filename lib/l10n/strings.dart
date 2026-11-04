@@ -719,4 +719,37 @@ abstract class Str {
   String get linkedToRecord;
   String addedOn(String date);
   String foundIn(String field, String text);
+
+  // ------------------------------------------------ Renewal
+  String get renew;
+  String get renewBoth;
+  String bothEndOn(String date);
+  String get markDoneOnly;
+  String currentEnds(String date);
+  String get coverLength;
+  String monthsCount(int n);
+  String get otherLength;
+  String suggestedFromLast(int n);
+  String get coverStartLabel;
+  String get coverNewEnd;
+  String get renewHelpRoadTax;
+  String get renewHelpInsurance;
+  String get costOptional;
+  String get addProof;
+  String get proofAttached;
+  String renewAlsoQ(String what);
+  String alsoEndsOn(String what, String asset, String date);
+  String renewKeepsPeriod(String from, String to);
+  String renewReplacesEnd(String date);
+  String get renewFirst;
+  String saveEndsOn(String date);
+  String get endBeforeStart;
+  String get costInvalid;
+  String get roadTaxRenewal;
+  String get insuranceRenewal;
+  String roadTaxProofTitle(int from, int to);
+  String insurancePolicyTitle(int from, int to);
+  String renewedUntil(String what, String date);
+  String get coverPeriodWord;
+  String coverPeriod(String from, String to);
 }

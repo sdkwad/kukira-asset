@@ -10,6 +10,7 @@ import 'package:kukira_asset/ui/add_actions.dart';
 import 'package:kukira_asset/ui/app.dart';
 import 'package:kukira_asset/ui/assets.dart';
 import 'package:kukira_asset/ui/common.dart';
+import 'package:kukira_asset/ui/renew.dart';
 
 import 'helpers.dart';
 
@@ -38,7 +39,9 @@ void main() {
 
     test('what each one opens, and what it is called', () {
       expect(suggestionAction(rem(1, 2, 'Engine oil change', -6)), SuggestionAction.record);
-      expect(suggestionAction(rem(1, 2, 'Road tax', 3, auto: 'roadTax')), SuggestionAction.reminder);
+      expect(suggestionAction(rem(1, 2, 'Road tax', 3, auto: 'roadTax')), SuggestionAction.renew, reason: 'renewing it sets the next date (0.2.7e)');
+      expect(suggestionAction(rem(1, 2, 'Insurance', 3, auto: 'insurance')), SuggestionAction.renew);
+      expect(suggestionAction(rem(1, 1, 'DLP ends', 3, auto: 'dlp')), SuggestionAction.reminder);
       expect(suggestionAction(rem(1, 2, 'Odometer', 0, category: 'odometer')), SuggestionAction.reminder);
       expect(suggestionTitle(s, rem(1, 2, 'Engine oil change', -6)), 'Record engine oil change');
       expect(suggestionTitle(strFor('ms'), rem(1, 2, 'Tukar minyak enjin', -6)), 'Rekod tukar minyak enjin');
@@ -87,7 +90,7 @@ void main() {
     expect(find.descendant(of: sheet, matching: find.text(s.addActionName('maintenance', 'car'))), findsOneWidget);
   });
 
-  testWidgets('a road tax suggestion opens the reminder, which updates the date', (tester) async {
+  testWidgets('a road tax suggestion opens its renewal', (tester) async {
     setPhone(tester, height: 1600);
     final w = fakeWorld(reminders: [rem(1, 2, 'Road tax renewal', 5, auto: 'roadTax')]);
     await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 2), w));
@@ -97,7 +100,7 @@ void main() {
     await tester.tap(find.text(s.renewRoadTax));
     await tester.pumpAndSettle();
     expect(find.text(s.newRecord), findsNothing);
-    expect(find.text(s.markDone), findsOneWidget, reason: 'the reminder sheet');
+    expect(find.byType(RenewScreen), findsOneWidget);
   });
 
   testWidgets('with nothing due the sheet is as before', (tester) async {

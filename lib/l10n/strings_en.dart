@@ -1397,4 +1397,68 @@ class StrEn extends Str {
   String addedOn(String date) => 'added $date';
   @override
   String foundIn(String field, String text) => '${field.toLowerCase()}: $text';
+
+  // ------------------------------------------------ Renewal
+  @override
+  String get renew => 'Renew';
+  @override
+  String get renewBoth => 'Renew road tax and insurance';
+  @override
+  String bothEndOn(String date) => 'both end $date';
+  @override
+  String get markDoneOnly => 'Only mark done, without a new date';
+  @override
+  String currentEnds(String date) => 'Ends now $date';
+  @override
+  String get coverLength => 'Length';
+  @override
+  String monthsCount(int n) => n == 1 ? '1 month' : '$n months';
+  @override
+  String get otherLength => 'Other';
+  @override
+  String suggestedFromLast(int n) => n == 1 ? 'Suggested because the last one was 1 month.' : 'Suggested because the last one was $n months.';
+  @override
+  String get coverStartLabel => 'Starts';
+  @override
+  String get coverNewEnd => 'New end';
+  @override
+  String get renewHelpRoadTax => 'Starts the day after the old one ends. Check with your e-LKM or MyJPJ.';
+  @override
+  String get renewHelpInsurance => 'Starts the day after the old one ends. Check the dates on the new policy.';
+  @override
+  String get costOptional => 'Cost (optional)';
+  @override
+  String get addProof => 'Proof (optional): e-LKM, policy or receipt';
+  @override
+  String get proofAttached => 'Proof attached';
+  @override
+  String renewAlsoQ(String what) => 'Renew the ${lowerFirst(what)} too';
+  @override
+  String alsoEndsOn(String what, String asset, String date) => 'The ${lowerFirst(what)} of $asset also ends $date';
+  @override
+  String renewKeepsPeriod(String from, String to) => 'The old period ($from to $to) stays in Records. The reminder will follow the new end date.';
+  @override
+  String renewReplacesEnd(String date) => 'The old end date, $date, is replaced. This renewal is kept in Records, and the reminder will follow the new end date.';
+  @override
+  String get renewFirst => 'This renewal is kept in Records, and the reminder will follow its end date.';
+  @override
+  String saveEndsOn(String date) => 'Save · ends $date';
+  @override
+  String get endBeforeStart => 'The end date must be after the start.';
+  @override
+  String get costInvalid => 'That cost is not a valid number.';
+  @override
+  String get roadTaxRenewal => 'Road tax renewal';
+  @override
+  String get insuranceRenewal => 'Insurance renewal';
+  @override
+  String roadTaxProofTitle(int from, int to) => from == to ? 'Road tax proof $from' : 'Road tax proof $from–$to';
+  @override
+  String insurancePolicyTitle(int from, int to) => from == to ? 'Insurance policy $from' : 'Insurance policy $from–$to';
+  @override
+  String renewedUntil(String what, String date) => '$what renewed until $date.';
+  @override
+  String get coverPeriodWord => 'Period';
+  @override
+  String coverPeriod(String from, String to) => '$from – $to';
 }

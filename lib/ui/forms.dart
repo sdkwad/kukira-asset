@@ -2,7 +2,9 @@ import 'package:drift/drift.dart' show Value;
 import 'package:flutter/material.dart';
 
 import '../data/db.dart';
+import '../domain/auto_sync.dart';
 import '../domain/presets.dart';
+import '../domain/renewal.dart';
 import '../domain/rules.dart';
 import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
@@ -12,6 +14,7 @@ import 'assets.dart';
 import 'combo.dart';
 import 'common.dart';
 import 'documents.dart';
+import 'renew.dart';
 
 // ================================================================ reminder sheet
 
@@ -30,6 +33,22 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
       // (not the first one, which may be long past for an overdue reminder).
       final next = planNotes([r.info], now: DateTime.now(), hour: w.notifyHour, minute: w.notifyMinute, limit: 1).firstOrNull?.at;
       final odoReminder = r.category == 'odometer';
+      // Road tax and insurance follow the vehicle's date: renewing sets the next one.
+      final renewKind = switch (r.autoSource) { autoRoadTax => RenewKind.roadTax, autoInsurance => RenewKind.insurance, _ => null };
+      Future<void> markDone() async {
+        Navigator.pop(sheet);
+        if (odoReminder) {
+          final saved = await showOdometerDialog(context, r.assetId);
+          if (!saved || !context.mounted) return;
+          final now = context.app.world.value!;
+          final fresh = now.reminders.where((x) => x.id == r.id).firstOrNull ?? r;
+          await context.db.completeReminder(fresh, today: today(), odometer: now.odoOf(r.assetId));
+          return;
+        }
+        final n = await context.db.completeReminder(r, today: today(), odometer: w.odoOf(r.assetId));
+        if (context.mounted) await _showDoneDialog(context, r, n);
+      }
+
       return SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -51,23 +70,23 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
               NoteBox(s.estimatedNote(r.note ?? '', r.confirmWith ?? s.theAuthority), warn: true),
             ],
             const SizedBox(height: 16),
-            FilledButton.icon(
-              icon: Icon(odoReminder ? Icons.speed : Icons.check),
-              label: Text(odoReminder ? s.updateOdometer : s.markDone),
-              onPressed: () async {
-                Navigator.pop(sheet);
-                if (odoReminder) {
-                  final saved = await showOdometerDialog(context, r.assetId);
-                  if (!saved || !context.mounted) return;
-                  final now = context.app.world.value!;
-                  final fresh = now.reminders.where((x) => x.id == r.id).firstOrNull ?? r;
-                  await context.db.completeReminder(fresh, today: today(), odometer: now.odoOf(r.assetId));
-                  return;
-                }
-                final n = await context.db.completeReminder(r, today: today(), odometer: w.odoOf(r.assetId));
-                if (context.mounted) await _showDoneDialog(context, r, n);
-              },
-            ),
+            if (renewKind != null) ...[
+              FilledButton.icon(
+                icon: const Icon(Icons.autorenew),
+                label: Text(s.renew),
+                onPressed: () {
+                  Navigator.pop(sheet);
+                  final v = w.vehicles[r.assetId];
+                  openRenewal(context, r.assetId, renewKind, both: v != null && renewTogether(v.roadTaxExpiry, v.insuranceExpiry));
+                },
+              ),
+              Align(alignment: Alignment.centerLeft, child: TextButton(onPressed: markDone, child: Text(s.markDoneOnly))),
+            ] else
+              FilledButton.icon(
+                icon: Icon(odoReminder ? Icons.speed : Icons.check),
+                label: Text(odoReminder ? s.updateOdometer : s.markDone),
+                onPressed: markDone,
+              ),
             const SizedBox(height: 12),
             FieldLabel(s.snooze),
             Wrap(spacing: 8, children: [

@@ -151,6 +151,11 @@ class Records extends Table {
   /// Added in schema 4: the reminder that follows [warrantyEnd]. Cleared if that reminder
   /// is deleted. See planWarranty in lib/services/auto_reminders.dart.
   IntColumn get warrantyReminderId => integer().nullable().references(Reminders, #id, onDelete: KeyAction.setNull)();
+
+  /// Added in schema 5: the period a renewal paid for (road tax, insurance), kept with the
+  /// payment so every past period stays in the history. See lib/services/renewal.dart.
+  DateTimeColumn get coverStart => dateTime().nullable()();
+  DateTimeColumn get coverEnd => dateTime().nullable()();
 }
 
 /// Optional cost breakdown for a record (added in schema 2).
@@ -288,7 +293,7 @@ class AppDb extends _$AppDb {
 
   /// Bump together with a migration step below. Backups record it, and a backup made by a
   /// newer schema is refused instead of silently losing the fields this app doesn't know.
-  static const latestSchema = 4;
+  static const latestSchema = 5;
 
   @override
   int get schemaVersion => latestSchema;
@@ -303,6 +308,10 @@ class AppDb extends _$AppDb {
           }
           if (from < 3) await m.addColumn(reminders, reminders.autoSource);
           if (from < 4) await m.addColumn(records, records.warrantyReminderId);
+          if (from < 5) {
+            await m.addColumn(records, records.coverStart);
+            await m.addColumn(records, records.coverEnd);
+          }
           // Linking reads the columns added above, so it runs after all of them.
           if (from < 4) await linkExistingAutoReminders();
         },
