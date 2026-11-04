@@ -294,6 +294,8 @@ class _ComboSheetState extends State<_ComboSheet> {
     final k = context.tokens;
     final list = _q.trim().isEmpty ? widget.options : comboMatches(widget.options, _q);
     final current = _plain(widget.current);
+    // The field may hold the short form of a listed option ("MBSA").
+    bool isCurrent(ComboOption o) => _plain(o.value) == current || (o.also.isNotEmpty && _plain(o.also) == current);
     final mq = MediaQuery.of(context);
     return Padding(
       padding: EdgeInsets.only(bottom: mq.viewInsets.bottom),
@@ -318,7 +320,7 @@ class _ComboSheetState extends State<_ComboSheet> {
               itemCount: list.length,
               itemBuilder: (c, i) {
                 final o = list[i];
-                final on = _plain(o.value) == current;
+                final on = isCurrent(o);
                 return ListTile(
                   title: Text(o.value),
                   subtitle: o.detail == null ? null : Text(o.detail!),
@@ -365,11 +367,15 @@ List<ComboOption> insurerOptions(World w) => withTyped(
 List<ComboOption> stateOptions() => [for (final s in malaysianStates) ComboOption(s)];
 
 /// The councils of the chosen state, or of every state (each with its state) when none is.
+/// A council typed before as its short form ("MBSA") is that listed council, not another one.
 List<ComboOption> councilOptions(World w, String state) {
   final st = stateNamed(state);
   return withTyped(
     [for (final (c, cs) in councilsFor(state)) ComboOption(c.label, detail: st == null ? cs : null, also: c.abbr ?? '')],
-    [for (final h in w.houses.values) if (st == null || stateNamed(h.state) == st) h.council],
+    [
+      for (final h in w.houses.values)
+        if ((st == null || stateNamed(h.state) == st) && councilNamed(h.council, state: h.state) == null) h.council,
+    ],
   );
 }
 

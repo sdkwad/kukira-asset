@@ -230,6 +230,21 @@ void main() {
       expect(find.text('${s.typeYourOwn} ${s.councilListSource}'), findsOneWidget);
     });
 
+    testWidgets('a council typed before as its short form is the listed council, not a second entry', (tester) async {
+      setPhone(tester, height: 3200);
+      final w = withProfiles(fakeWorld(), house: HouseProfile(assetId: 1, propertyType: 'landed', state: 'Selangor', council: 'MBSA'));
+      expect(values(councilOptions(w, 'Selangor')).where((v) => v.contains('MBSA')), ['Majlis Bandaraya Shah Alam (MBSA)']);
+      await tester.pumpWidget(harness(const HouseEditScreen(assetId: 1), w));
+      await tester.pumpAndSettle();
+      await tester.tap(find.descendant(of: find.widgetWithText(TextField, s.council), matching: find.byTooltip(s.showList)));
+      await tester.pumpAndSettle();
+      final tile = tester.widget<ListTile>(find.widgetWithText(ListTile, 'Majlis Bandaraya Shah Alam (MBSA)'));
+      expect(tile.selected, isTrue, reason: 'the field says MBSA, so this one is ticked');
+
+      final own = withProfiles(fakeWorld(), house: HouseProfile(assetId: 1, propertyType: 'landed', state: 'Selangor', council: 'Majlis kampung saya'));
+      expect(values(councilOptions(own, 'Selangor')).first, 'Majlis kampung saya', reason: 'a name of their own is still offered');
+    });
+
     testWidgets('a short form typed before still gets the link when the state makes it clear', (tester) async {
       setPhone(tester, height: 2400);
       final w = withProfiles(fakeWorld(), house: HouseProfile(assetId: 1, propertyType: 'landed', state: 'Selangor', council: 'MPS'));
