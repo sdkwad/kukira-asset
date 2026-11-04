@@ -1351,4 +1351,10 @@ class StrEn extends Str {
   String get pinRecommended => 'Recommended. The PIN protects the key that opens your records.';
   @override
   String get setupBackupNote => 'Your records are only on this phone. Kukira reminds you to make a backup file every 30 days.';
+
+  // ------------------------------------------------ Asset photo row
+  @override
+  String get assetPhotoHint => 'Shown on the card and the asset page';
+  @override
+  String get photoNotSaved => 'The asset is saved, but its photo is not. Try again in Edit details.';
 }

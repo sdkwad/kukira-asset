@@ -1360,14 +1360,81 @@ Future<void> saveWithAutoReminders(BuildContext context, int assetId, List<AutoC
   snack(context, msgs.isEmpty ? s.changesSaved : msgs.join(' '));
 }
 
-/// Pick, change or remove the asset photo.
+/// The asset photo as one row: a small picture, what it is for, and a button that offers the
+/// camera, the gallery and, when there is one, removing it.
+class PhotoRow extends StatelessWidget {
+  const PhotoRow({super.key, required this.thumb, required this.onPick, this.onRemove});
+
+  /// The picture, or null for none yet.
+  final Widget? thumb;
+  final void Function(String source) onPick;
+
+  /// Null when there is no photo to remove.
+  final VoidCallback? onRemove;
+
+  Future<void> _choose(BuildContext context) async {
+    final s = context.s;
+    final v = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (c) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(leading: const Icon(Icons.photo_camera_outlined), title: Text(s.camera), onTap: () => Navigator.pop(c, 'camera')),
+          ListTile(leading: const Icon(Icons.photo_library_outlined), title: Text(s.gallery), onTap: () => Navigator.pop(c, 'gallery')),
+          if (onRemove != null) ListTile(leading: const Icon(Icons.delete_outline), title: Text(s.removePhoto), onTap: () => Navigator.pop(c, 'remove')),
+          const SizedBox(height: 8),
+        ]),
+      ),
+    );
+    if (v == null) return;
+    if (v == 'remove') {
+      onRemove?.call();
+    } else {
+      onPick(v);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    return InkWell(
+      borderRadius: BorderRadius.circular(12),
+      onTap: () => _choose(context),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 4),
+        child: Row(children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: SizedBox(
+              width: 64,
+              height: 64,
+              child: thumb ?? ColoredBox(color: k.iconBg, child: Icon(Icons.add_a_photo_outlined, color: k.iconFg)),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(s.assetPhoto, style: KText.row.copyWith(color: k.text)),
+              const SizedBox(height: 2),
+              Text(s.assetPhotoHint, style: KText.meta.copyWith(color: k.textMuted)),
+            ]),
+          ),
+          const SizedBox(width: 8),
+          TextButton(onPressed: () => _choose(context), child: Text(thumb == null ? s.add : s.change)),
+        ]),
+      ),
+    );
+  }
+}
+
+/// Pick, change or remove the photo of an asset that is already saved.
 class AssetPhotoField extends StatelessWidget {
   const AssetPhotoField({super.key, required this.a});
   final Asset a;
 
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     Future<void> set(String src) async {
       final p = await pickFile(context, src);
       if (p == null || !context.mounted) return;
@@ -1378,26 +1445,17 @@ class AssetPhotoField extends StatelessWidget {
       if (old != null) await SecureFiles.delete(old);
     }
 
-    return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
-      if (a.photoPath != null) ...[
-        ClipRRect(borderRadius: BorderRadius.circular(16), child: AssetBanner(a, height: 120)),
-        const SizedBox(height: 8),
-      ] else
-        FieldLabel(s.assetPhoto),
-      Wrap(spacing: 8, children: [
-        OutlinedButton.icon(icon: const Icon(Icons.photo_camera_outlined), label: Text(s.camera), onPressed: () => set('camera')),
-        OutlinedButton.icon(icon: const Icon(Icons.photo_library_outlined), label: Text(s.gallery), onPressed: () => set('gallery')),
-        if (a.photoPath != null)
-          TextButton(
-            onPressed: () async {
-              final old = a.photoPath!;
+    final photo = a.photoPath;
+    return PhotoRow(
+      thumb: photo == null ? null : SecureImage(photo, cacheWidth: 200),
+      onPick: set,
+      onRemove: photo == null
+          ? null
+          : () async {
               await context.db.updateAsset(a.id, const AssetsCompanion(photoPath: Value(null)));
-              await SecureFiles.delete(old);
+              await SecureFiles.delete(photo);
             },
-            child: Text(s.removePhoto),
-          ),
-      ]),
-    ]);
+    );
   }
 }
 

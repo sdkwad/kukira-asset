@@ -21,8 +21,14 @@ class Picked {
   final String? name;
 }
 
+/// Tests only: answers [pickFile] instead of the camera, the gallery or the file picker.
+@visibleForTesting
+Future<Picked?> Function(String source)? debugPickFile;
+
 /// camera | gallery | files
 Future<Picked?> pickFile(BuildContext context, String source) async {
+  final debug = debugPickFile;
+  if (debug != null) return debug(source);
   try {
     if (source == 'files') {
       final r = await FilePicker.platform.pickFiles(

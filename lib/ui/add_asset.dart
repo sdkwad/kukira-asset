@@ -5,9 +5,11 @@ import '../data/db.dart';
 import '../domain/auto_sync.dart';
 import '../domain/presets.dart';
 import '../services/auto_reminders.dart';
+import '../services/asset_save.dart';
 import '../services/error_log.dart';
 import 'assets.dart';
 import 'common.dart';
+import 'documents.dart';
 import 'more.dart';
 import 'today.dart';
 
@@ -32,6 +34,9 @@ class _AddAssetState extends State<AddAssetScreen> {
   final Map<String, DateTime?> _picks = {};
   String? _error;
 
+  /// An optional photo, kept in memory until the asset is created, then saved encrypted.
+  Picked? _photo;
+
   @override
   void dispose() {
     _name.dispose();
@@ -44,13 +49,17 @@ class _AddAssetState extends State<AddAssetScreen> {
     if (_name.text.trim().isEmpty) return setState(() => _error = s.errNickname);
     if (_cat != 'house' && _plate.text.trim().isEmpty) return setState(() => _error = s.errPlate);
     _firstEver ??= context.app.world.value?.assets.isEmpty ?? true;
-    final id = await context.db.createAsset(
+    final (id, photoSaved) = await createAssetWithPhoto(
+      context.db,
       category: _cat,
       nickname: _name.text.trim(),
       propertyType: _ptype,
       plate: _plate.text.trim().toUpperCase(),
+      photo: _photo?.bytes,
+      photoExt: _photo?.ext ?? 'jpg',
     );
     if (!mounted) return;
+    if (!photoSaved) snack(context, s.photoNotSaved);
     setState(() {
       _newId = id;
       _step = 3;
@@ -183,6 +192,15 @@ class _AddAssetState extends State<AddAssetScreen> {
               textCapitalization: TextCapitalization.characters,
               decoration: InputDecoration(labelText: s.plate, hintText: 'VKE 2231', border: const OutlineInputBorder()),
             ),
+          const SizedBox(height: 16),
+          PhotoRow(
+            thumb: _photo == null ? null : Image.memory(_photo!.bytes, fit: BoxFit.cover, cacheWidth: 200),
+            onPick: (src) async {
+              final p = await pickFile(context, src);
+              if (p != null && mounted) setState(() => _photo = p);
+            },
+            onRemove: _photo == null ? null : () => setState(() => _photo = null),
+          ),
           if (_error != null) Padding(padding: const EdgeInsets.only(top: 12), child: Text(_error!, style: TextStyle(color: theme.colorScheme.error))),
           const SizedBox(height: 20),
           Row(children: [

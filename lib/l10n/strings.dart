@@ -689,4 +689,8 @@ abstract class Str {
   String get change;
   String get pinRecommended;
   String get setupBackupNote;
+
+  // ------------------------------------------------ Asset photo row
+  String get assetPhotoHint;
+  String get photoNotSaved;
 }

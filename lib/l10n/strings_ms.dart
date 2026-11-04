@@ -1348,4 +1348,10 @@ class StrMs extends Str {
   String get pinRecommended => 'Disyorkan. PIN melindungi kunci yang membuka rekod anda.';
   @override
   String get setupBackupNote => 'Rekod hanya ada dalam telefon ini. Kukira akan ingatkan anda buat fail sandaran setiap 30 hari.';
+
+  // ------------------------------------------------ Asset photo row
+  @override
+  String get assetPhotoHint => 'Ditunjuk pada kad dan halaman aset';
+  @override
+  String get photoNotSaved => 'Aset disimpan, tetapi gambarnya tidak. Cuba lagi dalam Ubah butiran.';
 }
