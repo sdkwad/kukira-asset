@@ -1473,4 +1473,8 @@ class StrEn extends Str {
   String get backupOnlyOnPhone => 'The last backup is only on this phone. If the phone is lost or broken, the backup goes with it. Save one to Google Drive or OneDrive too.';
   @override
   String get restoreFromCloudHint => 'The backup file can be picked from Google Drive or OneDrive too.';
+
+  // ------------------------------------------------ Wide screens
+  @override
+  String get pickReminder => 'Pick a reminder in the list to see it here.';
 }

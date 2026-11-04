@@ -23,10 +23,35 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
     context: context,
     isScrollControlled: true,
     showDragHandle: true,
-    builder: (sheet) => WorldView(builder: (c, w) {
+    builder: (sheet) => ReminderDetail(reminderId: reminderId, sheet: sheet, host: context),
+  );
+}
+
+/// A reminder, how it stands and what can be done with it: in a sheet on a phone, in the
+/// pane beside Today's list on a wide screen.
+class ReminderDetail extends StatelessWidget {
+  const ReminderDetail({super.key, required this.reminderId, this.sheet, this.host});
+  final int reminderId;
+
+  /// The sheet this is shown in, closed before an action. Null in a pane.
+  final BuildContext? sheet;
+
+  /// The screen under the sheet, which actions open from once the sheet has closed. Null
+  /// in a pane, which opens them itself.
+  final BuildContext? host;
+
+  @override
+  Widget build(BuildContext outer) => WorldView(builder: (c, w) {
       final s = c.s;
+      final context = host ?? outer;
+      final inSheet = sheet != null;
+      void close() {
+        final sh = sheet;
+        if (sh != null && sh.mounted) Navigator.pop(sh);
+      }
+
       final r = w.reminders.where((x) => x.id == reminderId).firstOrNull;
-      if (r == null) return const SizedBox(height: 120);
+      if (r == null) return inSheet ? const SizedBox(height: 120) : Center(child: Text(s.pickReminder));
       final a = w.asset(r.assetId);
       final st = remStatus(r, w);
       // The next notification this reminder will get, from the same plan as the real schedule
@@ -36,7 +61,7 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
       // Road tax and insurance follow the vehicle's date: renewing sets the next one.
       final renewKind = switch (r.autoSource) { autoRoadTax => RenewKind.roadTax, autoInsurance => RenewKind.insurance, _ => null };
       Future<void> markDone() async {
-        Navigator.pop(sheet);
+        close();
         if (odoReminder) {
           final saved = await showOdometerDialog(context, r.assetId);
           if (!saved || !context.mounted) return;
@@ -51,7 +76,7 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
 
       return SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          padding: inSheet ? const EdgeInsets.fromLTRB(20, 0, 20, 20) : const EdgeInsets.fromLTRB(24, 24, 24, 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
             Text(r.title, style: Theme.of(c).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w700)),
             const SizedBox(height: 4),
@@ -75,7 +100,7 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
                 icon: const Icon(Icons.autorenew),
                 label: Text(s.renew),
                 onPressed: () {
-                  Navigator.pop(sheet);
+                  close();
                   final v = w.vehicles[r.assetId];
                   openRenewal(context, r.assetId, renewKind, both: v != null && renewTogether(v.roadTaxExpiry, v.insuranceExpiry));
                 },
@@ -96,8 +121,7 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
                   onPressed: () async {
                     final until = today().add(Duration(days: d));
                     await c.db.snooze(r.id, until);
-                    if (!sheet.mounted) return;
-                    Navigator.pop(sheet);
+                    close();
                     if (context.mounted) snack(context, s.snoozedMsg(s.dLong(until)));
                   },
                 ),
@@ -107,15 +131,14 @@ Future<void> showReminderSheet(BuildContext context, int reminderId) {
               icon: const Icon(Icons.edit_outlined),
               label: Text(s.editReminder),
               onPressed: () {
-                Navigator.pop(sheet);
+                close();
                 Navigator.push(context, MaterialPageRoute(builder: (_) => ReminderFormScreen(editId: r.id)));
               },
             ),
           ]),
         ),
       );
-    }),
-  );
+    });
 }
 
 Future<void> _showDoneDialog(BuildContext context, Reminder r, NextDue n) async {

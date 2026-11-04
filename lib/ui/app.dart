@@ -10,6 +10,7 @@ import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import '../services/privacy.dart';
+import 'add_actions.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'documents.dart';
@@ -65,6 +66,14 @@ ThemeData buildTheme(Brightness b) {
       elevation: 2,
       highlightElevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    ),
+    navigationRailTheme: NavigationRailThemeData(
+      backgroundColor: k.surface,
+      indicatorColor: k.tonal,
+      selectedIconTheme: IconThemeData(color: k.onTonal),
+      unselectedIconTheme: IconThemeData(color: k.label),
+      selectedLabelTextStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: k.primary),
+      unselectedLabelTextStyle: TextStyle(fontSize: 12, color: k.label),
     ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: k.background, surfaceTintColor: Colors.transparent),
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
@@ -278,18 +287,46 @@ class _ShellState extends State<Shell> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _page, children: _pages),
-      bottomNavigationBar: DecoratedBox(
-        decoration: BoxDecoration(border: Border(top: BorderSide(color: context.tokens.line))),
-        child: NavigationBar(
-          selectedIndex: _page,
-          onDestinationSelected: (i) => setState(() => _page = i),
-          destinations: [
-            for (final d in mainDestinations(context.s)) NavigationDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selected), label: d.label),
-          ],
+    final k = context.tokens;
+    final destinations = mainDestinations(context.s);
+    final pages = IndexedStack(index: _page, children: _pages);
+    if (windowSize(context) == WindowSize.compact) {
+      return Scaffold(
+        body: pages,
+        bottomNavigationBar: DecoratedBox(
+          decoration: BoxDecoration(border: Border(top: BorderSide(color: k.line))),
+          child: NavigationBar(
+            selectedIndex: _page,
+            onDestinationSelected: (i) => setState(() => _page = i),
+            destinations: [
+              for (final d in destinations) NavigationDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selected), label: d.label),
+            ],
+          ),
         ),
-      ),
+      );
+    }
+    // A wide screen: the same four places on a rail at the side, with Tambah on top of it.
+    return Scaffold(
+      body: Row(children: [
+        ColoredBox(
+          color: k.surface,
+          child: SafeArea(
+            right: false,
+            child: NavigationRail(
+              selectedIndex: _page,
+              onDestinationSelected: (i) => setState(() => _page = i),
+              labelType: NavigationRailLabelType.all,
+              groupAlignment: -1,
+              leading: const Padding(padding: EdgeInsets.only(top: 8, bottom: 16), child: RailAddButton()),
+              destinations: [
+                for (final d in destinations) NavigationRailDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selected), label: Text(d.label)),
+              ],
+            ),
+          ),
+        ),
+        VerticalDivider(width: 1, thickness: 1, color: k.line),
+        Expanded(child: RailScope(child: MediaQuery.removePadding(context: context, removeLeft: true, child: pages))),
+      ]),
     );
   }
 }

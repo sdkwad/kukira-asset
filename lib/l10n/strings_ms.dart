@@ -1470,4 +1470,8 @@ class StrMs extends Str {
   String get backupOnlyOnPhone => 'Sandaran terakhir hanya ada dalam telefon ini. Jika telefon hilang atau rosak, ia hilang bersamanya. Simpan juga ke Google Drive atau OneDrive.';
   @override
   String get restoreFromCloudHint => 'Fail sandaran boleh dipilih dari Google Drive atau OneDrive juga.';
+
+  // ------------------------------------------------ Wide screens
+  @override
+  String get pickReminder => 'Pilih peringatan dalam senarai untuk melihat butirannya.';
 }

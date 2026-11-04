@@ -71,22 +71,70 @@ class WorldView extends StatelessWidget {
       );
 }
 
+// ---------------------------------------------------------------- wide screens
+
+/// Material window size classes: a phone (compact), a large phone on its side, a small
+/// tablet or an unfolded phone (medium), a tablet (expanded).
+enum WindowSize { compact, medium, expanded }
+
+WindowSize windowSize(BuildContext context) {
+  final w = MediaQuery.sizeOf(context).width;
+  return w >= 840 ? WindowSize.expanded : (w >= 600 ? WindowSize.medium : WindowSize.compact);
+}
+
+/// How wide a page of text and fields gets on a wide screen.
+const readableWidth = 760.0;
+
+/// The part of the window beside the navigation rail. The rail has its own Tambah button,
+/// so the pages there do not show their floating one as well.
+class RailScope extends InheritedWidget {
+  const RailScope({super.key, required super.child});
+
+  static bool of(BuildContext context) => context.dependOnInheritedWidgetOfExactType<RailScope>() != null;
+
+  @override
+  bool updateShouldNotify(RailScope oldWidget) => false;
+}
+
+/// Keeps [child] at most [maxWidth] wide, centred, on a wide screen. Narrower than that (a
+/// phone) it is left exactly as it was.
+class ReadableWidth extends StatelessWidget {
+  const ReadableWidth({super.key, this.maxWidth = readableWidth, required this.child});
+  final double maxWidth;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => LayoutBuilder(
+        builder: (context, box) => box.maxWidth <= maxWidth
+            ? child
+            : Align(
+                alignment: Alignment.topCenter,
+                child: SizedBox(width: maxWidth, height: box.maxHeight.isFinite ? box.maxHeight : null, child: child),
+              ),
+      );
+}
+
 /// A Scaffold whose body stays clear of the system bars. With Android's edge-to-edge
 /// layout the 3-button navigation bar otherwise covers the last field and the Save button.
+/// On a wide screen the body keeps to [maxWidth] (null: the full width).
 class SafeScaffold extends StatelessWidget {
-  const SafeScaffold({super.key, this.appBar, this.body, this.floatingActionButton, this.backgroundColor});
+  const SafeScaffold({super.key, this.appBar, this.body, this.floatingActionButton, this.backgroundColor, this.maxWidth = readableWidth});
   final PreferredSizeWidget? appBar;
   final Widget? body;
   final Widget? floatingActionButton;
   final Color? backgroundColor;
+  final double? maxWidth;
 
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: appBar,
-        backgroundColor: backgroundColor,
-        floatingActionButton: floatingActionButton,
-        body: SafeArea(top: appBar == null, child: body ?? const SizedBox.shrink()),
-      );
+  Widget build(BuildContext context) {
+    final content = body ?? const SizedBox.shrink();
+    return Scaffold(
+      appBar: appBar,
+      backgroundColor: backgroundColor,
+      floatingActionButton: floatingActionButton,
+      body: SafeArea(top: appBar == null, child: maxWidth == null ? content : ReadableWidth(maxWidth: maxWidth!, child: content)),
+    );
+  }
 }
 
 // ---------------------------------------------------------------- reminder helpers

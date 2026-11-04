@@ -13,9 +13,17 @@ import 'more.dart';
 
 /// What needs doing, and nothing else: a summary sentence, what is overdue and what is due in
 /// 30 days, odometer readings that are getting old. When nothing is due it says so calmly and
-/// shows what comes next, instead of a row of empty sections.
-class TodayScreen extends StatelessWidget {
+/// shows what comes next, instead of a row of empty sections. On a wide screen the reminder
+/// picked from the list shows beside it instead of in a sheet.
+class TodayScreen extends StatefulWidget {
   const TodayScreen({super.key});
+
+  @override
+  State<TodayScreen> createState() => _TodayScreenState();
+}
+
+class _TodayScreenState extends State<TodayScreen> {
+  int? _picked;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +50,8 @@ class TodayScreen extends StatelessWidget {
         final theme = Theme.of(context);
         return Scaffold(
           body: SafeArea(
-            child: ListView(padding: const EdgeInsets.all(16), children: [
+            child: ReadableWidth(
+              child: ListView(padding: const EdgeInsets.all(16), children: [
               header,
               const SizedBox(height: 24),
               Card(
@@ -67,6 +76,7 @@ class TodayScreen extends StatelessWidget {
                 ),
               ),
             ]),
+            ),
           ),
         );
       }
@@ -90,7 +100,8 @@ class TodayScreen extends StatelessWidget {
       final needBackup = live.isNotEmpty && (lastBackup == null || daysBetween(lastBackup, t) > 30);
       final calm = over.isEmpty && soon.isEmpty;
 
-      void open(Reminder r) => showReminderSheet(context, r.id);
+      final twoPanes = windowSize(context) == WindowSize.expanded;
+      void open(Reminder r) => twoPanes ? setState(() => _picked = r.id) : showReminderSheet(context, r.id);
       Widget odoRow(Asset a) {
         final o = w.odometer[a.id];
         return AppRow(
@@ -202,10 +213,25 @@ class TodayScreen extends StatelessWidget {
         ));
       }
 
+      final list = ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: children);
+      if (!twoPanes) {
+        return Scaffold(floatingActionButton: const AddButton(), body: SafeArea(child: ReadableWidth(child: list)));
+      }
+      // The reminder picked, or the most urgent one.
+      final picked = w.reminders.any((r) => r.id == _picked && !r.done) ? _picked : [...over, ...soon, ...later].firstOrNull?.id;
       return Scaffold(
         floatingActionButton: const AddButton(),
         body: SafeArea(
-          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: children),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Expanded(flex: 5, child: list),
+            VerticalDivider(width: 1, thickness: 1, color: k.line),
+            Expanded(
+              flex: 6,
+              child: picked == null
+                  ? Center(child: Padding(padding: const EdgeInsets.all(24), child: Text(s.pickReminder, style: KText.meta.copyWith(color: k.textMuted))))
+                  : ReminderDetail(key: ValueKey(picked), reminderId: picked),
+            ),
+          ]),
         ),
       );
     });

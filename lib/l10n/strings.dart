@@ -759,4 +759,7 @@ abstract class Str {
   String get backupInCloud;
   String get backupOnlyOnPhone;
   String get restoreFromCloudHint;
+
+  // ------------------------------------------------ Wide screens
+  String get pickReminder;
 }

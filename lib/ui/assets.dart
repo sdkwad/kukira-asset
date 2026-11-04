@@ -82,16 +82,23 @@ class AssetsScreen extends StatefulWidget {
 
 class _AssetsScreenState extends State<AssetsScreen> {
   String _q = '';
+  int? _picked;
 
   @override
   Widget build(BuildContext context) {
     return WorldView(builder: (context, w) {
       final s = context.s;
       final q = _q.trim().toLowerCase();
+      // On a wide screen the asset picked from the list opens beside it, not over it.
+      final twoPanes = windowSize(context) == WindowSize.expanded && w.assets.isNotEmpty;
+      final picked = w.asset(_picked ?? -1)?.id ?? w.assets.firstOrNull?.id;
       Widget body;
       if (q.isEmpty) {
         body = Column(children: [
-          for (final a in w.assets) ...[_AssetCard(a, w), const SizedBox(height: 12)],
+          for (final a in w.assets) ...[
+            _AssetCard(a, w, selected: twoPanes && a.id == picked, onOpen: twoPanes ? () => setState(() => _picked = a.id) : null),
+            const SizedBox(height: 12),
+          ],
           OutlinedButton.icon(
             style: OutlinedButton.styleFrom(minimumSize: const Size.fromHeight(52)),
             icon: const Icon(Icons.add),
@@ -102,19 +109,26 @@ class _AssetsScreenState extends State<AssetsScreen> {
       } else {
         body = SearchResults(q, w);
       }
+      final list = ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: [
+        PageTitle(s.assetsTab),
+        SearchBar(
+          hintText: s.searchHint,
+          leading: const Icon(Icons.search),
+          elevation: const WidgetStatePropertyAll(0),
+          onChanged: (v) => setState(() => _q = v),
+        ),
+        const SizedBox(height: 14),
+        body,
+      ]);
+      if (!twoPanes || picked == null) return SafeScaffold(floatingActionButton: const AddButton(), body: SafeArea(child: list));
+      final k = context.tokens;
       return SafeScaffold(
-        floatingActionButton: const AddButton(),
+        maxWidth: null,
         body: SafeArea(
-          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: [
-            PageTitle(s.assetsTab),
-            SearchBar(
-              hintText: s.searchHint,
-              leading: const Icon(Icons.search),
-              elevation: const WidgetStatePropertyAll(0),
-              onChanged: (v) => setState(() => _q = v),
-            ),
-            const SizedBox(height: 14),
-            body,
+          child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            SizedBox(width: 400, child: list),
+            VerticalDivider(width: 1, thickness: 1, color: k.line),
+            Expanded(child: AssetDetailScreen(key: ValueKey(picked), assetId: picked, embedded: true)),
           ]),
         ),
       );
@@ -238,9 +252,15 @@ class PhotoFade extends StatelessWidget {
 const photoTextWidth = 0.52;
 
 class _AssetCard extends StatelessWidget {
-  const _AssetCard(this.a, this.w);
+  const _AssetCard(this.a, this.w, {this.selected = false, this.onOpen});
   final Asset a;
   final World w;
+
+  /// The asset open beside the list (wide screens).
+  final bool selected;
+
+  /// Opens the asset beside the list instead of on its own page.
+  final VoidCallback? onOpen;
 
   @override
   Widget build(BuildContext context) {
@@ -282,8 +302,11 @@ class _AssetCard extends StatelessWidget {
     return Card(
       margin: EdgeInsets.zero,
       clipBehavior: Clip.antiAlias,
+      shape: selected
+          ? RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSpace.groupRadius), side: BorderSide(color: k.primary, width: 2))
+          : null,
       child: InkWell(
-        onTap: () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
+        onTap: onOpen ?? () => Navigator.push(context, MaterialPageRoute(builder: (_) => AssetDetailScreen(assetId: a.id))),
         child: photo == null
             ? Padding(
                 padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
@@ -312,8 +335,12 @@ class _AssetCard extends StatelessWidget {
 // ================================================================ detail
 
 class AssetDetailScreen extends StatefulWidget {
-  const AssetDetailScreen({super.key, required this.assetId});
+  const AssetDetailScreen({super.key, required this.assetId, this.embedded = false});
   final int assetId;
+
+  /// Shown beside the asset list on a wide screen rather than as a page of its own: it has
+  /// no page to close, so deleting the asset leaves the list to pick another.
+  final bool embedded;
 
   @override
   State<AssetDetailScreen> createState() => _AssetDetailState();
@@ -354,7 +381,7 @@ class _AssetDetailState extends State<AssetDetailScreen> {
               for (final f in files) {
                 await SecureFiles.delete(f);
               }
-              if (context.mounted) Navigator.pop(context);
+              if (context.mounted && !widget.embedded) Navigator.pop(context);
             }
           }
         },
@@ -366,6 +393,8 @@ class _AssetDetailState extends State<AssetDetailScreen> {
       return DefaultTabController(
         length: tabs.length,
         child: SafeScaffold(
+          // The tabs keep their own readable width, in two columns where there is room.
+          maxWidth: null,
           floatingActionButton: AddButton(assetId: a.id),
           body: NestedScrollView(
             headerSliverBuilder: (context, scrolled) => [
@@ -506,22 +535,44 @@ class _Identity extends StatelessWidget {
 
 /// A tab's content inside the scrolling page header (NestedScrollView).
 class _TabScroll extends StatelessWidget {
-  const _TabScroll(this.name, this.children);
+  const _TabScroll(this.name, this.children, {this.side = const []});
   final String name;
   final List<Widget> children;
 
+  /// Beside [children] where the tab is wide enough for two columns, under them otherwise.
+  final List<Widget> side;
+
   @override
-  Widget build(BuildContext context) => CustomScrollView(
-        key: PageStorageKey<String>(name),
-        slivers: [
-          SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
-          SliverPadding(padding: _tabPadding, sliver: SliverList(delegate: SliverChildListDelegate(children))),
-        ],
-      );
+  Widget build(BuildContext context) => LayoutBuilder(builder: (context, box) {
+        final two = side.isNotEmpty && box.maxWidth >= _twoColumnsFrom;
+        final content = two ? _twoColumnsMax : readableWidth;
+        final gutter = box.maxWidth > content + 32 ? (box.maxWidth - content) / 2 : 16.0;
+        final items = two
+            ? [
+                Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: children)),
+                  const SizedBox(width: 24),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: side)),
+                ]),
+              ]
+            : [...children, ...side];
+        return CustomScrollView(
+          key: PageStorageKey<String>(name),
+          slivers: [
+            SliverOverlapInjector(handle: NestedScrollView.sliverOverlapAbsorberHandleFor(context)),
+            // Room at the bottom for the Tambah button over it.
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(gutter, 16, gutter, KSpace.fabClearance),
+              sliver: SliverList(delegate: SliverChildListDelegate(items)),
+            ),
+          ],
+        );
+      });
 }
 
-// Room at the bottom of each tab for the Tambah button over it.
-const _tabPadding = EdgeInsets.fromLTRB(16, 16, 16, KSpace.fabClearance);
+/// From how wide an asset's overview is laid out in two columns, and how wide it then gets.
+const _twoColumnsFrom = 880.0;
+const _twoColumnsMax = 1120.0;
 
 /// What a reminder needs, as words for a sentence: "lewat 6 hari", "tamat 12 Nov".
 (String, Tone) statusPhrase(Str s, Reminder r, World w) {
@@ -672,13 +723,14 @@ class _Overview extends StatelessWidget {
     // The latest records, with this year's spending.
     final recs = w.records.where((r) => r.assetId == a.id).toList()..sort((x, y) => y.date.compareTo(x.date));
     final spent = recs.where((r) => r.date.year == t.year).fold<double>(0, (sum, r) => sum + (r.cost ?? 0));
-    children.addAll([
+    // On a wide screen the records and details are the second column.
+    final side = <Widget>[
       SectionTitle(s.recordsYear(t.year, s.rm(spent)), link: recs.isEmpty ? null : s.seeAll(recs.length), onLink: () => tab(1)),
       CardList([for (final r in recs.take(3)) RecordTile(r, w)], empty: s.noRecordsYet),
       SectionTitle(s.detailsTitle),
       _Details(a, w, edit),
-    ]);
-    return _TabScroll('overview', children);
+    ];
+    return _TabScroll('overview', children, side: side);
   }
 
   /// A date the asset carries (road tax, insurance), with the reminder that follows it.

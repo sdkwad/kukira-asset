@@ -232,7 +232,8 @@ class AddButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<World?>(
         valueListenable: context.app.world,
-        builder: (c, w, _) => (w?.assets.isEmpty ?? true)
+        // Beside the navigation rail, the rail's own Tambah is the one for everything.
+        builder: (c, w, _) => (w?.assets.isEmpty ?? true) || (assetId == null && RailScope.of(c))
             ? const SizedBox.shrink()
             : FloatingActionButton.extended(
                 // Several of these live in the tab stack at once; no hero animation between them.
@@ -241,6 +242,30 @@ class AddButton extends StatelessWidget {
                 label: Text(c.s.add),
                 onPressed: () => showAddSheet(c, assetId: assetId),
               ),
+      );
+}
+
+/// Tambah at the top of the navigation rail on a wide screen. Hidden until there is an
+/// asset, like the floating button.
+class RailAddButton extends StatelessWidget {
+  const RailAddButton({super.key});
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<World?>(
+        valueListenable: context.app.world,
+        builder: (c, w, _) => (w?.assets.isEmpty ?? true)
+            ? const SizedBox(height: 56)
+            : Column(mainAxisSize: MainAxisSize.min, children: [
+                FloatingActionButton(
+                  heroTag: null,
+                  elevation: 0,
+                  tooltip: c.s.add,
+                  onPressed: () => showAddSheet(c),
+                  child: const Icon(Icons.add),
+                ),
+                const SizedBox(height: 4),
+                Text(c.s.add, style: TextStyle(fontSize: 12, color: c.tokens.label)),
+              ]),
       );
 }
 
