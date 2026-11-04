@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.2.8 (build 13)
+
+Renewing road tax and insurance (planned as 0.2.7e), wide screens, backups to a cloud drive, and the fixes from a full audit. The database moves to schema 5; it upgrades on its own and older backups still restore. The app still has no internet permission.
+
+- **New:** Renew road tax or insurance from the asset page (once the end is within 60 days), from its reminder, or from Tambah. One form: 6 or 12 months or another length, starting the day after the old end, the new end, the cost and a proof (e-LKM, policy, receipt), all but the dates optional. The length follows the last period on record. When road tax and insurance end close together, both can be renewed at once, each with its own dates, and Tambah shows them as one suggestion.
+- **New:** each renewal is a payment record that keeps its period (schema 5: `coverStart`, `coverEnd`), so every past period stays in Records; the asset page shows the current period's length. One save, in one transaction, sets the new end, moves the linked reminder there (reopening it if it was marked done or snoozed: renewing is the reason to move it, and the form says so) and files the proof, encrypted, with the record. A failed save changes nothing and leaves no file.
+- **New:** wide screens. From 600 dp (a tablet, an unfolded phone, a large phone on its side) the four places are on a rail at the side, with Tambah at the top; from 840 dp Today shows the picked reminder beside the list instead of in a sheet, and Assets shows the picked asset beside the list. An asset's overview goes into two columns when there is room. Forms and lists keep a readable width. Phones are unchanged.
+- **New:** "Google Drive, OneDrive or Dropbox" is the first place offered for a new backup. It opens Android's own save dialog, where the installed cloud apps are places: that app does the upload, so Kukira itself still never goes online, and the file stays encrypted with its passphrase. If the last backup was saved only in a folder on the phone, Backup and restore says it would be lost with the phone.
+- **Security:** a backup made by someone else could name files such as "../..", and restoring it would write outside Kukira's files folder. Every stored file name, in a backup and in the database, must now be one the app could have made; any other backup is refused.
+- **Security:** a backup's header is read before its passphrase is checked, so a made-up file could ask for billions of key-stretching rounds and hang the app. It may now ask for at most 2 million. A backup that opens but is not laid out as one is refused cleanly.
+- **Fixed:** deleting a record deleted its photos but left its other documents (such as a renewal proof) "linked to a record" that no longer existed. They now stay as documents of the asset.
+- **Fixed:** a record cost that was not a number ("1o0") was saved as no cost, a mistyped item as RM 0, and a negative cost was accepted. The form now says the cost is not valid.
+- **Fixed:** a tenancy could end before it started.
+- **Fixed:** a service record that marked its reminder done counted the next one from the day it was typed in, not the day of the service (a service on 1 Oct entered on 20 Oct made the next one 20 Apr instead of 1 Apr).
+- **Fixed:** a document moved to another asset left its expiry reminder, and its link to a record, on the old asset. Both now follow: the reminder moves, the link to the old asset's record is let go.
+- **Fixed:** a renewal used the records as they were when its form opened; if the reminder changed meanwhile, a second one could be made. It now reads them when saving.
+- **Fixed:** the menu button stayed in its white circle after the photo header shrank to a plain bar.
+- **Tests:** the period rules (month ends, leap years, follow-on and lapsed), the renewal save (period kept, date and reminder moved, proof filed, both covers, a failed save changing nothing, a reminder changed while the form was open), the schema 4 to 5 upgrade, the rail, list and detail panes, two columns and readable widths on tablet and medium windows, the cloud backup choice and the phone-only warning, and each audit fix.
+
 ## 0.2.7 (phase d, build 12)
 
 Tambah suggests what is due, a new Documents tab, the photo fade from the owner's test, and a smoother app. No database change; encryption, backups and documents work as before, and the app still has no internet permission.

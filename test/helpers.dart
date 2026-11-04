@@ -104,10 +104,10 @@ const phoneWidth = 360.0;
 const phoneHeight = 760.0;
 
 /// A 360 x 760 phone with a status bar and a 3-button navigation bar ([bottomInset] logical px).
-void setPhone(WidgetTester tester, {double bottomInset = 48, double height = phoneHeight}) {
+void setPhone(WidgetTester tester, {double bottomInset = 48, double height = phoneHeight, double width = phoneWidth}) {
   const dpr = 3.0;
   tester.view.devicePixelRatio = dpr;
-  tester.view.physicalSize = Size(phoneWidth * dpr, height * dpr);
+  tester.view.physicalSize = Size(width * dpr, height * dpr);
   tester.view.padding = FakeViewPadding(top: 24 * dpr, bottom: bottomInset * dpr);
   tester.view.viewPadding = FakeViewPadding(top: 24 * dpr, bottom: bottomInset * dpr);
   addTearDown(tester.view.reset);

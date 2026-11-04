@@ -26,7 +26,17 @@ Road tax expiry, insurance expiry (vehicles) and the DLP end (house, from the VP
 - Setting a date creates the reminder; changing it updates the same reminder; clearing it removes the reminder. There is never more than one linked reminder per field.
 - If the linked reminder was marked done or is snoozed, the app explains what will change and asks before reopening it or clearing the snooze.
 - The due date of a linked reminder is edited on the asset page, not in the reminder form.
+- Renewing road tax or insurance (`lib/services/renewal.dart`) is the exception to asking: the renewal sets the new end, and the linked reminder is moved there and reopened without a second question, because that is what renewing means. The renewal form says so. Each renewal is a payment record with its period (`Records.coverStart`, `coverEnd`, schema 5), so past periods are never overwritten.
 - The planning rules are in `lib/domain/auto_sync.dart` (pure, unit tested); applying them is `lib/services/auto_reminders.dart`.
+
+## Backups and stored files
+
+- A backup file is the only way records leave the phone. Saving one to Google Drive, OneDrive or Dropbox goes through Android's own save dialog (the cloud app uploads it); never add a cloud API or the internet permission for it.
+- Every stored file name, from the database or from a backup, must pass `SecureFiles.isSafeName`; a backup that names any other file is refused. A backup header may ask for at most `Backup.maxIterations` rounds.
+
+## Wide screens
+
+`windowSize` (`lib/ui/common.dart`) follows Material: compact under 600 dp, medium to 840, expanded above. From medium the main places are on a `NavigationRail` with Tambah, and pages inside it (`RailScope`) hide their own floating Tambah; from expanded Today and Assets show list and detail side by side. `SafeScaffold` keeps a page to `readableWidth`. A phone layout must never change because of this.
 
 ## Pick lists and official sources
 

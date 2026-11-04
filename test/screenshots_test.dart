@@ -17,6 +17,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/data/db.dart';
+import 'package:kukira_asset/domain/renewal.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/services/error_log.dart';
 import 'package:kukira_asset/ui/add_asset.dart';
@@ -27,6 +28,7 @@ import 'package:kukira_asset/ui/documents.dart';
 import 'package:kukira_asset/ui/forms.dart';
 import 'package:kukira_asset/ui/lock.dart';
 import 'package:kukira_asset/ui/more.dart';
+import 'package:kukira_asset/ui/renew.dart';
 import 'package:kukira_asset/ui/vendors.dart';
 import 'package:kukira_asset/ui/welcome.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -204,11 +206,12 @@ void main() {
       String lang = 'ms',
       Brightness brightness = Brightness.light,
       double height = phoneHeight,
+      double width = phoneWidth,
       double textScale = 1,
       bool? notif = true,
       Future<void> Function(WidgetTester t)? act}) {
     testWidgets(name, skip: !_enabled, (tester) async {
-      setPhone(tester, height: height);
+      setPhone(tester, height: height, width: width);
       debugDisableShadows = false;
       final previous = FlutterError.onError;
       FlutterError.onError = (d) => _problems.add('$name: ${d.exceptionAsString().split('\n').first}');
@@ -336,6 +339,20 @@ void main() {
   shot('74-gelap-aset', () => const AssetsScreen(), brightness: Brightness.dark);
   shot('75-gelap-rumah', () => const AssetDetailScreen(assetId: 1), brightness: Brightness.dark);
   shot('76-besar-tambah-cadangan', () => const AssetDetailScreen(assetId: 1), textScale: 1.3, act: openAdd);
+
+  // 0.2.8: renewal, wide screens and the backup kept only on the phone.
+  shot('80-perbaharui', () => const RenewScreen(assetId: 2, kind: RenewKind.roadTax), height: 1100);
+  shot('81-perbaharui-kedua', () => const RenewScreen(assetId: 2, kind: RenewKind.roadTax, both: true), height: 1900);
+  shot('82-besar-perbaharui', () => const RenewScreen(assetId: 2, kind: RenewKind.insurance, both: true), textScale: 1.3, height: 2300);
+  shot('83-tablet-hari-ini', () => const Shell(), width: 1280, height: 800);
+  shot('84-tablet-aset', () => const Shell(), width: 1280, height: 800, act: (t) async {
+    await t.tap(find.descendant(of: find.byType(NavigationRail), matching: find.text(ms.assetsTab)));
+  });
+  shot('85-tablet-kereta', () => const AssetDetailScreen(assetId: 2), width: 1280, height: 900);
+  shot('86-sederhana-dokumen', () => const Shell(), width: 700, height: 1000, act: (t) async {
+    await t.tap(find.descendant(of: find.byType(NavigationRail), matching: find.text(ms.documentsTab)));
+  });
+  shot('87-sandaran-telefon', () => const BackupScreen(), world: _backupOnPhone(), height: 1100);
 }
 
 /// The demo with nothing overdue or due in 30 days, and a backup two days ago.
@@ -378,6 +395,23 @@ World _rentedSubsale() {
     vendors: w.vendors,
     documents: w.documents,
     settings: w.settings,
+    costItems: w.costItems,
+  );
+}
+
+/// The demo with its last backup saved only in a folder on the phone.
+World _backupOnPhone() {
+  final w = demoWorld();
+  return World(
+    assets: w.assets,
+    houses: w.houses,
+    vehicles: w.vehicles,
+    reminders: w.reminders,
+    records: w.records,
+    odometer: w.odometer,
+    vendors: w.vendors,
+    documents: w.documents,
+    settings: {'lastBackup': DateTime.now().subtract(const Duration(days: 12)).toIso8601String(), 'lastBackupTo': 'folder'},
     costItems: w.costItems,
   );
 }
