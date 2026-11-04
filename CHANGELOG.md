@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.2.8 (build 15)
+
+- **Fixed:** on a wide screen the side rail's labels had no font of their own, so on a phone with its own system font (such as some Samsung phones) they could show in a different font from the rest of Kukira, and in the test screenshots they showed as boxes. They now use the app's font, like the bottom bar's labels.
+
 ## 0.2.8 (build 14)
 
 A second pass of the 0.2.8 audit. No schema change; install over build 13 or over 0.2.7 phase d. The app still has no internet permission.
