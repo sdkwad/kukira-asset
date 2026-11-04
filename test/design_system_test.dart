@@ -33,6 +33,25 @@ void main() {
       }
     });
 
+    test('the side rail labels keep the theme font, like the bottom bar', () {
+      // The rail puts its label style around the label in place of the page's, so a style
+      // without a font family drew the labels in the fallback font (boxes in the screenshots).
+      for (final b in Brightness.values) {
+        final t = buildTheme(b);
+        final k = b == Brightness.light ? KukiraColors.light : KukiraColors.dark;
+        final picked = t.navigationRailTheme.selectedLabelTextStyle;
+        final other = t.navigationRailTheme.unselectedLabelTextStyle;
+        for (final st in [picked, other]) {
+          expect(st?.fontFamily, isNotNull);
+          expect(st?.fontFamily, t.textTheme.bodyMedium?.fontFamily);
+          expect(st?.fontSize, 12);
+        }
+        expect(picked?.color, k.primary);
+        expect(picked?.fontWeight, FontWeight.w500);
+        expect(other?.color, k.label);
+      }
+    });
+
     for (final (name, k) in [('light', KukiraColors.light), ('dark', KukiraColors.dark)]) {
       test('every text colour in $name mode has at least 4.5:1 contrast', () {
         final pairs = {

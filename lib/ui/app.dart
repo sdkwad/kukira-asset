@@ -72,17 +72,22 @@ ThemeData buildTheme(Brightness b) {
       indicatorColor: k.tonal,
       selectedIconTheme: IconThemeData(color: k.onTonal),
       unselectedIconTheme: IconThemeData(color: k.label),
-      selectedLabelTextStyle: TextStyle(fontSize: 12, fontWeight: FontWeight.w500, color: k.primary),
-      unselectedLabelTextStyle: TextStyle(fontSize: 12, color: k.label),
     ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: k.background, surfaceTintColor: Colors.transparent),
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
   );
   // The button's label style replaces the default one rather than adding to it, so it starts
-  // from the theme's own label style to keep the font.
+  // from the theme's own label style to keep the font. The rail's label styles replace the
+  // text style around its labels the same way; they start from the body style, which the
+  // bottom bar's labels add to, so both read the same.
+  final body = theme.textTheme.bodyMedium;
   return theme.copyWith(
     floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
       extendedTextStyle: theme.textTheme.labelLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.w500),
+    ),
+    navigationRailTheme: theme.navigationRailTheme.copyWith(
+      selectedLabelTextStyle: body?.copyWith(fontSize: 12, fontWeight: FontWeight.w500, color: k.primary),
+      unselectedLabelTextStyle: body?.copyWith(fontSize: 12, fontWeight: FontWeight.w400, color: k.label),
     ),
   );
 }
