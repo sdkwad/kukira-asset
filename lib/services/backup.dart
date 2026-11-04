@@ -6,6 +6,7 @@ import 'dart:typed_data';
 
 import 'package:cryptography/cryptography.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/services.dart' show MethodChannel;
 import 'package:share_plus/share_plus.dart';
 
 import '../data/db.dart';
@@ -294,18 +295,48 @@ class Backup {
     return res.status != ShareResultStatus.dismissed;
   }
 
-  /// Saves into a folder the user picks on the phone.
-  static Future<bool> saveToFolder(Uint8List bytes, String name) async {
-    final path = await FilePicker.platform.saveFile(fileName: name, bytes: bytes);
-    return path != null;
+  /// Android's own save dialog (see MainActivity.kt).
+  static const saveChannel = MethodChannel('kukira/save');
+
+  static const _phoneProviders = {
+    'com.android.externalstorage.documents',
+    'com.android.providers.downloads.documents',
+    'com.android.providers.media.documents',
+  };
+  static const _cloudProviders = ['com.google.android.apps.docs', 'skydrive', 'onedrive', 'dropbox'];
+
+  /// Where a file saved through Android's save dialog went, from the authority of the
+  /// document provider that took it: 'folder' for a folder on the phone (internal storage,
+  /// SD card, Downloads), 'cloud' for Google Drive, OneDrive or Dropbox, and 'other' for any
+  /// other app, about which nothing is claimed.
+  static String placeOf(String authority) {
+    final a = authority.toLowerCase();
+    if (_phoneProviders.contains(a)) return 'folder';
+    if (_cloudProviders.any(a.contains)) return 'cloud';
+    return 'other';
+  }
+
+  /// Saves through Android's own save dialog, whose places are the folders on the phone and
+  /// the installed cloud apps. The app that owns the place takes the file (a cloud app does
+  /// the upload), so Kukira itself never goes online. Returns where the file went, as
+  /// [placeOf] tells it from the dialog's answer rather than from what was picked in
+  /// Kukira, or null when the owner backed out.
+  static Future<String?> saveWithDialog(Uint8List bytes, String name) async {
+    final authority = await saveChannel.invokeMethod<String>('createDocument', {'name': name, 'bytes': bytes});
+    return authority == null ? null : placeOf(authority);
   }
 
   static Future<Uint8List?> pick() async {
-    final r = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
-    if (r == null || r.files.isEmpty) return null;
-    final f = r.files.single;
-    if (f.bytes != null) return f.bytes;
-    if (f.path != null) return File(f.path!).readAsBytes();
-    return null;
+    try {
+      final r = await FilePicker.platform.pickFiles(type: FileType.any, withData: true);
+      if (r == null || r.files.isEmpty) return null;
+      final f = r.files.single;
+      if (f.bytes != null) return f.bytes;
+      if (f.path != null) return await File(f.path!).readAsBytes();
+      return null;
+    } finally {
+      // The file picker leaves a copy of the picked file in the cache.
+      await SecureFiles.clearPickerCopies();
+    }
   }
 }

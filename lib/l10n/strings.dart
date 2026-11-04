@@ -762,4 +762,8 @@ abstract class Str {
 
   // ------------------------------------------------ Wide screens
   String get pickReminder;
+
+  // ------------------------------------------------ Audit 2
+  String get fileNotOpened;
+  String backupOnPhoneNotCloud(String name);
 }

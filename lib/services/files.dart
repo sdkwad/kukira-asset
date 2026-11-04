@@ -86,14 +86,54 @@ class SecureFiles {
   static String _newName(String ext) {
     final r = Random.secure();
     final id = List.generate(16, (_) => r.nextInt(256).toRadixString(16).padLeft(2, '0')).join();
-    final clean = ext.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
-    return '$id.${clean.isEmpty ? 'bin' : clean}';
+    final clean = _clean(ext);
+    return '$id.${clean.isEmpty || clean.length > maxExt ? 'bin' : clean}';
+  }
+
+  static String _clean(String ext) => ext.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+
+  /// The longest extension a new file gets. Anything longer is the end of a name that had no
+  /// extension: the file picker calls everything after the last dot (or the whole name) one.
+  static const maxExt = 16;
+
+  static const _knownTypes = ['pdf', 'jpg', 'jpeg', 'png', 'webp', 'heic', 'gif'];
+
+  /// The type of [bytes] read from their first bytes, for the kinds of file Kukira takes in
+  /// (PDF and pictures); null for anything else.
+  static String? sniff(Uint8List bytes) {
+    bool at(int from, List<int> sig) {
+      if (bytes.length < from + sig.length) return false;
+      for (var i = 0; i < sig.length; i++) {
+        if (bytes[from + i] != sig[i]) return false;
+      }
+      return true;
+    }
+
+    if (at(0, const [0x25, 0x50, 0x44, 0x46])) return 'pdf'; // %PDF
+    if (at(0, const [0xFF, 0xD8, 0xFF])) return 'jpg';
+    if (at(0, const [0x89, 0x50, 0x4E, 0x47])) return 'png';
+    if (at(0, 'RIFF'.codeUnits) && at(8, 'WEBP'.codeUnits)) return 'webp';
+    if (at(0, 'GIF8'.codeUnits)) return 'gif';
+    if (at(4, 'ftyp'.codeUnits) && (at(8, 'heic'.codeUnits) || at(8, 'heix'.codeUnits) || at(8, 'mif1'.codeUnits))) return 'heic';
+    return null;
+  }
+
+  /// The extension a file is stored (or handed to a viewer) with: the one it came with when
+  /// that is a kind Kukira knows, else the kind its bytes show, else the one it came with if
+  /// it is short enough to be an extension, else "bin". A PDF picked from a cloud drive
+  /// often has no extension in its name, so its name alone says nothing.
+  static String extFor(String claimed, Uint8List bytes) {
+    final clean = _clean(claimed);
+    if (_knownTypes.contains(clean)) return clean;
+    return sniff(bytes) ?? (clean.isNotEmpty && clean.length <= maxExt ? clean : 'bin');
   }
 
   /// A name the app could have made: letters, digits, dashes and underscores, an optional
   /// extension, nothing that could point outside the files folder ("../"). Names come from
-  /// the database and from backups, and a backup can be made by someone else.
-  static bool isSafeName(String name) => RegExp(r'^[A-Za-z0-9_-]{1,80}(\.[A-Za-z0-9]{1,16})?$').hasMatch(name);
+  /// the database and from backups, and a backup can be made by someone else. The extension
+  /// may be long: before 0.2.8 a file picked without one kept the end of its name as one
+  /// (up to what fits in a file name), and those files must still open and restore.
+  static bool isSafeName(String name) => name.length <= 251 && RegExp(r'^[A-Za-z0-9_-]{1,80}(\.[A-Za-z0-9]{1,218})?$').hasMatch(name);
 
   static String _checked(String name) {
     if (!isSafeName(name)) throw ArgumentError.value(name, 'name', 'not a stored file name');
@@ -109,7 +149,7 @@ class SecureFiles {
 
   /// Encrypts [bytes] into a new file and returns its name.
   static Future<String> save(AppDb db, Uint8List bytes, String ext) async {
-    final name = _newName(ext);
+    final name = _newName(extFor(ext, bytes));
     await saveNamed(db, name, bytes);
     return name;
   }
@@ -170,11 +210,14 @@ class SecureFiles {
     }
   }
 
-  /// Decrypts to a temporary file so the phone's own viewer can open it.
-  static Future<File> _temp(AppDb db, String name, String title) async {
+  /// Decrypts to a temporary file so the phone's own viewer can open it. Named after the
+  /// title, cut short so a long title still makes a valid file name, with the extension the
+  /// viewer goes by (see [extFor]: a file stored before 0.2.8 may have a made-up one).
+  static Future<File> viewCopy(AppDb db, String name, String title) async {
     final bytes = await read(db, name);
-    final safe = title.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
-    return writeTemp('${safe.isEmpty ? 'kukira' : safe}.${extOf(name)}', bytes);
+    var safe = title.replaceAll(RegExp(r'[^A-Za-z0-9 _-]'), '').trim();
+    if (safe.length > 60) safe = safe.substring(0, 60).trim();
+    return writeTemp('${safe.isEmpty ? 'kukira' : safe}.${extFor(extOf(name), bytes)}', bytes);
   }
 
   /// Writes a file for another app to read (a viewer, or a share target) into the folder
@@ -189,33 +232,65 @@ class SecureFiles {
 
   /// Returns false when the phone has no app that can open the file.
   static Future<bool> openExternal(AppDb db, String name, String title) async {
-    final f = await _temp(db, name, title);
+    final f = await viewCopy(db, name, title);
     final r = await OpenFilex.open(f.path);
     return r.type == ResultType.done;
   }
 
   static Future<void> shareCopy(AppDb db, String name, String title) async {
-    final f = await _temp(db, name, title);
+    final f = await viewCopy(db, name, title);
     await Share.shareXFiles([XFile(f.path)], subject: title);
   }
 
   /// How long a decrypted copy may stay for the phone's viewer or a share target to read it.
   static const tempLifetime = Duration(minutes: 5);
 
+  /// The folders that hold decrypted copies for another app: Kukira's own, for the viewer
+  /// and the share sheet, and the one the share sheet copies every shared file into
+  /// (share_plus empties it only at the next share, so a shared document stayed there).
+  static const handOverFolders = ['view', 'share_plus'];
+
   /// Removes decrypted copies left from viewing or sharing: all of them at start-up, and
   /// with [olderThan] only those at least that old, so a viewer or share target that is
   /// still reading a fresh copy is not cut off.
   static Future<void> clearTemp({Duration? olderThan}) async {
+    final String tmp;
     try {
-      final dir = Directory(p.join((await getTemporaryDirectory()).path, 'view'));
-      if (!await dir.exists()) return;
-      if (olderThan == null) {
-        await dir.delete(recursive: true);
-        return;
-      }
-      final cutoff = DateTime.now().subtract(olderThan);
-      await for (final e in dir.list()) {
-        if (e is File && (await e.lastModified()).isBefore(cutoff)) await e.delete();
+      tmp = (await getTemporaryDirectory()).path;
+    } catch (_) {
+      return;
+    }
+    for (final folder in handOverFolders) {
+      try {
+        final dir = Directory(p.join(tmp, folder));
+        if (!await dir.exists()) continue;
+        if (olderThan == null) {
+          await dir.delete(recursive: true);
+          continue;
+        }
+        final cutoff = DateTime.now().subtract(olderThan);
+        await for (final e in dir.list(recursive: true)) {
+          if (e is File && (await e.lastModified()).isBefore(cutoff)) await e.delete();
+        }
+      } catch (_) {}
+    }
+  }
+
+  static final _pickerCopy = RegExp(r'^(file_picker$|scaled_|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})');
+
+  /// Removes the plain copies the pickers leave in the cache, none of which they remove
+  /// themselves: the file picker copies each picked file into "file_picker", and the photo
+  /// picker copies a gallery photo into a folder named with a UUID, takes a camera photo
+  /// into a UUID-named file and makes a "scaled_" copy. Kukira keeps only its encrypted
+  /// file, so these go as soon as the picked bytes are read, and at start-up.
+  static Future<void> clearPickerCopies() async {
+    try {
+      final tmp = await getTemporaryDirectory();
+      await for (final e in tmp.list()) {
+        if (!_pickerCopy.hasMatch(p.basename(e.path))) continue;
+        try {
+          await e.delete(recursive: true);
+        } catch (_) {}
       }
     } catch (_) {}
   }

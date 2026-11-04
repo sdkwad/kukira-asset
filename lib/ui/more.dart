@@ -502,6 +502,14 @@ Future<String?> chooseBackupPlace(BuildContext context) {
   );
 }
 
+/// What to say once a backup file is saved. [wanted] is the place picked in Kukira
+/// ([chooseBackupPlace]), [place] where Android says the file went ([Backup.placeOf]).
+String backupSavedMessage(Str s, String name, {required int missing, required String wanted, required String place}) {
+  if (missing > 0) return s.backupSavedMissing(name, missing);
+  if (wanted == 'cloud' && place == 'folder') return s.backupOnPhoneNotCloud(name);
+  return s.backupSaved(name);
+}
+
 class BackupScreen extends StatelessWidget {
   const BackupScreen({super.key});
 
@@ -516,23 +524,25 @@ class BackupScreen extends StatelessWidget {
     final name = Backup.fileName(DateTime.now());
     final where = await chooseBackupPlace(context);
     if (where == null || !context.mounted) return;
-    bool saved;
+    String? place;
     try {
-      // Drive, OneDrive and Dropbox are places in Android's own save dialog: their app does
-      // the upload, so Kukira needs no internet permission for it.
-      saved = where == 'share' ? await Backup.share(bytes, name) : await Backup.saveToFolder(bytes, name);
+      // Folders on the phone, Drive, OneDrive and Dropbox are all places in Android's own save
+      // dialog: a cloud app does the upload, so Kukira needs no internet permission for it.
+      // Where the file went is what the dialog answers, not what was picked above: the
+      // dialog often opens at Downloads, and saving there keeps the file on the phone.
+      place = where == 'share' ? (await Backup.share(bytes, name) ? 'share' : null) : await Backup.saveWithDialog(bytes, name);
     } catch (e) {
       ErrorLog.record('backup.save', e);
-      saved = false;
+      place = null;
     }
     if (!context.mounted) return;
-    if (saved) {
-      await db.setSetting('lastBackup', DateTime.now().toIso8601String());
-      await db.setSetting('lastBackupTo', where);
-      if (context.mounted) snack(context, backup.missing > 0 ? s.backupSavedMissing(name, backup.missing) : s.backupSaved(name));
-    } else {
+    if (place == null) {
       snack(context, s.backupNotSaved);
+      return;
     }
+    await db.setSetting('lastBackup', DateTime.now().toIso8601String());
+    await db.setSetting('lastBackupTo', place);
+    if (context.mounted) snack(context, backupSavedMessage(s, name, missing: backup.missing, wanted: where, place: place));
   }
 
 

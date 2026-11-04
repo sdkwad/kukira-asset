@@ -1466,7 +1466,7 @@ class StrEn extends Str {
   @override
   String get saveToCloud => 'Google Drive, OneDrive or Dropbox';
   @override
-  String get saveToCloudHint => 'Pick the cloud app among the places that open. That app does the upload; Kukira itself never goes online. The file is encrypted.';
+  String get saveToCloudHint => 'In the save dialog, open the menu at the top left and pick Drive or OneDrive. That app does the upload; Kukira itself never goes online. The file is encrypted.';
   @override
   String get backupInCloud => 'saved to the cloud';
   @override
@@ -1477,4 +1477,10 @@ class StrEn extends Str {
   // ------------------------------------------------ Wide screens
   @override
   String get pickReminder => 'Pick a reminder in the list to see it here.';
+
+  // ------------------------------------------------ Audit 2
+  @override
+  String get fileNotOpened => 'This file could not be opened. Try again; if it still fails, add the file again.';
+  @override
+  String backupOnPhoneNotCloud(String name) => 'The backup was saved on this phone, not in the cloud: $name. For the cloud, make the backup again and pick Drive or OneDrive in the menu at the top left of the save dialog.';
 }

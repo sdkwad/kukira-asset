@@ -1463,7 +1463,7 @@ class StrMs extends Str {
   @override
   String get saveToCloud => 'Google Drive, OneDrive atau Dropbox';
   @override
-  String get saveToCloudHint => 'Pilih app awan dalam senarai lokasi yang dibuka. App itu yang memuat naik; Kukira sendiri tidak menyambung ke internet. Fail ini bersulit.';
+  String get saveToCloudHint => 'Dalam dialog simpan, buka menu di kiri atas dan pilih Drive atau OneDrive. App itu yang memuat naik; Kukira sendiri tidak menyambung ke internet. Fail ini bersulit.';
   @override
   String get backupInCloud => 'disimpan ke awan';
   @override
@@ -1474,4 +1474,10 @@ class StrMs extends Str {
   // ------------------------------------------------ Wide screens
   @override
   String get pickReminder => 'Pilih peringatan dalam senarai untuk melihat butirannya.';
+
+  // ------------------------------------------------ Audit 2
+  @override
+  String get fileNotOpened => 'Fail ini tidak dapat dibuka. Cuba lagi; jika masih gagal, tambah semula fail itu.';
+  @override
+  String backupOnPhoneNotCloud(String name) => 'Sandaran disimpan dalam telefon ini, bukan dalam awan: $name. Untuk awan, buat sandaran semula dan pilih Drive atau OneDrive dalam menu di kiri atas dialog simpan.';
 }

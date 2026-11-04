@@ -55,6 +55,10 @@ Future<Picked?> pickFile(BuildContext context, String source) async {
     ErrorLog.record('document.pick', e);
     if (context.mounted) snack(context, context.s.couldNotRead);
     return null;
+  } finally {
+    // The pickers leave a plain copy of what was picked in the cache. Only the encrypted
+    // file Kukira makes from the bytes is kept.
+    await SecureFiles.clearPickerCopies();
   }
 }
 
@@ -525,6 +529,12 @@ Future<void> showDocSheet(BuildContext context, int docId) {
       final d = w.documents.where((x) => x.id == docId).firstOrNull;
       if (d == null) return const SizedBox(height: 100);
       final img = SecureFiles.isImage(d.filePath);
+      // A message shown from the sheet would be hidden behind it, so the sheet closes first.
+      void tell(String msg) {
+        if (sheet.mounted) Navigator.pop(sheet);
+        if (context.mounted) snack(context, msg);
+      }
+
       return SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -550,8 +560,15 @@ Future<void> showDocSheet(BuildContext context, int docId) {
                   icon: const Icon(Icons.open_in_new),
                   label: Text(s.open),
                   onPressed: () async {
-                    final ok = await SecureFiles.openExternal(c.db, d.filePath, d.title);
-                    if (!ok && c.mounted) snack(c, s.noViewer);
+                    final bool ok;
+                    try {
+                      ok = await SecureFiles.openExternal(c.db, d.filePath, d.title);
+                    } catch (e) {
+                      ErrorLog.record('document.open', e);
+                      tell(s.fileNotOpened);
+                      return;
+                    }
+                    if (!ok) tell(s.noViewer);
                   },
                 ),
               ),
@@ -560,7 +577,14 @@ Future<void> showDocSheet(BuildContext context, int docId) {
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.share_outlined),
                   label: Text(s.shareCopy),
-                  onPressed: () => SecureFiles.shareCopy(c.db, d.filePath, d.title),
+                  onPressed: () async {
+                    try {
+                      await SecureFiles.shareCopy(c.db, d.filePath, d.title);
+                    } catch (e) {
+                      ErrorLog.record('document.share', e);
+                      tell(s.fileNotOpened);
+                    }
+                  },
                 ),
               ),
             ]),

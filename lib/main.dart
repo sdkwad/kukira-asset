@@ -30,6 +30,7 @@ Future<BootResult> boot() async {
     ErrorLog.record('boot.notifications', e);
   }
   await SecureFiles.clearTemp();
+  await SecureFiles.clearPickerCopies();
   try {
     return await Vault.open();
   } catch (e) {
