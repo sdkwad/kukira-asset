@@ -82,10 +82,15 @@ void main() {
     // The name stays on the part of the photo that is covered.
     expect(tester.getRect(name.first).right, lessThanOrEqualTo(phoneWidth * 0.64 + 0.5));
 
+    expect(tester.widget<PhotoFade>(find.byType(PhotoFade)).opacity, 1.0);
+
     await tester.drag(find.byType(NestedScrollView), const Offset(0, -600));
     await tester.pumpAndSettle();
     expect(opacityOf(name.first), 0.0);
     expect(opacityOf(name.last), 1.0);
+    // The photo fades by its own alpha, not under an Opacity layer over the whole header.
+    expect(tester.widget<PhotoFade>(find.byType(PhotoFade)).opacity, 0.0);
+    expect(find.ancestor(of: find.byType(PhotoFade), matching: find.byType(Opacity)), findsNothing);
   });
 
   testWidgets('the monthly odometer switch still adds and removes its reminder', (tester) async {

@@ -118,6 +118,10 @@ class SecureFiles {
     await tmp.rename(p.join(dir, '$name.enc'));
   }
 
+  /// The decrypted bytes of [name] when they are in memory already, so a picture can be
+  /// drawn in the same frame instead of after a decrypt.
+  static Uint8List? cached(String name) => _cache[name];
+
   static Future<Uint8List> read(AppDb db, String name) async {
     final hit = _cache[name];
     if (hit != null) return hit;

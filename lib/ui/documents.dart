@@ -56,13 +56,18 @@ Future<Picked?> pickFile(BuildContext context, String source) async {
   }
 }
 
-/// Shows an encrypted image from app storage.
-class SecureImage extends StatelessWidget {
-  const SecureImage(this.name, {super.key, this.size, this.fit = BoxFit.cover, this.cacheWidth = 400});
+/// Shows an encrypted image from app storage. The file is decrypted once per name, not on
+/// every rebuild (a scrolling page header rebuilds every frame), and an image already
+/// decrypted shows at once instead of after a blank frame.
+class SecureImage extends StatefulWidget {
+  const SecureImage(this.name, {super.key, this.size, this.fit = BoxFit.cover, this.cacheWidth = 400, this.opacity = 1});
   final String name;
   final double? size;
   final BoxFit fit;
   final int? cacheWidth;
+
+  /// Drawn with this opacity, without the offscreen layer an Opacity widget needs.
+  final double opacity;
 
   /// Screenshots only: draws a test picture for [name] instead of reading an encrypted file,
   /// so asset photos can be pictured without a key. Never set in the app.
@@ -70,15 +75,54 @@ class SecureImage extends StatelessWidget {
   static ImageProvider Function(String name)? debugImage;
 
   @override
+  State<SecureImage> createState() => _SecureImageState();
+}
+
+class _SecureImageState extends State<SecureImage> {
+  String? _loaded;
+  Future<Uint8List>? _bytes;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _load();
+  }
+
+  @override
+  void didUpdateWidget(SecureImage old) {
+    super.didUpdateWidget(old);
+    if (old.name != widget.name) _load();
+  }
+
+  void _load() {
+    if (_loaded == widget.name) return;
+    _loaded = widget.name;
+    _bytes = SecureImage.debugImage != null || SecureFiles.cached(widget.name) != null ? null : SecureFiles.read(context.db, widget.name);
+  }
+
+  Widget _image(Uint8List bytes) => Image.memory(
+        bytes,
+        width: widget.size,
+        height: widget.size,
+        fit: widget.fit,
+        cacheWidth: widget.cacheWidth,
+        gaplessPlayback: true,
+        opacity: widget.opacity >= 1 ? null : AlwaysStoppedAnimation(widget.opacity),
+      );
+
+  @override
   Widget build(BuildContext context) {
-    final debug = debugImage;
-    if (debug != null) return Image(image: debug(name), width: size, height: size, fit: fit);
+    final size = widget.size;
+    final debug = SecureImage.debugImage;
+    if (debug != null) {
+      return Image(image: debug(widget.name), width: size, height: size, fit: widget.fit, opacity: widget.opacity >= 1 ? null : AlwaysStoppedAnimation(widget.opacity));
+    }
+    final hit = SecureFiles.cached(widget.name);
+    if (hit != null) return _image(hit);
     return FutureBuilder<Uint8List>(
-      future: SecureFiles.read(context.db, name),
+      future: _bytes ??= SecureFiles.read(context.db, widget.name),
       builder: (c, snap) {
-        if (snap.hasData) {
-          return Image.memory(snap.data!, width: size, height: size, fit: fit, cacheWidth: cacheWidth, gaplessPlayback: true);
-        }
+        if (snap.hasData) return _image(snap.data!);
         return Container(
           width: size,
           height: size,

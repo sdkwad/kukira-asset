@@ -248,6 +248,7 @@ class HealthScreen extends StatelessWidget {
           icon: const Icon(Icons.refresh),
           label: Text(s.rebuildNow),
           onPressed: () async {
+            Notifier.forgetSchedule();
             await app.rebuildNow();
             if (context.mounted) snack(context, s.rebuilt);
           },

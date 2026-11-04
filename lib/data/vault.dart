@@ -5,7 +5,9 @@ import 'dart:math';
 
 import 'package:biometric_storage/biometric_storage.dart';
 import 'package:cryptography/cryptography.dart';
+import 'package:drift/drift.dart' show QueryExecutor;
 import 'package:drift/native.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
@@ -48,8 +50,9 @@ class Vault {
   static Future<void> _setup() async {
     if (_ready) return;
     await applyWorkaroundToOpenSqlCipherOnOldAndroidVersions();
-    // Must run on every isolate that opens the database. Kukira opens it on the main isolate only.
-    sqlite_open.open.overrideFor(sqlite_open.OperatingSystem.android, openCipherOnAndroid);
+    // Must run on every isolate that opens the database: here for the start-up probe, and in
+    // the database's own isolate through [_useCipher].
+    _useCipher();
     _ready = true;
   }
 
@@ -98,7 +101,7 @@ class Vault {
     } else if (exists && !_probe(f, key)) {
       return const BootResult(BootState.unreadable);
     }
-    return BootResult(BootState.ready, _openDb(f, key));
+    return BootResult(BootState.ready, await _openDb(f, key));
   }
 
   static bool _probe(File f, String hex) {
@@ -116,15 +119,48 @@ class Vault {
     }
   }
 
-  static AppDb _openDb(File f, String hex) {
+  /// Opens the database file with its key. The database runs on its own isolate, so queries,
+  /// SQLCipher's decryption and disk writes never hold up drawing or touches. If that isolate
+  /// cannot be started on this phone, the database opens on the main isolate as it did
+  /// before 0.2.7d, and the reason is kept in the error log.
+  static Future<AppDb> _openDb(File f, String hex) async {
     _currentKey = hex;
-    return AppDb(NativeDatabase(f, setup: (raw) {
-      raw.execute(_pragma(hex));
-      final v = raw.select('PRAGMA cipher_version;');
-      if (v.isEmpty) {
+    final background = AppDb(connectInBackground(f, hex));
+    try {
+      await background.customSelect('SELECT count(*) FROM sqlite_master').get();
+      return background;
+    } catch (e) {
+      ErrorLog.record('vault.background', e);
+      try {
+        await background.close();
+      } catch (_) {
+        // Already failed; nothing more to close.
+      }
+      return AppDb(NativeDatabase(f, setup: keySetup(hex)));
+    }
+  }
+
+  /// The app's connection: an isolate that loads SQLCipher, sets the key and refuses to go
+  /// on unencrypted. Tests pass [requireCipher] false, since they run on the computer's plain
+  /// SQLite.
+  @visibleForTesting
+  static QueryExecutor connectInBackground(File f, String hex, {bool requireCipher = true}) =>
+      NativeDatabase.createInBackground(f, isolateSetup: _useCipher, setup: keySetup(hex, requireCipher: requireCipher));
+
+  /// Uses SQLCipher instead of plain SQLite. Runs on the isolate that opens the database.
+  static void _useCipher() => sqlite_open.open.overrideFor(sqlite_open.OperatingSystem.android, openCipherOnAndroid);
+
+  /// Sets the key on a newly opened database. It is sent to the database's isolate, so it
+  /// keeps only the key text and the flag.
+  @visibleForTesting
+  static DatabaseSetup keySetup(String hex, {bool requireCipher = true}) {
+    final pragma = _pragma(hex);
+    return (raw) {
+      raw.execute(pragma);
+      if (requireCipher && raw.select('PRAGMA cipher_version;').isEmpty) {
         throw StateError('SQLCipher is not loaded; refusing to open an unencrypted database.');
       }
-    }));
+    };
   }
 
   // ---------------------------------------------------------------- PIN wrapping

@@ -200,12 +200,17 @@ const photoVeil = 0.75;
 /// [photoVeil] where the text is and thins out to nothing at the right edge: the photo shows
 /// at full strength on the right and at a quarter of it under the text.
 class PhotoFade extends StatelessWidget {
-  const PhotoFade({super.key, required this.photo, required this.color, this.holdTo = 0.55});
+  const PhotoFade({super.key, required this.photo, required this.color, this.holdTo = 0.55, this.opacity = 1});
   final String photo;
   final Color color;
 
   /// The veil holds its full cover up to this fraction of the width, then thins out.
   final double holdTo;
+
+  /// Fades the photo and its veil out together (the asset page header as it shrinks). Each
+  /// is drawn with this alpha instead of under an Opacity widget, which would draw the whole
+  /// header into an offscreen layer on every frame of the scroll.
+  final double opacity;
 
   /// The veil's cover at [x], a fraction of the width from the left.
   double coverAt(double x) => x <= holdTo ? photoVeil : photoVeil * (1 - (x - holdTo) / (1 - holdTo));
@@ -213,11 +218,11 @@ class PhotoFade extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ExcludeSemantics(
         child: Stack(fit: StackFit.expand, children: [
-          SecureImage(photo, cacheWidth: 1080),
+          SecureImage(photo, cacheWidth: 1080, opacity: opacity),
           DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [color.withValues(alpha: photoVeil), color.withValues(alpha: photoVeil), color.withValues(alpha: 0)],
+                colors: [color.withValues(alpha: photoVeil * opacity), color.withValues(alpha: photoVeil * opacity), color.withValues(alpha: 0)],
                 stops: [0, holdTo, 1],
               ),
             ),
@@ -420,15 +425,18 @@ class _Hero extends StatelessWidget {
           right: 0,
           top: 0,
           bottom: kTextTabBarHeight,
-          child: Opacity(
-            opacity: open,
-            child: Stack(fit: StackFit.expand, children: [
-              PhotoFade(photo: a.photoPath!, color: k.background, holdTo: 0.66),
-              // The text ends by 64% of the width, still under the full veil: a name such as
-              // "Rumah Setia Alam" fits one line on a 360 dp phone.
-              Positioned(left: 20, right: box.maxWidth * 0.36, bottom: 14, child: _Identity(a, w, large: true)),
-            ]),
-          ),
+          child: Stack(fit: StackFit.expand, children: [
+            PhotoFade(photo: a.photoPath!, color: k.background, holdTo: 0.66, opacity: open),
+            // The text ends by 64% of the width, still under the full veil: a name such as
+            // "Rumah Setia Alam" fits one line on a 360 dp phone. Only this small block of text
+            // fades through an Opacity layer, and only while the header is part open.
+            Positioned(
+              left: 20,
+              right: box.maxWidth * 0.36,
+              bottom: 14,
+              child: Opacity(opacity: open, child: _Identity(a, w, large: true)),
+            ),
+          ]),
         ),
         Positioned(
           left: 56,

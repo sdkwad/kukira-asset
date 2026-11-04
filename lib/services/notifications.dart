@@ -66,6 +66,23 @@ class Notifier {
   static const _refreshId = 8100;
   static const _noteBase = 1000000;
 
+  /// What each notification was last scheduled with in this run of the app, by id. A rebuild
+  /// schedules only what changed: Android's side rewrites its whole list of scheduled
+  /// notifications on every call, on the thread that also delivers touches, so scheduling
+  /// all 50 again after every edit made the app stutter. Empty after a restart, so the
+  /// first rebuild of each run schedules everything.
+  static final Map<int, String> _applied = {};
+
+  /// Makes the next rebuild schedule everything again (Rebuild the schedule now).
+  static void forgetSchedule() => _applied.clear();
+
+  static String _signature(String title, String body, DateTime at) => [title, body, at.toIso8601String()].join('|');
+
+  /// Whether notification [id] must be scheduled (again): it was never scheduled in this
+  /// run, it changed, or Android no longer has it pending.
+  static bool needsSchedule(Map<int, String> applied, Set<int> pending, int id, String signature) =>
+      applied[id] != signature || !pending.contains(id);
+
   /// The notification id for slot [slot] (see PlannedNote.slot) of reminder [reminderId].
   /// The same notification keeps the same id when the schedule is rebuilt.
   static int noteId(int reminderId, int slot) => _noteBase + reminderId * 10 + slot;
@@ -92,6 +109,7 @@ class Notifier {
     final plan = planNotes(infos, now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: windowSize);
     final refreshAt = refreshNoticeAt(infos, now: now, hour: w.notifyHour, minute: w.notifyMinute, limit: windowSize);
     final details = _details(s);
+    final pending = await _pendingIds();
     final wanted = <int>{};
     for (final n in plan) {
       final r = live[n.index];
@@ -104,13 +122,13 @@ class Notifier {
       };
       final id = noteId(r.id, n.slot);
       wanted.add(id);
-      await _schedule(id, r.title, body, n.at, details);
+      await _schedule(id, r.title, body, n.at, details, pending);
     }
     var scheduled = plan.length;
     // More reminders than fit: ask to open the app the day after the last one.
     if (refreshAt != null) {
       wanted.add(_refreshId);
-      await _schedule(_refreshId, s.refreshNoteTitle, s.refreshNoteBody, refreshAt, details);
+      await _schedule(_refreshId, s.refreshNoteTitle, s.refreshNoteBody, refreshAt, details, pending);
       scheduled++;
     }
     // Backup nudge 30 days after the last backup (or after the first asset was added).
@@ -121,13 +139,13 @@ class Notifier {
       final at = DateTime(d.year, d.month, d.day, w.notifyHour, w.notifyMinute);
       if (at.isAfter(now)) {
         wanted.add(_backupId);
-        await _schedule(_backupId, s.backupNudgeTitle, s.backupNudgeBody, at, details);
+        await _schedule(_backupId, s.backupNudgeTitle, s.backupNudgeBody, at, details, pending);
         scheduled++;
       } else {
         backupDue = true;
       }
     }
-    await _cancelStale(w, wanted, today: now, keepBackupNudge: backupDue);
+    await _cancelStale(w, wanted, pending, today: now, keepBackupNudge: backupDue);
     return RebuildInfo(
       at: now,
       count: scheduled,
@@ -136,10 +154,24 @@ class Notifier {
     );
   }
 
-  static Future<void> _cancelStale(World w, Set<int> wanted, {required DateTime today, required bool keepBackupNudge}) async {
+  /// The ids Android has scheduled, read once per rebuild. Empty if it cannot be read, so
+  /// everything is scheduled again rather than missed.
+  static Future<Set<int>> _pendingIds() async {
     try {
-      for (final p in await plugin.pendingNotificationRequests()) {
-        if (!wanted.contains(p.id) && p.id != _testId && p.id != _mileageId) await plugin.cancel(p.id);
+      return {for (final p in await plugin.pendingNotificationRequests()) p.id};
+    } catch (e) {
+      ErrorLog.record('notifications.pending', e);
+      return {};
+    }
+  }
+
+  static Future<void> _cancelStale(World w, Set<int> wanted, Set<int> pending, {required DateTime today, required bool keepBackupNudge}) async {
+    try {
+      for (final id in pending) {
+        if (!wanted.contains(id) && id != _testId && id != _mileageId) {
+          await plugin.cancel(id);
+          _applied.remove(id);
+        }
       }
       for (final a in await plugin.getActiveNotifications()) {
         final id = a.id;
@@ -154,7 +186,9 @@ class Notifier {
     }
   }
 
-  static Future<void> _schedule(int id, String title, String body, DateTime at, NotificationDetails d) async {
+  static Future<void> _schedule(int id, String title, String body, DateTime at, NotificationDetails d, Set<int> pending) async {
+    final signature = _signature(title, body, at);
+    if (!needsSchedule(_applied, pending, id, signature)) return;
     try {
       await plugin.zonedSchedule(
         id,
@@ -165,6 +199,7 @@ class Notifier {
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         uiLocalNotificationDateInterpretation: UILocalNotificationDateInterpretation.absoluteTime,
       );
+      _applied[id] = signature;
     } catch (e) {
       ErrorLog.record('notifications.schedule', e);
       // A failed schedule must never break the app. Today still shows the reminder.
