@@ -707,6 +707,10 @@ class _Details extends StatelessWidget {
         if (h.council != null) (s.council, h.council!),
         if (h.state != null) (s.state, h.state!),
         if (h.occupancy != null) (s.occupancy, s.occupancyName(h.occupancy!)),
+        // The tenancy is kept when the house stops being rented out, but shown only while it is.
+        if (h.occupancy == 'rented' && (h.tenancyStart != null || h.tenancyEnd != null))
+          (s.tenancy, s.tenancyPeriod(h.tenancyStart == null ? null : s.dLong(h.tenancyStart!), h.tenancyEnd == null ? null : s.dLong(h.tenancyEnd!))),
+        if (h.occupancy == 'rented' && h.rentDueDay != null) (s.rentDue, s.rentDueDay(h.rentDueDay!)),
         if (h.address != null) (s.address, h.address!),
         if (h.contact != null) (s.contact, h.contact!),
         if (a.notes != null) (s.notes, a.notes!),
@@ -1419,6 +1423,16 @@ class _HouseEditState extends State<HouseEditScreen> {
   DateTime? _vp;
   DateTime? _spa;
   DateTime? _dlpOverride;
+  DateTime? _tenancyStart;
+  DateTime? _tenancyEnd;
+  int? _rentDay;
+
+  /// Subsale only: whether the developer's 24-month DLP still runs. When it does not, the VP
+  /// and DLP dates are not asked, and are cleared on save.
+  bool _inDlp = false;
+
+  /// Optional fields that were empty and have been opened with their "+" button.
+  final Set<String> _opened = {};
   bool _loaded = false;
 
   @override
@@ -1428,6 +1442,9 @@ class _HouseEditState extends State<HouseEditScreen> {
     }
     super.dispose();
   }
+
+  /// The VP and DLP dates apply unless this is a subsale past the developer's DLP.
+  bool get _asksVp => _source != 'subsale' || _inDlp;
 
   @override
   Widget build(BuildContext context) {
@@ -1447,11 +1464,29 @@ class _HouseEditState extends State<HouseEditScreen> {
         _vp = h.vpDate;
         _spa = h.spaDate;
         _dlpOverride = h.dlpEndOverride;
+        _inDlp = h.vpDate != null;
+        _tenancyStart = h.tenancyStart;
+        _tenancyEnd = h.tenancyEnd;
+        _rentDay = h.rentDueDay;
         _council.text = h.council ?? '';
         _state.text = h.state ?? '';
         _address.text = h.address ?? '';
         _contact.text = h.contact ?? '';
       }
+      final theme = Theme.of(context);
+      final k = context.tokens;
+      final help = theme.textTheme.bodySmall;
+      bool shown(String key, bool hasValue) => hasValue || _opened.contains(key);
+      Widget addButton(String key, String label) => TextButton.icon(
+            icon: const Icon(Icons.add, size: 18),
+            label: Text(label),
+            onPressed: () => setState(() => _opened.add(key)),
+          );
+      final showSpa = shown('spa', _spa != null);
+      final showAddress = shown('address', _address.text.isNotEmpty);
+      final showContact = shown('contact', _contact.text.isNotEmpty);
+      final showNotes = shown('notes', _notes.text.isNotEmpty);
+      final rented = _occupancy == 'rented';
       return SafeScaffold(
         appBar: AppBar(title: Text(s.editDetails)),
         body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
@@ -1475,7 +1510,7 @@ class _HouseEditState extends State<HouseEditScreen> {
             final open = templatesFor('house', _ptype)
                 .where((p) => !w.reminders.any((r) => r.assetId == a.id && !r.done && r.category == p.category))
                 .toList();
-            if (open.isEmpty) return Text(s.allSuggestedAdded, style: Theme.of(context).textTheme.bodySmall);
+            if (open.isEmpty) return Text(s.allSuggestedAdded, style: help);
             return Wrap(spacing: 6, runSpacing: 6, children: [
               for (final p in open)
                 ActionChip(
@@ -1485,32 +1520,47 @@ class _HouseEditState extends State<HouseEditScreen> {
                 ),
             ]);
           }),
-          const SizedBox(height: 14),
-          FieldLabel(s.boughtAs),
+
+          // ---- purchase: the VP and DLP only when they can still apply
+          const SizedBox(height: 20),
+          FieldLabel(s.purchase),
           ChoiceRow<String>(options: const ['new_from_developer', 'subsale'], value: _source, label: s.sourceName, onChanged: (v) => setState(() => _source = v)),
-          const SizedBox(height: 14),
-          // Not hidden for subsale: the buyer may still be inside the developer's 24-month DLP.
-          DateField(label: _source == 'subsale' ? s.vpDateSubsale : s.vpDate, value: _vp, onChanged: (d) => setState(() => _vp = d)),
-          Padding(
-            padding: const EdgeInsets.only(top: 4, bottom: 10),
-            child: Text(_source == 'subsale' ? s.vpHelpSubsale : s.vpHelp, style: Theme.of(context).textTheme.bodySmall),
-          ),
-          if (_vp != null) ...[
-            DateField(label: s.dlpEndOverrideLabel, value: _dlpOverride, onChanged: (d) => setState(() => _dlpOverride = d)),
+          const SizedBox(height: 12),
+          if (_source == 'subsale')
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: SwitchListTile(
+                value: _inDlp,
+                title: Text(s.stillInDlpQ, style: KText.row.copyWith(color: k.text)),
+                subtitle: Text(s.stillInDlpHelp),
+                onChanged: (v) => setState(() => _inDlp = v),
+              ),
+            ),
+          if (_asksVp) ...[
+            DateField(label: _source == 'subsale' ? s.vpDateSubsale : s.vpDate, value: _vp, onChanged: (d) => setState(() => _vp = d)),
             Padding(
               padding: const EdgeInsets.only(top: 4, bottom: 10),
-              child: Text(s.dlpEndOverrideHelp(s.dLong(dlpEndFrom(_vp!))), style: Theme.of(context).textTheme.bodySmall),
+              child: Text(_source == 'subsale' ? s.vpHelpSubsale : s.vpHelp, style: help),
             ),
-            NoteBox(s.autoSyncNoteDlp, icon: Icons.sync),
-            const SizedBox(height: 12),
+            if (_vp != null) ...[
+              DateField(label: s.dlpEndOverrideLabel, value: _dlpOverride, onChanged: (d) => setState(() => _dlpOverride = d)),
+              Padding(
+                padding: const EdgeInsets.only(top: 4, bottom: 10),
+                child: Text(s.dlpEndOverrideHelp(s.dLong(dlpEndFrom(_vp!))), style: help),
+              ),
+              NoteBox(s.autoSyncNoteDlp, icon: Icons.sync),
+              const SizedBox(height: 12),
+            ],
           ],
-          DateField(label: s.spaDate, value: _spa, onChanged: (d) => setState(() => _spa = d)),
-          const SizedBox(height: 14),
-          FieldLabel(s.titleStatus),
+          if (showSpa)
+            DateField(label: s.spaDate, value: _spa, onChanged: (d) => setState(() => _spa = d))
+          else
+            Align(alignment: Alignment.centerLeft, child: addButton('spa', s.spaShort)),
+
+          // ---- title and council
+          const SizedBox(height: 20),
+          FieldLabel(s.titleAndCouncil),
           ChoiceRow<String>(options: titleOptionsFor(_ptype), value: _title, label: s.titleName, onChanged: (v) => setState(() => _title = v)),
-          const SizedBox(height: 14),
-          FieldLabel(s.occupancy),
-          ChoiceRow<String>(options: const ['owner', 'rented', 'vacant'], value: _occupancy, label: s.occupancyName, onChanged: (v) => setState(() => _occupancy = v)),
           const SizedBox(height: 14),
           ComboField(controller: _state, label: s.state, options: stateOptions(), onChanged: (_) => setState(() {})),
           const SizedBox(height: 12),
@@ -1528,39 +1578,85 @@ class _HouseEditState extends State<HouseEditScreen> {
               if (c != null && stateNamed(_state.text) == null) _state.text = c.$2;
             },
           ),
-          const SizedBox(height: 12),
-          TextField(controller: _address, maxLines: 2, decoration: InputDecoration(labelText: s.address, border: const OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _contact, decoration: InputDecoration(labelText: s.contact, hintText: s.contactHint, border: const OutlineInputBorder())),
-          const SizedBox(height: 12),
-          TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(labelText: s.notes, border: const OutlineInputBorder())),
+
+          // ---- occupancy, and the tenancy when it is rented out
+          const SizedBox(height: 20),
+          FieldLabel(s.occupancy),
+          ChoiceRow<String>(options: const ['owner', 'rented', 'vacant'], value: _occupancy, label: s.occupancyName, onChanged: (v) => setState(() => _occupancy = v)),
+          if (rented) ...[
+            const SizedBox(height: 14),
+            DateField(label: s.tenancyStart, value: _tenancyStart, onChanged: (d) => setState(() => _tenancyStart = d)),
+            const SizedBox(height: 12),
+            DateField(label: s.tenancyEnd, value: _tenancyEnd, onChanged: (d) => setState(() => _tenancyEnd = d)),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<int?>(
+              value: _rentDay,
+              isExpanded: true,
+              decoration: InputDecoration(labelText: s.rentDue, border: const OutlineInputBorder()),
+              items: [
+                DropdownMenuItem<int?>(value: null, child: Text(s.notSet, maxLines: 1, overflow: TextOverflow.ellipsis)),
+                for (var d = 1; d <= 31; d++)
+                  DropdownMenuItem<int?>(value: d, child: Text(s.rentDueDay(d), maxLines: 1, overflow: TextOverflow.ellipsis)),
+              ],
+              onChanged: (v) => setState(() => _rentDay = v),
+            ),
+            Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.tenancyNote, style: help)),
+          ],
+
+          // ---- the rest, only when used
+          const SizedBox(height: 20),
+          FieldLabel(s.otherDetails),
+          if (showAddress) ...[
+            TextField(controller: _address, maxLines: 2, decoration: InputDecoration(labelText: s.address, border: const OutlineInputBorder())),
+            const SizedBox(height: 12),
+          ],
+          if (showContact) ...[
+            TextField(controller: _contact, decoration: InputDecoration(labelText: s.contact, hintText: s.contactHint, border: const OutlineInputBorder())),
+            const SizedBox(height: 12),
+          ],
+          if (showNotes) ...[
+            TextField(controller: _notes, maxLines: 3, decoration: InputDecoration(labelText: s.notes, border: const OutlineInputBorder())),
+            const SizedBox(height: 12),
+          ],
+          if (!showAddress || !showContact || !showNotes)
+            Wrap(spacing: 4, children: [
+              if (!showAddress) addButton('address', s.address),
+              if (!showContact) addButton('contact', s.contactShort),
+              if (!showNotes) addButton('notes', s.notes),
+            ]),
           const SizedBox(height: 20),
           SaveButton(
             onPressed: () async {
               if (_name.text.trim().isEmpty) return;
               final db = context.db;
               final t = today();
+              final vp = _asksVp ? _vp : null;
+              final dlpOverride = vp == null ? null : _dlpOverride;
               final changes = [
                 planChange(w.reminders, a.id, autoDlp,
                     oldDate: activeDlpEnd(vp: h.vpDate, override: h.dlpEndOverride, today: t),
-                    newDate: activeDlpEnd(vp: _vp, override: _vp == null ? null : _dlpOverride, today: t),
+                    newDate: activeDlpEnd(vp: vp, override: dlpOverride, today: t),
                     today: t),
               ];
               await saveWithAutoReminders(context, a.id, changes, () async {
                 await db.updateAsset(a.id, AssetsCompanion(nickname: Value(_name.text.trim()), notes: Value(nn(_notes.text))));
                 await db.updateHouse(a.id, HouseProfilesCompanion(
-                propertyType: Value(_ptype),
-                source: Value(_source),
-                vpDate: Value(_vp),
-                dlpEndOverride: Value(_vp == null ? null : _dlpOverride),
-                spaDate: Value(_spa),
-                titleStatus: Value(_title),
-                occupancy: Value(_occupancy),
-                council: Value(nn(_council.text)),
-                state: Value(nn(_state.text)),
-                address: Value(nn(_address.text)),
-                contact: Value(nn(_contact.text)),
-              ));
+                  propertyType: Value(_ptype),
+                  source: Value(_source),
+                  vpDate: Value(vp),
+                  dlpEndOverride: Value(dlpOverride),
+                  spaDate: Value(_spa),
+                  titleStatus: Value(_title),
+                  occupancy: Value(_occupancy),
+                  // Kept when the house is no longer rented out, so a wrong tap loses nothing.
+                  tenancyStart: Value(_tenancyStart),
+                  tenancyEnd: Value(_tenancyEnd),
+                  rentDueDay: Value(_rentDay),
+                  council: Value(nn(_council.text)),
+                  state: Value(nn(_state.text)),
+                  address: Value(nn(_address.text)),
+                  contact: Value(nn(_contact.text)),
+                ));
               });
             },
             child: Text(s.saveChanges),

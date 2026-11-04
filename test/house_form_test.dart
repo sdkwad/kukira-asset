@@ -70,9 +70,13 @@ void main() {
     expect(find.text(s.titleName('individual')), findsNothing);
   });
 
-  testWidgets('subsale keeps the VP date, relabelled', (tester) async {
+  testWidgets('subsale asks first whether the developer DLP still runs, then for the VP date, relabelled', (tester) async {
     setPhone(tester, height: 3200);
     await tester.pumpWidget(harness(const HouseEditScreen(assetId: 1), fakeWorld(source: 'subsale')));
+    await tester.pumpAndSettle();
+    expect(find.text(s.stillInDlpQ), findsOneWidget);
+    expect(find.text(s.vpDateSubsale), findsNothing, reason: 'not asked until the DLP is said to still run');
+    await tester.tap(find.text(s.stillInDlpQ));
     await tester.pumpAndSettle();
     expect(find.text(s.vpDateSubsale), findsOneWidget);
     expect(find.text(s.vpHelpSubsale), findsOneWidget);

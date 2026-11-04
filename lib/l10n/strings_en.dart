@@ -1284,4 +1284,37 @@ class StrEn extends Str {
   List<String> get houseAreas => const ['Living room', 'Dining area', 'Kitchen', 'Wet kitchen', 'Master bedroom', 'Bedroom 2', 'Bedroom 3', 'Bedroom 4', 'Master bathroom', 'Bathroom 2', 'Bathroom 3', 'Laundry area', 'Store room', 'Balcony', 'Corridor', 'Staircase', 'Ceiling', 'Roof', 'Car porch', 'Garden', 'Fence', 'Main door', 'Windows'];
   @override
   List<String> itemSuggestions(bool vehicle) => vehicle ? const ['Engine oil', 'Oil filter', 'Air filter', 'Cabin filter', 'Spark plugs', 'Brake fluid', 'Brake pads', 'Gear oil', 'ATF', 'Coolant', 'Battery', 'Tyres', 'Wheel alignment', 'Wheel balancing', 'Wiper blades', 'Chain and sprocket', 'Labour'] : const ['Labour', 'Materials', 'Paint', 'Pipes', 'Tap', 'Wiring', 'Switch', 'Lights', 'Tiles', 'Cement', 'Lock', 'Hinges', 'Aircond gas', 'Water filter'];
+
+  // ------------------------------------------------ House form by situation
+  @override
+  String get purchase => 'Purchase';
+  @override
+  String get stillInDlpQ => 'Still within the developer’s DLP?';
+  @override
+  String get stillInDlpHelp => 'Only if it is less than 24 months since the first vacant possession. If not, the VP and DLP dates are not asked.';
+  @override
+  String get spaShort => 'SPA date';
+  @override
+  String get titleAndCouncil => 'Title and council';
+  @override
+  String get tenancyStart => 'Tenancy starts';
+  @override
+  String get tenancyEnd => 'Tenancy ends';
+  @override
+  String get rentDue => 'Rent due';
+  @override
+  String rentDueDay(int day) {
+    final suffix = day % 100 >= 11 && day % 100 <= 13 ? 'th' : switch (day % 10) { 1 => 'st', 2 => 'nd', 3 => 'rd', _ => 'th' };
+    return 'Monthly, on the $day$suffix';
+  }
+  @override
+  String get tenancyNote => 'For reference only. Kukira does not remind you about the tenancy end yet.';
+  @override
+  String get otherDetails => 'Other details';
+  @override
+  String get contactShort => 'Contact';
+  @override
+  String get tenancy => 'Tenancy';
+  @override
+  String tenancyPeriod(String? from, String? to) => from != null && to != null ? '$from to $to' : (to != null ? 'Ends $to' : 'From $from');
 }

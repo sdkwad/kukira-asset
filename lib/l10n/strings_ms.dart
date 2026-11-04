@@ -1284,4 +1284,34 @@ class StrMs extends Str {
   List<String> get houseAreas => const ['Ruang tamu', 'Ruang makan', 'Dapur', 'Dapur basah', 'Bilik utama', 'Bilik tidur 2', 'Bilik tidur 3', 'Bilik tidur 4', 'Bilik air utama', 'Bilik air 2', 'Bilik air 3', 'Bilik dobi', 'Bilik stor', 'Balkoni', 'Koridor', 'Tangga', 'Siling', 'Bumbung', 'Porch', 'Laman', 'Pagar', 'Pintu utama', 'Tingkap'];
   @override
   List<String> itemSuggestions(bool vehicle) => vehicle ? const ['Minyak enjin', 'Penapis minyak', 'Penapis udara', 'Penapis kabin', 'Palam pencucuh', 'Minyak brek', 'Pad brek', 'Minyak gear', 'Minyak ATF', 'Air radiator', 'Bateri', 'Tayar', 'Penjajaran roda', 'Pengimbangan roda', 'Bilah pengelap', 'Rantai dan sproket', 'Upah'] : const ['Upah', 'Barang', 'Cat', 'Paip', 'Kepala paip', 'Wayar', 'Suis', 'Lampu', 'Jubin', 'Simen', 'Kunci', 'Engsel', 'Gas aircond', 'Penapis air'];
+
+  // ------------------------------------------------ House form by situation
+  @override
+  String get purchase => 'Pembelian';
+  @override
+  String get stillInDlpQ => 'Masih dalam tempoh DLP pemaju?';
+  @override
+  String get stillInDlpHelp => 'Hanya jika belum 24 bulan dari milikan kosong pertama. Jika tidak, tarikh VP dan DLP tidak ditanya.';
+  @override
+  String get spaShort => 'Tarikh SPA';
+  @override
+  String get titleAndCouncil => 'Hakmilik dan PBT';
+  @override
+  String get tenancyStart => 'Mula sewa';
+  @override
+  String get tenancyEnd => 'Tamat sewa';
+  @override
+  String get rentDue => 'Sewa dibayar';
+  @override
+  String rentDueDay(int day) => 'Setiap $day haribulan';
+  @override
+  String get tenancyNote => 'Untuk rujukan sahaja. Kukira belum mengingatkan tarikh tamat sewa.';
+  @override
+  String get otherDetails => 'Lain-lain';
+  @override
+  String get contactShort => 'Hubungan';
+  @override
+  String get tenancy => 'Tempoh sewa';
+  @override
+  String tenancyPeriod(String? from, String? to) => from != null && to != null ? '$from hingga $to' : (to != null ? 'Tamat $to' : 'Mula $from');
 }

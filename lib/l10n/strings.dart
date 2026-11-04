@@ -655,4 +655,20 @@ abstract class Str {
   String get insurerListSource;
   List<String> get houseAreas;
   List<String> itemSuggestions(bool vehicle);
+
+  // ------------------------------------------------ House form by situation
+  String get purchase;
+  String get stillInDlpQ;
+  String get stillInDlpHelp;
+  String get spaShort;
+  String get titleAndCouncil;
+  String get tenancyStart;
+  String get tenancyEnd;
+  String get rentDue;
+  String rentDueDay(int day);
+  String get tenancyNote;
+  String get otherDetails;
+  String get contactShort;
+  String get tenancy;
+  String tenancyPeriod(String? from, String? to);
 }
