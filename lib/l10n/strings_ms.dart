@@ -646,16 +646,27 @@ class StrMs extends Str {
   String get goToToday => 'Pergi ke Hari ini';
   @override
   String get addAssetHint => 'Rumah, kereta atau motosikal';
+
+  // ------------------------------------------------ Tambah
   @override
-  String get record => 'Rekod';
+  String get whichAsset => 'Untuk aset mana?';
   @override
-  String get addRecordHint => 'Penyelenggaraan, baik pulih, ubah suai, kecacatan, bayaran';
+  String get forAsset => 'Untuk';
   @override
-  String get reminder => 'Peringatan';
+  String get changeAsset => 'Tukar aset';
   @override
-  String get addReminderHint => 'Satu tarikh, berulang atau ikut jarak';
+  String get newAsset => 'Aset baharu';
   @override
-  String get document => 'Dokumen';
+  String addActionName(String action, String assetCategory) => switch (action) {
+        'maintenance' => assetCategory == 'house' ? 'Baiki atau selenggara' : 'Servis atau baiki',
+        'renovation' => 'Ubah suai',
+        'defect' => 'Kecacatan',
+        'payment' => 'Bayaran',
+        'incident' => 'Insiden',
+        'odometer' => 'Odometer',
+        'reminder' => 'Peringatan',
+        _ => 'Dokumen',
+      };
 
   // ------------------------------------------------ more
   @override
@@ -844,8 +855,6 @@ class StrMs extends Str {
   // ------------------------------------------------ 0.2
   @override
   String get aboutDocument => 'Butiran dokumen';
-  @override
-  String get addDocumentHint => 'SPA, geran, surat VP, bil, resit, polisi';
   @override
   String get addItem => 'Tambah item';
   @override

@@ -7,6 +7,7 @@ import '../domain/rules.dart';
 import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
 import '../services/record_save.dart';
+import 'add_actions.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'documents.dart';
@@ -218,7 +219,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       _source = e.source;
       _autoSource = e.autoSource;
     } else {
-      _assetId = widget.assetId ?? (w.assets.isEmpty ? null : w.assets.first.id);
+      _assetId = addStartAsset(w, widget.assetId);
       final p = widget.templateKey == null ? null : presetByKey(widget.templateKey!);
       if (p != null && _assetId != null) _fill(p, w);
     }
@@ -326,6 +327,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
     return WorldView(builder: (context, w) {
       _load(w);
       final s = context.s;
+      if (_assetId == null && w.assets.isNotEmpty) return AssetChoiceScreen(title: s.newReminder, w: w, onPick: (id) => setState(() => _assetId = id));
       final a = _assetId == null ? null : w.asset(_assetId!);
       if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
       final vehicle = a.category != 'house';
@@ -558,7 +560,7 @@ class _RecordFormState extends State<RecordFormScreen> {
       _photosKept.addAll(_photosBefore);
       return;
     }
-    _assetId = widget.assetId ?? (w.assets.isEmpty ? null : w.assets.first.id);
+    _assetId = addStartAsset(w, widget.assetId);
     final link = widget.linkedReminderId == null ? null : w.reminders.where((r) => r.id == widget.linkedReminderId).firstOrNull;
     if (link != null) {
       _title.text = link.title;
@@ -667,6 +669,9 @@ class _RecordFormState extends State<RecordFormScreen> {
       _load(w);
       final s = context.s;
       final theme = Theme.of(context);
+      if (_assetId == null && w.assets.isNotEmpty) {
+        return AssetChoiceScreen(title: _kind == 'defect' ? s.newDefect : s.newRecord, w: w, onPick: (id) => setState(() => _assetId = id));
+      }
       final a = _assetId == null ? null : w.asset(_assetId!);
       if (a == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
       final kinds = kindsFor(a.category);

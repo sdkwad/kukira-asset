@@ -10,11 +10,9 @@ import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import '../services/privacy.dart';
-import 'add_asset.dart';
 import 'assets.dart';
 import 'common.dart';
 import 'documents.dart';
-import 'forms.dart';
 import 'lock.dart';
 import 'more.dart';
 import 'today.dart';
@@ -37,7 +35,7 @@ ThemeData buildTheme(Brightness b) {
     errorContainer: k.overdueBg,
     onErrorContainer: k.overdue,
   );
-  return ThemeData(
+  final theme = ThemeData(
     colorScheme: scheme,
     useMaterial3: true,
     extensions: [k],
@@ -66,10 +64,16 @@ ThemeData buildTheme(Brightness b) {
       elevation: 2,
       highlightElevation: 3,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      extendedTextStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
     ),
     bottomSheetTheme: BottomSheetThemeData(backgroundColor: k.background, surfaceTintColor: Colors.transparent),
     inputDecorationTheme: const InputDecorationTheme(border: OutlineInputBorder()),
+  );
+  // The button's label style replaces the default one rather than adding to it, so it starts
+  // from the theme's own label style to keep the font.
+  return theme.copyWith(
+    floatingActionButtonTheme: theme.floatingActionButtonTheme.copyWith(
+      extendedTextStyle: theme.textTheme.labelLarge?.copyWith(fontSize: 15, fontWeight: FontWeight.w500),
+    ),
   );
 }
 
@@ -249,99 +253,34 @@ class Shell extends StatefulWidget {
   State<Shell> createState() => _ShellState();
 }
 
+/// The four main places, defined once: a bottom bar on a phone now, a navigation rail on a
+/// wide screen later. "Tambah" is not one of them; it is a button on the screens that use it.
+List<({IconData icon, IconData selected, String label})> mainDestinations(Str s) => [
+      (icon: Icons.today_outlined, selected: Icons.today, label: s.today),
+      (icon: Icons.grid_view_outlined, selected: Icons.grid_view, label: s.assetsTab),
+      (icon: Icons.description_outlined, selected: Icons.description, label: s.documentsTab),
+      (icon: Icons.menu, selected: Icons.menu, label: s.moreTab),
+    ];
+
 class _ShellState extends State<Shell> {
   int _page = 0; // 0 Today, 1 Assets, 2 Documents, 3 More
 
   static const _pages = [TodayScreen(), AssetsScreen(), DocumentsScreen(), MoreScreen()];
 
-  int get _navIndex => _page < 2 ? _page : _page + 1;
-
-  void _onNav(int i) {
-    if (i == 2) {
-      _showAddSheet(context);
-      return;
-    }
-    setState(() => _page = i < 2 ? i : i - 1);
-  }
-
   @override
   Widget build(BuildContext context) {
-    final s = context.s;
     return Scaffold(
       body: IndexedStack(index: _page, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _navIndex,
-        onDestinationSelected: _onNav,
-        destinations: [
-          NavigationDestination(icon: const Icon(Icons.today_outlined), selectedIcon: const Icon(Icons.today), label: s.today),
-          NavigationDestination(icon: const Icon(Icons.grid_view_outlined), selectedIcon: const Icon(Icons.grid_view), label: s.assetsTab),
-          NavigationDestination(
-            icon: CircleAvatar(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-              child: const Icon(Icons.add),
-            ),
-            label: s.add,
-          ),
-          NavigationDestination(icon: const Icon(Icons.description_outlined), selectedIcon: const Icon(Icons.description), label: s.documentsTab),
-          NavigationDestination(icon: const Icon(Icons.menu), label: s.moreTab),
-        ],
+      bottomNavigationBar: DecoratedBox(
+        decoration: BoxDecoration(border: Border(top: BorderSide(color: context.tokens.line))),
+        child: NavigationBar(
+          selectedIndex: _page,
+          onDestinationSelected: (i) => setState(() => _page = i),
+          destinations: [
+            for (final d in mainDestinations(context.s)) NavigationDestination(icon: Icon(d.icon), selectedIcon: Icon(d.selected), label: d.label),
+          ],
+        ),
       ),
     );
   }
-}
-
-void _showAddSheet(BuildContext context) {
-  final s = context.s;
-  final hasAssets = context.app.world.value?.assets.isNotEmpty ?? false;
-  void go(Widget page) => Navigator.push(context, MaterialPageRoute(builder: (_) => page));
-  showModalBottomSheet<void>(
-    context: context,
-    showDragHandle: true,
-    builder: (c) => SafeArea(
-      child: Column(mainAxisSize: MainAxisSize.min, children: [
-        ListTile(
-          leading: const Icon(Icons.home_outlined),
-          title: Text(s.asset),
-          subtitle: Text(s.addAssetHint),
-          onTap: () {
-            Navigator.pop(c);
-            go(const AddAssetScreen());
-          },
-        ),
-        ListTile(
-          enabled: hasAssets,
-          leading: const Icon(Icons.build_outlined),
-          title: Text(s.record),
-          subtitle: Text(s.addRecordHint),
-          onTap: () {
-            Navigator.pop(c);
-            go(const RecordFormScreen());
-          },
-        ),
-        ListTile(
-          enabled: hasAssets,
-          leading: const Icon(Icons.notifications_none),
-          title: Text(s.reminder),
-          subtitle: Text(s.addReminderHint),
-          onTap: () {
-            Navigator.pop(c);
-            go(const ReminderFormScreen());
-          },
-        ),
-        ListTile(
-          enabled: hasAssets,
-          leading: const Icon(Icons.description_outlined),
-          title: Text(s.document),
-          subtitle: Text(s.addDocumentHint),
-          onTap: () {
-            Navigator.pop(c);
-            go(const DocumentFormScreen());
-          },
-        ),
-        if (!hasAssets) Padding(padding: const EdgeInsets.fromLTRB(16, 0, 16, 8), child: Text(s.addAssetFirst)),
-        const SizedBox(height: 8),
-      ]),
-    ),
-  );
 }

@@ -646,16 +646,27 @@ class StrEn extends Str {
   String get goToToday => 'Go to Today';
   @override
   String get addAssetHint => 'House, car or motorcycle';
+
+  // ------------------------------------------------ Tambah
   @override
-  String get record => 'Record';
+  String get whichAsset => 'Which asset?';
   @override
-  String get addRecordHint => 'Maintenance, repair, renovation, defect, payment';
+  String get forAsset => 'For';
   @override
-  String get reminder => 'Reminder';
+  String get changeAsset => 'Change asset';
   @override
-  String get addReminderHint => 'A date, a repeat or a mileage';
+  String get newAsset => 'New asset';
   @override
-  String get document => 'Document';
+  String addActionName(String action, String assetCategory) => switch (action) {
+        'maintenance' => assetCategory == 'house' ? 'Repair or upkeep' : 'Service or repair',
+        'renovation' => 'Renovation',
+        'defect' => 'Defect',
+        'payment' => 'Payment',
+        'incident' => 'Incident',
+        'odometer' => 'Odometer',
+        'reminder' => 'Reminder',
+        _ => 'Document',
+      };
 
   // ------------------------------------------------ more
   @override
@@ -844,8 +855,6 @@ class StrEn extends Str {
   // ------------------------------------------------ 0.2
   @override
   String get aboutDocument => 'About this document';
-  @override
-  String get addDocumentHint => 'SPA, geran, VP letter, bills, receipts, policies';
   @override
   String get addItem => 'Add item';
   @override

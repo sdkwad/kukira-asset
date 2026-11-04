@@ -23,6 +23,15 @@ void main() {
       expect(buildTheme(Brightness.light).scaffoldBackgroundColor, const Color(0xFFF6F7F5));
     });
 
+    test('the Tambah button label keeps the theme font', () {
+      // A label style without a font family drew the label in the fallback font.
+      for (final b in Brightness.values) {
+        final t = buildTheme(b);
+        expect(t.floatingActionButtonTheme.extendedTextStyle?.fontFamily, isNotNull);
+        expect(t.floatingActionButtonTheme.extendedTextStyle?.fontFamily, t.textTheme.labelLarge?.fontFamily);
+      }
+    });
+
     for (final (name, k) in [('light', KukiraColors.light), ('dark', KukiraColors.dark)]) {
       test('every text colour in $name mode has at least 4.5:1 contrast', () {
         final pairs = {

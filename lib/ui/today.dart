@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../data/db.dart';
 import '../domain/rules.dart';
 import '../services/notifications.dart';
+import 'add_actions.dart';
 import 'add_asset.dart';
 import 'assets.dart';
 import 'common.dart';
@@ -78,8 +79,9 @@ class TodayScreen extends StatelessWidget {
       final lastBackup = w.lastBackup;
 
       return Scaffold(
+        floatingActionButton: const AddButton(),
         body: SafeArea(
-          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
+          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: [
             header,
             _Summary(over: over.length, soon: soon.length, lastBackup: lastBackup, onBackup: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupScreen()))),
             const SizedBox(height: 12),

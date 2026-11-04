@@ -9,6 +9,7 @@ import '../data/db.dart';
 import '../domain/rules.dart';
 import '../services/error_log.dart';
 import '../services/files.dart';
+import 'add_actions.dart';
 import 'common.dart';
 
 const docTypes = ['spa', 'geran', 'vp_letter', 'dlp', 'tax_bill', 'insurance', 'receipt', 'other'];
@@ -408,7 +409,7 @@ class _DocumentFormState extends State<DocumentFormScreen> {
       _expiry = d.expiry;
       _remind = d.linkedReminderId != null;
     } else {
-      _assetId = widget.assetId ?? (w.assets.isEmpty ? null : w.assets.first.id);
+      _assetId = addStartAsset(w, widget.assetId);
     }
   }
 
@@ -502,6 +503,7 @@ class _DocumentFormState extends State<DocumentFormScreen> {
       _load(w);
       final s = context.s;
       final theme = Theme.of(context);
+      if (_assetId == null && w.assets.isNotEmpty) return AssetChoiceScreen(title: s.attachDocument, w: w, onPick: (id) => setState(() => _assetId = id));
       if (_assetId == null) return SafeScaffold(appBar: AppBar(), body: Center(child: Text(s.addAssetFirst)));
       final editing = widget.editId != null;
       if (!editing && _file == null) {

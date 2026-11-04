@@ -315,11 +315,15 @@ abstract class Str {
   String get backUp;
   String get goToToday;
   String get addAssetHint;
-  String get record;
-  String get addRecordHint;
-  String get reminder;
-  String get addReminderHint;
-  String get document;
+
+  // ------------------------------------------------ Tambah
+  String get whichAsset;
+  String get forAsset;
+  String get changeAsset;
+  String get newAsset;
+
+  /// [action] is an AddKind name; [assetCategory] house, car or motorcycle.
+  String addActionName(String action, String assetCategory);
 
   // ------------------------------------------------ more
   String get backupRestore;
@@ -419,7 +423,6 @@ abstract class Str {
 
   // ------------------------------------------------ 0.2
   String get aboutDocument;
-  String get addDocumentHint;
   String get addItem;
   String get addVendor;
   String get added;

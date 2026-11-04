@@ -1,0 +1,286 @@
+// "Tambah": what can be added, and the sheet that offers it. The rules (which actions,
+// which asset) are kept apart from how they are shown, so the bottom sheet used on a phone
+// now and the menu by the navigation rail planned for wide screens (0.2.8) share them.
+
+import 'package:flutter/material.dart';
+
+import '../data/db.dart';
+import 'add_asset.dart';
+import 'assets.dart';
+import 'common.dart';
+import 'documents.dart';
+import 'forms.dart';
+
+enum AddKind { maintenance, defect, payment, renovation, incident, odometer, reminder, document }
+
+/// What can be added to an asset of [category], most common first. Every record kind the
+/// record form allows for the category (kindsFor) is here, so none is out of reach.
+List<AddKind> addKindsFor(String category) => category == 'house'
+    ? const [AddKind.maintenance, AddKind.defect, AddKind.payment, AddKind.renovation, AddKind.incident, AddKind.reminder, AddKind.document]
+    : const [AddKind.maintenance, AddKind.payment, AddKind.incident, AddKind.odometer, AddKind.reminder, AddKind.document];
+
+IconData addKindIcon(AddKind k) => switch (k) {
+      AddKind.odometer => Icons.speed_outlined,
+      AddKind.reminder => Icons.notifications_none,
+      AddKind.document => Icons.description_outlined,
+      _ => kindIcon(k.name),
+    };
+
+/// The asset "Tambah" starts on: the one whose page is open, or the only one. With several
+/// and none open, null: the user picks, and nothing is added to an asset they did not choose.
+int? addStartAsset(World w, int? assetId) => assetId ?? (w.assets.length == 1 ? w.assets.single.id : null);
+
+/// Opens the form (or the odometer dialog) for [k] on asset [assetId].
+Future<void> runAddAction(BuildContext context, AddKind k, int assetId) async {
+  switch (k) {
+    case AddKind.odometer:
+      await showOdometerDialog(context, assetId);
+    case AddKind.reminder:
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => ReminderFormScreen(assetId: assetId)));
+    case AddKind.document:
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => DocumentFormScreen(assetId: assetId)));
+    default:
+      await Navigator.push(context, MaterialPageRoute(builder: (_) => RecordFormScreen(assetId: assetId, kind: k.name)));
+  }
+}
+
+/// What the user chose in the sheet: an action on an asset, or (both null) a new asset.
+class _Choice {
+  const _Choice(this.kind, this.assetId);
+  final AddKind? kind;
+  final int? assetId;
+}
+
+/// Opens "Tambah" for [assetId] (an asset's page) or for everything. With no asset yet the
+/// only thing to add is an asset, so its form opens directly.
+Future<void> showAddSheet(BuildContext context, {int? assetId}) async {
+  final w = context.app.world.value;
+  if (w == null) return;
+  if (w.assets.isEmpty) {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAssetScreen()));
+    return;
+  }
+  // The sheet only chooses; the form opens from this screen after the sheet has closed.
+  final c = await showModalBottomSheet<_Choice>(
+    context: context,
+    isScrollControlled: true,
+    showDragHandle: true,
+    builder: (_) => _AddSheet(start: addStartAsset(w, assetId)),
+  );
+  if (c == null || !context.mounted) return;
+  if (c.kind == null) {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => const AddAssetScreen()));
+  } else {
+    await runAddAction(context, c.kind!, c.assetId!);
+  }
+}
+
+/// The floating "Tambah" button. Hidden until there is an asset: before that, the screen's
+/// own "Add your first asset" button is the one action.
+class AddButton extends StatelessWidget {
+  const AddButton({super.key, this.assetId});
+
+  /// The asset whose page this is, if any.
+  final int? assetId;
+
+  @override
+  Widget build(BuildContext context) => ValueListenableBuilder<World?>(
+        valueListenable: context.app.world,
+        builder: (c, w, _) => (w?.assets.isEmpty ?? true)
+            ? const SizedBox.shrink()
+            : FloatingActionButton.extended(
+                // Several of these live in the tab stack at once; no hero animation between them.
+                heroTag: null,
+                icon: const Icon(Icons.add),
+                label: Text(c.s.add),
+                onPressed: () => showAddSheet(c, assetId: assetId),
+              ),
+      );
+}
+
+class _AddSheet extends StatefulWidget {
+  const _AddSheet({required this.start});
+  final int? start;
+
+  @override
+  State<_AddSheet> createState() => _AddSheetState();
+}
+
+class _AddSheetState extends State<_AddSheet> {
+  late int? _asset = widget.start;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    return ValueListenableBuilder<World?>(
+      valueListenable: context.app.world,
+      builder: (context, w, _) {
+        final a = w == null || _asset == null ? null : w.asset(_asset!);
+        return SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Padding(padding: const EdgeInsets.symmetric(horizontal: 4), child: Text(s.add, style: KText.title.copyWith(color: k.text))),
+              if (w != null && a == null) ...[
+                SectionTitle(s.whichAsset),
+                AssetChoice(
+                  w: w,
+                  onPick: (id) => setState(() => _asset = id),
+                  extra: [
+                    AppRow(
+                      leading: const IconAvatar(Icons.add, tonal: true),
+                      title: s.newAsset,
+                      meta: s.addAssetHint,
+                      onTap: () => Navigator.pop(context, const _Choice(null, null)),
+                    ),
+                  ],
+                ),
+              ] else if (a != null) ...[
+                _ForAsset(a: a, w: w!, onChange: () => setState(() => _asset = null)),
+                const SizedBox(height: 8),
+                _ActionGrid(
+                  category: a.category,
+                  onPick: (kind) => Navigator.pop(context, _Choice(kind, a.id)),
+                ),
+              ],
+            ]),
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// "For Myvi WXY 4821 · Change asset" at the top of the actions.
+class _ForAsset extends StatelessWidget {
+  const _ForAsset({required this.a, required this.w, required this.onChange});
+  final Asset a;
+  final World w;
+  final VoidCallback onChange;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    final k = context.tokens;
+    final plate = w.vehicles[a.id]?.plate;
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, top: 2),
+      child: Row(children: [
+        // Wraps rather than overflows with a long name or large text.
+        Expanded(
+          child: Wrap(spacing: 8, runSpacing: 4, crossAxisAlignment: WrapCrossAlignment.center, children: [
+            Text(s.forAsset, style: TextStyle(fontSize: 14, color: k.label)),
+            Text(a.nickname, style: KText.row.copyWith(color: k.text)),
+            if (plate != null) Plate(plate),
+          ]),
+        ),
+        TextButton(onPressed: onChange, child: Text(s.changeAsset)),
+      ]),
+    );
+  }
+}
+
+/// The actions for one asset, two to a row with equal heights.
+class _ActionGrid extends StatelessWidget {
+  const _ActionGrid({required this.category, required this.onPick});
+  final String category;
+  final ValueChanged<AddKind> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final kinds = addKindsFor(category);
+    return Column(children: [
+      for (var i = 0; i < kinds.length; i += 2)
+        Padding(
+          padding: EdgeInsets.only(top: i == 0 ? 0 : 8),
+          child: IntrinsicHeight(
+            child: Row(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              Expanded(child: _Tile(kinds[i], category, onPick)),
+              const SizedBox(width: 8),
+              Expanded(child: i + 1 < kinds.length ? _Tile(kinds[i + 1], category, onPick) : const SizedBox.shrink()),
+            ]),
+          ),
+        ),
+    ]);
+  }
+}
+
+class _Tile extends StatelessWidget {
+  const _Tile(this.kind, this.category, this.onPick);
+  final AddKind kind;
+  final String category;
+  final ValueChanged<AddKind> onPick;
+
+  @override
+  Widget build(BuildContext context) {
+    final k = context.tokens;
+    return Material(
+      color: k.surface,
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(KSpace.groupRadius), side: BorderSide(color: k.line)),
+      child: InkWell(
+        onTap: () => onPick(kind),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: 56),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: Row(children: [
+              IconAvatar(addKindIcon(kind), size: 32),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  context.s.addActionName(kind.name, category),
+                  style: TextStyle(fontSize: 14, height: 18 / 14, fontWeight: FontWeight.w500, color: k.text),
+                ),
+              ),
+            ]),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The user's assets as rows to pick from, with any [extra] rows (such as "New asset") in
+/// the same group. Used by "Tambah" and by a form opened without an asset.
+class AssetChoice extends StatelessWidget {
+  const AssetChoice({super.key, required this.w, required this.onPick, this.extra = const []});
+  final World w;
+  final ValueChanged<int> onPick;
+  final List<Widget> extra;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = context.s;
+    return CardList([
+      for (final a in w.assets)
+        AppRow(
+          leading: AssetAvatar(a.category, size: 36),
+          title: a.nickname,
+          titleTag: w.vehicles[a.id] == null ? null : Plate(w.vehicles[a.id]!.plate),
+          meta: s.categoryName(a.category),
+          onTap: () => onPick(a.id),
+        ),
+      ...extra,
+    ]);
+  }
+}
+
+/// The body of a form opened without an asset while there are several: it asks which one
+/// instead of quietly using the first.
+class AssetChoiceScreen extends StatelessWidget {
+  const AssetChoiceScreen({super.key, required this.title, required this.w, required this.onPick});
+  final String title;
+  final World w;
+  final ValueChanged<int> onPick;
+
+  @override
+  Widget build(BuildContext context) => SafeScaffold(
+        appBar: AppBar(title: Text(title)),
+        body: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
+          SectionTitle(context.s.whichAsset),
+          AssetChoice(w: w, onPick: onPick),
+        ]),
+      );
+}

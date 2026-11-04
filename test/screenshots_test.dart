@@ -133,7 +133,7 @@ World demoWorld() {
   );
 }
 
-Widget _app(Widget home, World w, {required String lang, required Brightness brightness}) => AppScope(
+Widget _app(Widget home, World w, {required String lang, required Brightness brightness, double textScale = 1}) => AppScope(
       db: AppDb(NativeDatabase.memory()),
       s: strFor(lang),
       lang: lang,
@@ -150,6 +150,8 @@ Widget _app(Widget home, World w, {required String lang, required Brightness bri
         locale: Locale(lang),
         supportedLocales: const [Locale('ms'), Locale('en')],
         localizationsDelegates: GlobalMaterialLocalizations.delegates,
+        // Android's font size setting, for the large-text pictures.
+        builder: (c, child) => MediaQuery(data: MediaQuery.of(c).copyWith(textScaler: TextScaler.linear(textScale)), child: child!),
         home: home,
       ),
     );
@@ -172,14 +174,19 @@ void main() {
   });
 
   void shot(String name, Widget Function() screen,
-      {World? world, String lang = 'ms', Brightness brightness = Brightness.light, double height = phoneHeight, Future<void> Function(WidgetTester t)? act}) {
+      {World? world,
+      String lang = 'ms',
+      Brightness brightness = Brightness.light,
+      double height = phoneHeight,
+      double textScale = 1,
+      Future<void> Function(WidgetTester t)? act}) {
     testWidgets(name, skip: !_enabled, (tester) async {
       setPhone(tester, height: height);
       debugDisableShadows = false;
       final previous = FlutterError.onError;
       FlutterError.onError = (d) => _problems.add('$name: ${d.exceptionAsString().split('\n').first}');
       try {
-        await tester.pumpWidget(RepaintBoundary(key: _boundary, child: _app(screen(), world ?? demoWorld(), lang: lang, brightness: brightness)));
+        await tester.pumpWidget(RepaintBoundary(key: _boundary, child: _app(screen(), world ?? demoWorld(), lang: lang, brightness: brightness, textScale: textScale)));
         await tester.pumpAndSettle();
         // For tabs and sheets: tap through to the state to picture.
         if (act != null) {
@@ -200,7 +207,7 @@ void main() {
   shot('03-aset', () => const AssetsScreen());
   shot('04-kereta', () => const AssetDetailScreen(assetId: 2));
   shot('05-rumah', () => const AssetDetailScreen(assetId: 1));
-  shot('06-peringatan-baharu', () => const ReminderFormScreen(), height: 1500);
+  shot('06-peringatan-baharu', () => const ReminderFormScreen(assetId: 1), height: 1500);
   shot('07-rekod-baharu', () => const RecordFormScreen(assetId: 2), height: 1700);
   shot('08-dokumen', () => const DocumentsScreen());
   shot('09-lagi', () => const MoreScreen(), height: 1100);
@@ -236,7 +243,15 @@ void main() {
   shot('28-dokumen-baharu', () => const DocumentFormScreen(assetId: 2), height: 1100);
   shot('20-gelap-hari-ini', () => const Shell(), brightness: Brightness.dark);
   shot('21-gelap-kereta', () => const AssetDetailScreen(assetId: 2), brightness: Brightness.dark);
-  shot('22-gelap-peringatan-baharu', () => const ReminderFormScreen(), brightness: Brightness.dark);
+  shot('22-gelap-peringatan-baharu', () => const ReminderFormScreen(assetId: 1), brightness: Brightness.dark);
+  // Tambah: from Today (asks which asset), from a car and a house page, and a form opened
+  // without an asset.
+  Future<void> openAdd(WidgetTester t) => t.tap(find.byType(FloatingActionButton).hitTestable());
+  shot('40-tambah-pilih-aset', () => const Shell(), act: openAdd);
+  shot('41-tambah-kereta', () => const AssetDetailScreen(assetId: 2), act: openAdd);
+  shot('42-tambah-rumah', () => const AssetDetailScreen(assetId: 1), act: openAdd);
+  shot('43-rekod-pilih-aset', () => const RecordFormScreen());
+  shot('44-gelap-tambah-kereta', () => const AssetDetailScreen(assetId: 2), brightness: Brightness.dark, act: openAdd);
   shot('30-en-today', () => const Shell(), lang: 'en');
   shot('31-en-car', () => const AssetDetailScreen(assetId: 2), lang: 'en');
   shot('32-en-more', () => const MoreScreen(), lang: 'en', height: 1100);

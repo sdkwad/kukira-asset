@@ -9,6 +9,7 @@ import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
+import 'add_actions.dart';
 import 'add_asset.dart';
 import 'common.dart';
 import 'documents.dart';
@@ -153,8 +154,9 @@ class _AssetsScreenState extends State<AssetsScreen> {
         ]);
       }
       return SafeScaffold(
+        floatingActionButton: const AddButton(),
         body: SafeArea(
-          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, 32), children: [
+          child: ListView(padding: const EdgeInsets.fromLTRB(16, 0, 16, KSpace.fabClearance), children: [
             PageTitle(s.assetsTab),
             SearchBar(
               hintText: s.searchHint,
@@ -276,6 +278,7 @@ class AssetDetailScreen extends StatelessWidget {
         key: ValueKey(tabs.length),
         length: tabs.length,
         child: SafeScaffold(
+          floatingActionButton: AddButton(assetId: a.id),
           appBar: AppBar(
             title: Text(a.nickname),
             actions: [
@@ -315,6 +318,9 @@ class AssetDetailScreen extends StatelessWidget {
     });
   }
 }
+
+// Room at the bottom of each tab for the Tambah button over it.
+const _tabPadding = EdgeInsets.fromLTRB(16, 16, 16, KSpace.fabClearance);
 
 class _Overview extends StatelessWidget {
   const _Overview(this.a, this.w);
@@ -453,7 +459,7 @@ class _Overview extends StatelessWidget {
       const SizedBox(height: 12),
       OutlinedButton.icon(icon: const Icon(Icons.edit_outlined), label: Text(s.editDetails), onPressed: edit),
     ]);
-    return ListView(padding: const EdgeInsets.all(16), children: children);
+    return ListView(padding: _tabPadding, children: children);
   }
 }
 
@@ -623,7 +629,7 @@ class _Upkeep extends StatelessWidget {
     final rs = w.records.where((r) => r.assetId == a.id && r.kind != 'defect').toList();
     final year = today().year;
     final spent = rs.where((r) => r.date.year == year).fold<double>(0, (t, r) => t + (r.cost ?? 0));
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(padding: _tabPadding, children: [
       Row(children: [Expanded(child: Text(s.spentThisYear(year))), Text(s.rm(spent), style: const TextStyle(fontWeight: FontWeight.w700))]),
       const SizedBox(height: 12),
       CardList([for (final r in rs) RecordTile(r, w)], empty: s.noRecordsYet),
@@ -646,7 +652,7 @@ class _Reminders extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final rs = w.reminders.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(padding: _tabPadding, children: [
       CardList([for (final r in rs) ReminderTile(r, w, showAsset: false, onTap: () => showReminderSheet(context, r.id))], empty: s.noRemindersYet),
       const SizedBox(height: 12),
       OutlinedButton.icon(
@@ -667,7 +673,7 @@ class _Documents extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final ds = w.files.where((d) => d.assetId == a.id).toList()..sort((x, y) => y.addedAt.compareTo(x.addedAt));
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(padding: _tabPadding, children: [
       CardList([for (final d in ds) DocTile(d, w)], empty: s.noDocsForAsset),
       const SizedBox(height: 12),
       OutlinedButton.icon(
@@ -716,7 +722,7 @@ class _Defects extends StatelessWidget {
       ]);
     }
 
-    return ListView(padding: const EdgeInsets.all(16), children: [
+    return ListView(padding: _tabPadding, children: [
       Card(
         margin: EdgeInsets.zero,
         child: Padding(
