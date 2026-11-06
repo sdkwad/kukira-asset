@@ -876,4 +876,31 @@ abstract class Str {
   String get manageRent;
   String markMonthPaid(String month);
   String get openRent;
+
+  // ------------------------------------------------ 0.3 Room check
+  String roomName(String key);
+  String inspectionItemName(String item);
+  String get inspectionTitle;
+  String inspectionKindName(String kind);
+  String get startInspection;
+  String get inspectionStartTitle;
+  String get bedroomsLabel;
+  String get bathroomsLabel;
+  String get fewer;
+  String get more;
+  String inspectionProgress(int checked, int total, int defects);
+  String get resultOk;
+  String get resultDefect;
+  String get resultNa;
+  String get addDefectDetails;
+  String get inspectionHint;
+  String get sendDefects;
+  String get sendDefectsQ;
+  String sendDefectsBody(int n);
+  String get sendDefectsAction;
+  String defectsSentSaved(int n);
+  String defectReportHeading(String house);
+  String defectReportDate(String date);
+  String get otherArea;
+  String get defectReportFooter;
 }

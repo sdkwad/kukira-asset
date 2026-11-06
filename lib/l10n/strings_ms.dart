@@ -1686,4 +1686,68 @@ class StrMs extends Str {
   String markMonthPaid(String month) => 'Tanda $month dibayar';
   @override
   String get openRent => 'Buka sewa';
+
+  // ------------------------------------------------ 0.3 Room check
+  @override
+  String roomName(String key) {
+    final m = RegExp(r'^([a-z]+)(\d+)$').firstMatch(key);
+    final n = m?.group(2);
+    return switch (m?.group(1) ?? key) {
+      'living' => 'Ruang tamu',
+      'kitchen' => 'Dapur',
+      'bed' => 'Bilik tidur $n',
+      'bath' => 'Bilik air $n',
+      'balcony' => 'Balkoni',
+      'outside' => 'Luar rumah',
+      _ => key,
+    };
+  }
+  @override
+  String inspectionItemName(String item) => switch (item) { 'ceiling' => 'Siling', 'walls' => 'Dinding', 'floor' => 'Lantai dan jubin', 'door' => 'Pintu', 'window' => 'Tingkap', 'sink' => 'Sinki dan paip', 'switches' => 'Suis dan soket', 'paint' => 'Cat', 'toilet' => 'Mangkuk tandas', 'shower' => 'Pancuran dan kalis air', 'railing' => 'Pagar balkoni', 'drain' => 'Longkang', 'gate' => 'Pintu pagar', 'porch' => 'Anjung', 'roof' => 'Bumbung dan talang', _ => item };
+  @override
+  String get inspectionTitle => 'Semakan ikut bilik';
+  @override
+  String inspectionKindName(String kind) => kind == 'dlp' ? 'Semakan sebelum DLP tamat' : 'Semakan semasa terima kunci (VP)';
+  @override
+  String get startInspection => 'Mula semakan bilik';
+  @override
+  String get inspectionStartTitle => 'Semakan baharu';
+  @override
+  String get bedroomsLabel => 'Bilik tidur';
+  @override
+  String get bathroomsLabel => 'Bilik air';
+  @override
+  String get fewer => 'Kurang';
+  @override
+  String get more => 'Lebih';
+  @override
+  String inspectionProgress(int checked, int total, int defects) => '$checked/$total disemak · $defects cacat';
+  @override
+  String get resultOk => 'OK';
+  @override
+  String get resultDefect => 'Cacat';
+  @override
+  String get resultNa => 'Tiada';
+  @override
+  String get addDefectDetails => 'Tambah gambar atau catatan';
+  @override
+  String get inspectionHint => 'Tanda setiap perkara: OK, Cacat, atau Tiada jika rumah tidak mempunyainya. Cacat terus direkod sebagai kecacatan; gambar dan catatan boleh ditambah kemudian.';
+  @override
+  String get sendDefects => 'Hantar senarai kepada pemaju';
+  @override
+  String get sendDefectsQ => 'Hantar senarai kecacatan?';
+  @override
+  String sendDefectsBody(int n) => '$n kecacatan yang belum dibaiki, dengan gambarnya, akan dihantar melalui app yang anda pilih, contohnya WhatsApp. Teks dan gambar ini akan keluar dari telefon dan tidak lagi bersulit.';
+  @override
+  String get sendDefectsAction => 'Hantar';
+  @override
+  String defectsSentSaved(int n) => '$n kecacatan ditanda dilaporkan hari ini.';
+  @override
+  String defectReportHeading(String house) => 'Senarai kecacatan · $house';
+  @override
+  String defectReportDate(String date) => 'Tarikh: $date';
+  @override
+  String get otherArea => 'Lain-lain';
+  @override
+  String get defectReportFooter => 'Dihantar dari Kukira Asset.';
 }

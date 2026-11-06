@@ -20,6 +20,7 @@ import 'combo.dart';
 import 'common.dart';
 import 'documents.dart';
 import 'forms.dart';
+import 'inspection.dart';
 import 'renew.dart';
 import 'rent.dart';
 
@@ -1377,10 +1378,13 @@ class _DefectList extends StatelessWidget {
           s.dlpEnded(s.dLong(end)),
           if (_tribunal(w, a.id) case final d?) s.dlpEndedTribunal(s.dLong(d)),
         ].join(' ')),
+      InspectionsCard(a, w),
       group('open', s.defectOpen),
       group('in_progress', s.defectInProgress),
       group('done', s.defectFixed),
       const SizedBox(height: 12),
+      SendDefectsButton(a, w),
+      const SizedBox(height: 8),
       OutlinedButton.icon(
         icon: const Icon(Icons.add),
         label: Text(s.addDefect),
