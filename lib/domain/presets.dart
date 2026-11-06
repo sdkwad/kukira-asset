@@ -90,6 +90,10 @@ const householderInsurance = Preset(key: 'householderInsurance', rule: 'fixed', 
 final monsoonCheck = Preset(key: 'monsoonCheck', rule: 'repeat', repeatMonths: 12, repeatFrom: 'due', estimated: true, category: 'monsoon', leadDays: 14, defaultDue: (t) => nextOn(t, 9, 15));
 final monsoonCheckEast = Preset(key: 'monsoonCheckEast', rule: 'repeat', repeatMonths: 12, repeatFrom: 'due', estimated: true, category: 'monsoon', leadDays: 14, defaultDue: (t) => nextOn(t, 10, 1));
 
+/// The yearly general meeting of a strata scheme's JMB or MC, where the budget, the charges
+/// and the committee are decided.
+const agm = Preset(key: 'agm', rule: 'repeat', repeatMonths: 12, repeatFrom: 'due', category: 'agm', leadDays: 14);
+
 const eastMonsoonStates = ['kelantan', 'terengganu', 'pahang', 'johor', 'sabah', 'sarawak'];
 
 /// The monsoon check for a house in [state] (as typed in the house details).
@@ -129,9 +133,9 @@ List<Preset> templatesFor(String category, String? propertyType, {bool septicTan
       final every = [householderInsurance, monsoonCheckFor(state)];
       switch (propertyType) {
         case 'strata':
-          return [aircond, pestControl, cukaiPetak, cukaiTaksiran, maintenanceCharge, ...every];
+          return [aircond, pestControl, cukaiPetak, cukaiTaksiran, maintenanceCharge, agm, ...every];
         case 'strata_landed':
-          return [aircond, pestControl, waterTank, ...septic, cukaiPetak, cukaiTaksiran, maintenanceCharge, houseInsurance, ...every];
+          return [aircond, pestControl, waterTank, ...septic, cukaiPetak, cukaiTaksiran, maintenanceCharge, agm, houseInsurance, ...every];
         default:
           return [aircond, pestControl, waterTank, ...septic, cukaiTanah, cukaiTaksiran, houseInsurance, ...every];
       }
@@ -151,7 +155,7 @@ List<String> titleOptionsFor(String? propertyType) =>
 final allPresets = <Preset>[
   cukaiTanah, cukaiPetak, cukaiTaksiran, houseInsurance, maintenanceCharge, aircond, pestControl, waterTank,
   roadTax, vehicleInsurance, carService, motoOil, tyres, battery, chain, nextServiceCar, nextServiceMoto,
-  desludging, desludgingRural, householderInsurance, monsoonCheck, monsoonCheckEast,
+  desludging, desludgingRural, householderInsurance, monsoonCheck, monsoonCheckEast, agm,
 ];
 
 Preset? presetByKey(String key) => allPresets.where((p) => p.key == key).firstOrNull;
