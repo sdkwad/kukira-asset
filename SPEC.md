@@ -57,6 +57,17 @@ Decided by the owner (2026-11-06):
 - **iPhone next**, from this Flutter code, after an iOS spike (a CI build for the simulator, report only). Testers get it through TestFlight, which needs the Apple Developer Program. The Android-only parts to replace are listed in the spike report: the `kukira/save`, `kukira/links` and `kukira/privacy` channels (MainActivity.kt), SQLCipher's Android loader in `Vault`, Android-only notification and permission calls in `Notifier`, and the battery-optimisation link.
 - **Desktop later**, once real multi-device sync exists. A restore replaces everything, so two devices that both edit would lose data. Until then a backup file is a copy, not sync, and the app must say so wherever a second device is offered.
 
+## The house in 0.3
+
+Agreed with the owner in `docs/plan-0.3.md` (6 Nov 2026).
+
+- **Rent history is kept for good.** Every tenancy and every payment stays; a new tenant never replaces or edits the old one, and ending a tenancy only sets its end. One payment covers one whole month (no part payments). Rent reminders (`autoSource` `rent`, `rentStamp`, `tenancyEnd`, `deposit`, in `lib/services/rent.dart`) are planned again whenever a tenancy or payment changes and at start; the rent reminder is for the oldest unpaid month, due 7 days after the rent day, and is hidden from lists until the rent day itself.
+- **The tenant is someone else's data:** name and phone stay on the phone, encrypted like the rest, and are never shown in a notification when details are hidden.
+- **Tribunal deadline** (`autoSource` `tribunal`): the DLP end + 12 months (Act 118 s.16N(2)), following the DLP like the DLP reminder; none for a subsale house. Always marked as an estimate to confirm with a lawyer or the Tribunal.
+- **IWK desludging:** 24 months inside a council area, 36 outside, only for a landed house with its own septic tank; an estimate to confirm with IWK.
+- **Monsoon check:** 1 October in the north-east monsoon states (Kelantan, Terengganu, Pahang, Johor, Sabah, Sarawak), 15 September elsewhere; editable.
+- **Sending defects to the developer** is the one place a record leaves the phone other than a backup. It goes through Android's share sheet (no internet permission, no API), only after a note that the text and photos will leave the phone, and only when the owner presses send.
+
 ## Changes from the brief
 
 `docs/handoff-brief.md` is the original brief and is kept as written. Where it and this file differ, this file wins:
@@ -73,5 +84,4 @@ Not built yet. These notes constrain how they are built.
 - **OCR:** bundled on-device model only, with no model download at runtime. Check the APK size impact first. The user must confirm every auto-filled field.
 - **Home-screen widget:** opt-in, and show counts only, so no sensitive details appear on the home screen.
 - **Sharing:** start with a one-way encrypted snapshot import; defer two-way merge. Any sharing or PDF export needs a clear on-screen note that data leaves the phone.
-- **First 0.3 candidates:** WhatsApp follow-up for DLP defects, and the room-by-room VP/DLP inspection.
 - Also out of scope until agreed: Resale Passport PDF, `.kukira-pack` family sharing, parts lifespan.

@@ -24,9 +24,11 @@ import 'package:kukira_asset/services/error_log.dart';
 import 'package:kukira_asset/ui/add_asset.dart';
 import 'package:kukira_asset/ui/app.dart';
 import 'package:kukira_asset/ui/assets.dart';
+import 'package:kukira_asset/ui/checklists.dart';
 import 'package:kukira_asset/ui/common.dart';
 import 'package:kukira_asset/ui/documents.dart';
 import 'package:kukira_asset/ui/forms.dart';
+import 'package:kukira_asset/ui/inspection.dart';
 import 'package:kukira_asset/ui/lock.dart';
 import 'package:kukira_asset/ui/more.dart';
 import 'package:kukira_asset/ui/renew.dart';
@@ -376,6 +378,13 @@ void main() {
   shot('92-penyewa-baharu', () => const TenancyFormScreen(assetId: 1), world: _rentWorld(), height: 1500);
   shot('93-besar-sewa', () => const RentScreen(assetId: 1), world: _rentWorld(), textScale: 1.3, height: 1600);
   shot('94-gelap-sewa', () => const RentScreen(assetId: 1), world: _rentWorld(), brightness: Brightness.dark, height: 1300);
+
+  // 0.3 F4 and F7: the room-by-room check, and the checklists.
+  shot('95-semakan-bilik', () => const InspectionScreen(inspectionId: 1), world: _inspectionWorld(), height: 1600);
+  shot('96-besar-semakan-bilik', () => const InspectionScreen(inspectionId: 1), world: _inspectionWorld(), textScale: 1.3, height: 2000);
+  shot('97-senarai-semak', () => const ChecklistsScreen(), world: _checklistWorld());
+  shot('98-senarai-balik-kampung', () => const ChecklistScreen(checklistId: 1), world: _checklistWorld(), height: 1300);
+  shot('99-gelap-senarai-balik-kampung', () => const ChecklistScreen(checklistId: 1), world: _checklistWorld(), brightness: Brightness.dark, height: 1300);
 }
 
 /// The demo house let since January last year, with this year's rent mostly paid (one month
@@ -424,6 +433,62 @@ World _rentWorld() {
     rentPayments: {1: pays, 2: oldPays},
     assets: w.assets,
     houses: {for (final e in w.houses.entries) e.key: e.key == 1 ? e.value.copyWith(occupancy: const Value('rented')) : e.value},
+    vehicles: w.vehicles,
+    reminders: w.reminders,
+    records: w.records,
+    odometer: w.odometer,
+    vendors: w.vendors,
+    documents: w.documents,
+    settings: w.settings,
+    costItems: w.costItems,
+  );
+}
+
+/// The demo with a VP check of the house part done: the living room checked, two defects.
+World _inspectionWorld() {
+  final w = demoWorld();
+  final now = DateTime.now();
+  final ins = Inspection(id: 1, assetId: 1, kind: 'vp', date: DateTime(now.year, now.month, now.day), bedrooms: 3, bathrooms: 2, createdAt: now);
+  const living = ['ceiling', 'walls', 'floor', 'door', 'window', 'switches', 'paint'];
+  final checks = [
+    for (final (i, item) in living.indexed) InspectionCheck(id: i + 1, inspectionId: 1, room: 'living', item: item, result: item == 'walls' ? 'defect' : 'ok'),
+    const InspectionCheck(id: 20, inspectionId: 1, room: 'kitchen', item: 'ceiling', result: 'ok'),
+    const InspectionCheck(id: 21, inspectionId: 1, room: 'kitchen', item: 'sink', result: 'defect'),
+  ];
+  return World(
+    inspections: [ins],
+    inspectionChecks: {1: checks},
+    assets: w.assets,
+    houses: w.houses,
+    vehicles: w.vehicles,
+    reminders: w.reminders,
+    records: w.records,
+    odometer: w.odometer,
+    vendors: w.vendors,
+    documents: w.documents,
+    settings: w.settings,
+    costItems: w.costItems,
+  );
+}
+
+/// The demo with the two ready-made lists, the car one half ticked.
+World _checklistWorld() {
+  final w = demoWorld();
+  final ms = strFor('ms');
+  final now = DateTime.now();
+  final car = ms.checklistTemplateItems('tripCar');
+  final house = ms.checklistTemplateItems('tripHouse');
+  return World(
+    checklists: [
+      Checklist(id: 1, assetId: 2, title: ms.checklistTemplateTitle('tripCar'), lastUsed: DateTime(now.year, 4, 2), createdAt: now),
+      Checklist(id: 2, assetId: 1, title: ms.checklistTemplateTitle('tripHouse'), createdAt: now),
+    ],
+    checklistItems: {
+      1: [for (final (i, l) in car.indexed) ChecklistItem(id: i + 1, checklistId: 1, label: l, position: i, checked: i < 4)],
+      2: [for (final (i, l) in house.indexed) ChecklistItem(id: 50 + i, checklistId: 2, label: l, position: i, checked: false)],
+    },
+    assets: w.assets,
+    houses: w.houses,
     vehicles: w.vehicles,
     reminders: w.reminders,
     records: w.records,

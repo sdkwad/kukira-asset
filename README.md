@@ -2,7 +2,21 @@
 
 App Android untuk pemilik rumah, kereta dan motosikal di Malaysia. Satu tempat untuk lihat apa yang lewat atau hampir tiba, simpan rekod penyelenggaraan, dan jejak kecacatan dalam tempoh DLP. Semua data kekal dalam telefon: tiada akaun, tiada internet, tiada awan.
 
-Versi ini: **0.2.8, build 17 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+Versi ini: **0.3.0, build 18 (APK ujian)**. Senarai perubahan penuh: `CHANGELOG.md`. Peraturan wajib: `SPEC.md`.
+
+## Baharu dalam 0.3.0
+
+Rumah, dari VP hingga disewa. Pangkalan data naik ke skema 6 secara automatik; sandaran lama masih boleh dipulihkan. App masih tiada kebenaran internet.
+
+- Tarikh akhir tuntutan Tribunal Tuntutan Pembeli Rumah: 12 bulan selepas DLP tamat, di halaman rumah dan sebagai peringatan (anggaran, sahkan dengan peguam atau Tribunal). Medan tarikh CCC baharu.
+- Tangki septik (IWK): penyahenapan setiap 24 bulan dalam kawasan PBT atau 36 bulan di luar (anggaran, sahkan dengan IWK).
+- Sewa: kad penyewa, ringkasan tahun, grid 12 bulan berwarna dan sejarah semua penyewa, disimpan selamanya. Tekan bulan untuk tanda dibayar. Peringatan sewa belum diterima 7 hari selepas hari bayar, setem perjanjian, tamat sewa dan pulangan deposit.
+- Semakan VP/DLP ikut bilik: OK, Cacat atau Tiada bagi setiap perkara; kecacatan terus menjadi rekod. Hantar senarai kecacatan kepada pemaju melalui WhatsApp bersama gambar (dengan amaran bahawa data keluar dari telefon).
+- Insurans rumah (bangunan) dan isi rumah dipisahkan; semakan sebelum tengkujuh ikut negeri.
+- Strata: pratetap mesyuarat agung tahunan (AGM); catatan caj penyelenggaraan menyebut kumpulan wang penjelas.
+- Senarai semak boleh guna semula: sebelum perjalanan jauh dan sebelum tinggal rumah lama, atau senarai sendiri.
+
+Pasang terus di atas 0.2.8.
 
 ## Baharu dalam 0.2.8
 
@@ -161,7 +175,9 @@ Keluaran keselamatan data, tiada ciri baharu:
 - Semakan peringatan: status kebenaran, jadual terakhir, hantar ujian.
 - Bahasa Melayu (asal) dan English.
 
-Seterusnya (0.3): senarai semak VP/DLP ikut bilik, rumah sewa, peringatan strata dan musim tengkujuh, jangka hayat alat ganti, jangkaan servis, rekod kemalangan dan NCD, senarai semak balik kampung, sejarah servis untuk jual.
+Dalam 0.3: tarikh akhir Tribunal, tangki septik, sewa, semakan VP/DLP ikut bilik, insurans rumah dan tengkujuh, strata, senarai semak.
+
+Seterusnya (belum dipersetujui): jangka hayat alat ganti, jangkaan servis, rekod kemalangan dan NCD, sejarah servis untuk jual.
 
 ## Cara dapatkan APK
 

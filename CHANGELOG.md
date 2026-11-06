@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.3.0 (build 18)
+
+The house, from vacant possession to renting it out. The database moves to schema 6 by itself; older backups (schema 1 to 5, formats 1 to 3) still restore. Install over 0.2.8. The app still has no internet permission.
+
+- **Tribunal deadline:** a linked reminder for the last day to claim at the Homebuyer Claims Tribunal, 12 months after the DLP ends (Act 118 s.16N(2)), shown on the house page. It follows the VP and DLP dates like the DLP reminder, and is gone for a subsale house or once the date has passed. Marked as an estimate to confirm with a lawyer or the Tribunal. A new optional CCC date, with a note that claims other than defects are safer counted from it.
+- **Septic tank (IWK):** a landed house is asked whether it has its own septic tank and whether it is inside a council area. Desludging is then offered every 24 months (inside) or 36 months (outside), as an estimate to confirm with IWK, and never for strata or a house on the central sewer.
+- **Rent:** a tenancy screen with the tenant card, the year's figures, a 12-month grid (paid, paid late, unpaid, not yet due) and every past tenancy. Tap a month to mark it paid (full rent, today, both changeable); long-press to change or remove the payment. Reminders: rent not marked paid 7 days after the rent day, stamping the agreement 30 days after signing, the tenancy ending (60 days before), and returning the deposit after it ends. Each tenancy and its payments are kept for good; a new tenant never replaces the old one. The tenancy dates kept on the house before are moved into the first tenancy. The tenant's name and phone stay on the phone, encrypted, and never appear in a notification when details are hidden.
+- **Room-by-room check:** at VP or before the DLP ends, Kukira lists the rooms (by bedrooms and bathrooms) and what to check in each; OK, Defect or N/A. A defect files a defect record with its room filled in. Send the open defects to the developer as one numbered message with their photos through Android's share sheet (WhatsApp or another app), after a clear note that the text and photos leave the phone; they are then marked reported.
+- **House insurance and the monsoon:** houseowner (building) and householder (contents) insurance as separate presets, with notes on the difference, on MRTA/MLTA, and on what a strata fire policy does not cover. A yearly "check before the monsoon": 1 October in Kelantan, Terengganu, Pahang, Johor, Sabah and Sarawak, 15 September elsewhere; editable, an estimate.
+- **Strata:** a yearly preset for the JMB or MC annual general meeting, and the maintenance charge note says the sinking fund is usually at least 10% of the charge (to confirm with the JMB or MC).
+- **Checklists:** reusable lists, ready-made for a long drive and for leaving the house a while, or blank. Tick one by one, start again for the next trip (the last use is kept), add or remove items, and get a reminder on a date you pick.
+- **Fixed:** a date moved back by months could land a year off (whole years were rounded towards zero), which hid the Tribunal row for some DLP dates.
+- **Tests:** schema 5 to 6 with the tenancy move, restoring older backups, every new rule and preset, and a widget test for each new screen. Screenshots of the rent, room check and checklist screens, also in large text and dark mode.
+
 ## 0.2.8 (build 17)
 
 The third audit, before 0.3. No schema change; install over build 16.
