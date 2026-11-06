@@ -412,6 +412,7 @@ World _rentWorld() {
     createdAt: DateTime(y - 3, 1, 1),
   );
   final pays = <RentPayment>[
+    for (var m = 1; m <= 12; m++) RentPayment(id: 50 + m, tenancyId: 1, month: (y - 1) * 100 + m, paidOn: DateTime(y - 1, m, 3), amount: 1800),
     for (var m = 1; m < now.month; m++)
       if (m != now.month - 2) RentPayment(id: m, tenancyId: 1, month: y * 100 + m, paidOn: DateTime(y, m, m == 3 ? 12 : 4), amount: 1800),
   ];

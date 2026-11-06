@@ -227,9 +227,14 @@ class _RentScreenState extends State<RentScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
       decoration: BoxDecoration(color: k.surface, borderRadius: BorderRadius.circular(KSpace.controlRadius), border: Border.all(color: k.line)),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Text(label, style: KText.meta.copyWith(color: k.textMuted), maxLines: 1, overflow: TextOverflow.ellipsis),
+        Text(label, style: KText.meta.copyWith(color: k.textMuted), maxLines: 2),
         const SizedBox(height: 2),
-        Text(value, style: KText.row.copyWith(color: danger ? k.overdue : k.text), maxLines: 1, overflow: TextOverflow.ellipsis),
+        // An amount is shrunk to fit rather than cut short.
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(value, style: KText.row.copyWith(color: danger ? k.overdue : k.text), maxLines: 1),
+        ),
       ]),
     );
   }
