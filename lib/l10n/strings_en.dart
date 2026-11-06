@@ -50,6 +50,7 @@ class StrEn extends Str {
         'painting' => 'Painting',
         'pest_control' => 'Pest control',
         'appliance' => 'Appliance',
+        'septic' => 'Septic tank',
         'minor' => 'Minor',
         'major' => 'Major',
         'leak' => 'Leak',
@@ -133,6 +134,7 @@ class StrEn extends Str {
         'chain' => 'Chain and sprocket check',
         'nextService' => 'Next service',
         'nextOilChange' => 'Next oil change',
+        'desludging' || 'desludgingRural' => 'Septic tank desludging (IWK)',
         _ => k,
       };
   @override
@@ -146,6 +148,8 @@ class StrEn extends Str {
         'vehicleInsurance' => 'Pick the expiry date on your policy.',
         'nextService' => 'Repeats every 6 months. Add mileage later.',
         'nextOilChange' => 'Repeats every 3 months. Add mileage later.',
+        'desludging' => 'Every 2 years inside a PBT area. Pick the next date, 2 years after the last time.',
+        'desludgingRural' => 'Every 3 years outside a PBT area. Pick the next date, 3 years after the last time.',
         _ => '',
       };
   @override
@@ -153,12 +157,14 @@ class StrEn extends Str {
         'cukaiTanah' => '31 May is a common deadline, but it varies by state and year.',
         'cukaiPetak' => '31 May is a common deadline. If strata title is not issued yet, the management office pays for all owners.',
         'cukaiTaksiran' => 'Two halves a year, payable in January and July; in arrears after the end of February and the end of August.',
+        'desludging' || 'desludgingRural' => 'Required by the 2021 sewage services regulations: every 24 months inside a PBT area, 36 months outside. About RM192 each time. Sabah and Sarawak have their own rules.',
         _ => '',
       };
   @override
   String presetConfirm(String k) => switch (k) {
         'cukaiTaksiran' => 'your council',
         'cukaiPetak' => 'your land office or management office',
+        'desludging' || 'desludgingRural' => 'IWK (Indah Water)',
         _ => 'your land office',
       };
 
@@ -1531,4 +1537,14 @@ class StrEn extends Str {
   String get cccDateLabel => 'CCC date (optional)';
   @override
   String get cccHelp => 'Certificate of completion and compliance. A claim that is not about defects, such as late delivery, counts from this date; confirm with a lawyer.';
+
+  // ------------------------------------------------ 0.3 IWK
+  @override
+  String get septicQ => 'Has its own septic tank?';
+  @override
+  String get septicHelp => 'A house not connected to the main sewer. IWK requires the tank to be desludged on a schedule.';
+  @override
+  String get insidePbtQ => 'Inside a local council (PBT) area?';
+  @override
+  String get insidePbtHelp => 'Inside a PBT area: every 2 years. Outside one: every 3 years.';
 }

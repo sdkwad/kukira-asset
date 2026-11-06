@@ -50,6 +50,7 @@ class StrMs extends Str {
         'painting' => 'Cat',
         'pest_control' => 'Kawalan perosak',
         'appliance' => 'Perkakas',
+        'septic' => 'Tangki septik',
         'minor' => 'Kecil',
         'major' => 'Besar',
         'leak' => 'Bocor',
@@ -133,6 +134,7 @@ class StrMs extends Str {
         'chain' => 'Periksa rantai & sproket',
         'nextService' => 'Servis seterusnya',
         'nextOilChange' => 'Tukar minyak seterusnya',
+        'desludging' || 'desludgingRural' => 'Kosongkan tangki septik (IWK)',
         _ => k,
       };
   @override
@@ -146,6 +148,8 @@ class StrMs extends Str {
         'vehicleInsurance' => 'Pilih tarikh tamat polisi anda.',
         'nextService' => 'Berulang setiap 6 bulan. Tambah jarak kemudian.',
         'nextOilChange' => 'Berulang setiap 3 bulan. Tambah jarak kemudian.',
+        'desludging' => 'Setiap 2 tahun dalam kawasan PBT. Pilih tarikh seterusnya, iaitu 2 tahun selepas kali terakhir.',
+        'desludgingRural' => 'Setiap 3 tahun di luar kawasan PBT. Pilih tarikh seterusnya, iaitu 3 tahun selepas kali terakhir.',
         _ => '',
       };
   @override
@@ -153,12 +157,14 @@ class StrMs extends Str {
         'cukaiTanah' => '31 Mei ialah tarikh akhir biasa, tetapi berbeza ikut negeri dan tahun.',
         'cukaiPetak' => '31 Mei ialah tarikh akhir biasa. Jika hakmilik strata belum dikeluarkan, pejabat pengurusan membayar bagi semua pemilik.',
         'cukaiTaksiran' => 'Dua kali setahun, dibayar Januari dan Julai; tunggakan selepas hujung Februari dan hujung Ogos.',
+        'desludging' || 'desludgingRural' => 'Wajib di bawah peraturan perkhidmatan pembetungan 2021: setiap 24 bulan dalam kawasan PBT, 36 bulan di luar. Kos rujukan RM192 setiap kali. Sabah dan Sarawak ada peraturan sendiri.',
         _ => '',
       };
   @override
   String presetConfirm(String k) => switch (k) {
         'cukaiTaksiran' => 'PBT (majlis) anda',
         'cukaiPetak' => 'pejabat tanah atau pejabat pengurusan anda',
+        'desludging' || 'desludgingRural' => 'IWK (Indah Water)',
         _ => 'pejabat tanah anda',
       };
 
@@ -1528,4 +1534,14 @@ class StrMs extends Str {
   String get cccDateLabel => 'Tarikh CCC (pilihan)';
   @override
   String get cccHelp => 'Sijil perakuan siap dan pematuhan. Tuntutan yang bukan kecacatan, contohnya lewat serah, dikira dari tarikh ini; sahkan dengan peguam.';
+
+  // ------------------------------------------------ 0.3 IWK
+  @override
+  String get septicQ => 'Guna tangki septik sendiri?';
+  @override
+  String get septicHelp => 'Rumah yang tidak bersambung ke pembetungan pusat. IWK mewajibkan tangki dikosongkan secara berjadual.';
+  @override
+  String get insidePbtQ => 'Dalam kawasan PBT (majlis)?';
+  @override
+  String get insidePbtHelp => 'Dalam kawasan PBT: setiap 2 tahun. Di luar kawasan PBT: setiap 3 tahun.';
 }

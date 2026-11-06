@@ -69,6 +69,16 @@ const chain = Preset(key: 'chain', rule: 'mileage', repeatKm: 3000, category: 'c
 const nextServiceCar = Preset(key: 'nextService', rule: 'repeat', repeatMonths: 6, category: 'oil');
 const nextServiceMoto = Preset(key: 'nextOilChange', rule: 'repeat', repeatMonths: 3, category: 'oil');
 
+/// Scheduled desludging of a house's own septic tank by IWK (Water Services Industry (Sewage
+/// Disposal Services) Regulations 2021, from 30 March 2021): every 24 months inside a local
+/// authority (PBT) area, every 36 months outside, counted from the last time. An estimate:
+/// Sabah and Sarawak have their own rules.
+const desludging = Preset(key: 'desludging', rule: 'repeat', repeatMonths: 24, estimated: true, category: 'septic', leadDays: 30);
+const desludgingRural = Preset(key: 'desludgingRural', rule: 'repeat', repeatMonths: 36, estimated: true, category: 'septic', leadDays: 30);
+
+/// The desludging preset for a house inside a PBT area, or outside one ([insidePbt] false).
+Preset desludgingFor(bool? insidePbt) => insidePbt == false ? desludgingRural : desludging;
+
 /// Two or three chips offered right after adding an asset. Each needs only a date.
 List<Preset> suggestionsFor(String category, String? propertyType) {
   switch (category) {
@@ -90,17 +100,19 @@ List<Preset> suggestionsFor(String category, String? propertyType) {
 
 /// Templates in the "New reminder" form and the house edit screen, by property type.
 /// Strata titles pay cukai petak and a maintenance charge; a condo or apartment owner does not
-/// clean a water tank or insure the building (the JMB or MC does).
-List<Preset> templatesFor(String category, String? propertyType) {
+/// clean a water tank or insure the building (the JMB or MC does). A landed house with its own
+/// septic tank ([septicTank]) also gets IWK desludging, every 2 or 3 years ([insidePbt]).
+List<Preset> templatesFor(String category, String? propertyType, {bool septicTank = false, bool? insidePbt}) {
   switch (category) {
     case 'house':
+      final septic = [if (septicTank && propertyType != 'strata') desludgingFor(insidePbt)];
       switch (propertyType) {
         case 'strata':
           return [aircond, pestControl, cukaiPetak, cukaiTaksiran, maintenanceCharge];
         case 'strata_landed':
-          return [aircond, pestControl, waterTank, cukaiPetak, cukaiTaksiran, maintenanceCharge, houseInsurance];
+          return [aircond, pestControl, waterTank, ...septic, cukaiPetak, cukaiTaksiran, maintenanceCharge, houseInsurance];
         default:
-          return [aircond, pestControl, waterTank, cukaiTanah, cukaiTaksiran, houseInsurance];
+          return [aircond, pestControl, waterTank, ...septic, cukaiTanah, cukaiTaksiran, houseInsurance];
       }
     case 'car':
       return [carService, roadTax, vehicleInsurance, tyres, battery];
@@ -118,6 +130,7 @@ List<String> titleOptionsFor(String? propertyType) =>
 final allPresets = <Preset>[
   cukaiTanah, cukaiPetak, cukaiTaksiran, houseInsurance, maintenanceCharge, aircond, pestControl, waterTank,
   roadTax, vehicleInsurance, carService, motoOil, tyres, battery, chain, nextServiceCar, nextServiceMoto,
+  desludging, desludgingRural,
 ];
 
 Preset? presetByKey(String key) => allPresets.where((p) => p.key == key).firstOrNull;
@@ -150,7 +163,7 @@ List<String> categoriesFor(String assetCategory, String kind) {
       case 'payment':
         return const ['cukai_tanah', 'cukai_petak', 'cukai_taksiran', 'maintenance_charge', 'sinking_fund', 'insurance_premium'];
       default:
-        return const ['plumbing', 'bathroom', 'roof', 'leakage', 'electrical', 'aircond', 'painting', 'pest_control', 'appliance', 'other'];
+        return const ['plumbing', 'bathroom', 'roof', 'leakage', 'electrical', 'aircond', 'painting', 'pest_control', 'appliance', 'septic', 'other'];
     }
   }
   switch (kind) {
