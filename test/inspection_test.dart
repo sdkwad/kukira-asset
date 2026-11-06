@@ -145,6 +145,8 @@ void main() {
       reminders: w.reminders,
       records: [
         UpkeepRecord(id: 1, assetId: 1, kind: 'defect', title: 'Wall crack', date: DateTime(2026, 10, 1), area: 'Kitchen', status: 'open', createdAt: DateTime(2026, 10, 1)),
+        // A second kind, so the Records tab shows its kind filter.
+        UpkeepRecord(id: 2, assetId: 1, kind: 'maintenance', title: 'Aircond service', date: DateTime(2026, 9, 1), createdAt: DateTime(2026, 9, 1)),
       ],
       odometer: w.odometer,
       vendors: w.vendors,
