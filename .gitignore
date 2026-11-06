@@ -29,3 +29,9 @@ apk/
 
 # Screenshot pictures are made in CI (see test/screenshots_test.dart).
 /test/goldens/
+
+# Owner's own material kept beside the code, not part of the app
+/Kukira Asset v0.2 - compact.pptx
+/kukira-asset-handoff-brief.md
+/docs/slides/
+/gambar/
