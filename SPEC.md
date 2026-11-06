@@ -49,6 +49,23 @@ Fields with a natural list (make, model, year, insurer, state, council, area, co
 - The insurer list in `lib/domain/lists.dart` is the companies with a General Insurance Business or General Takaful Business licence in the BNM Financial Sector Participants directory. Say the date it was read when it changes.
 - Websites open in the phone's browser through the `kukira/links` channel in MainActivity. The app never loads a page itself and never asks for the internet permission for it.
 
+## Other platforms
+
+Decided by the owner (2026-11-06):
+
+- **No PWA.** A web app would need hosting (the code arrives from a server each time), cannot schedule local reminders offline, and on iPhone its data can be evicted and push needs a server that knows the dates. That breaks rules 1 and 2.
+- **iPhone next**, from this Flutter code, after an iOS spike (a CI build for the simulator, report only). Testers get it through TestFlight, which needs the Apple Developer Program. The Android-only parts to replace are listed in the spike report: the `kukira/save`, `kukira/links` and `kukira/privacy` channels (MainActivity.kt), SQLCipher's Android loader in `Vault`, Android-only notification and permission calls in `Notifier`, and the battery-optimisation link.
+- **Desktop later**, once real multi-device sync exists. A restore replaces everything, so two devices that both edit would lose data. Until then a backup file is a copy, not sync, and the app must say so wherever a second device is offered.
+
+## Changes from the brief
+
+`docs/handoff-brief.md` is the original brief and is kept as written. Where it and this file differ, this file wins:
+
+- Renewing road tax and insurance in the app was out of the MVP; it was added in 0.2.8 (see "Reminders that follow a date field").
+- The fingerprint lock uses `biometric_storage` (the key itself is gated by the fingerprint), not `local_auth`.
+- Backups can go to a cloud drive through the system save dialog (0.2.8), and are format 3 (build 16).
+- A new PIN is six digits by default (build 16).
+
 ## Backlog and constraints
 
 Not built yet. These notes constrain how they are built.
