@@ -173,6 +173,23 @@ Future<void> _showDoneDialog(BuildContext context, Reminder r, NextDue n) async 
 
 // ================================================================ reminder form
 
+/// Whether saving a reminder with these values gives it a new schedule (rule, date,
+/// distance or repeat). Only then is a reminder that was done or snoozed brought back. The
+/// old reminder is read the way the form saves one: only the fields its rule uses count
+/// (a preset may have stored a repeat on a one-off reminder).
+bool changesSchedule(Reminder old,
+    {required String rule, DateTime? due, int? dueKm, int? months, int? days, int? everyKm, required String repeatFrom}) {
+  if (old.ruleType != rule || old.repeatFrom != repeatFrom) return true;
+  final usesDate = rule != 'mileage';
+  final usesKm = rule == 'mileage' || rule == 'either';
+  final repeats = rule == 'repeat' || rule == 'either';
+  return (usesDate ? old.dueDate : null) != due ||
+      (usesKm ? old.dueOdometer : null) != dueKm ||
+      (repeats ? old.repeatMonths : null) != months ||
+      (repeats ? old.repeatDays : null) != days ||
+      (usesKm ? old.repeatKm : null) != everyKm;
+}
+
 class ReminderFormScreen extends StatefulWidget {
   const ReminderFormScreen({super.key, this.assetId, this.editId, this.templateKey});
   final int? assetId;
@@ -320,6 +337,18 @@ class _ReminderFormState extends State<ReminderFormScreen> {
     var dueKm = parseInt(_dueKm.text);
     if (usesKm && dueKm == null && everyKm != null) dueKm = odo + everyKm;
     if (usesKm && dueKm == null) return setState(() => _error = s.errKm);
+    // Editing only the title, notes or lead time keeps a reminder done or snoozed. A new
+    // date, distance or repeat is a new schedule, so it brings the reminder back.
+    final old = widget.editId == null ? null : w.reminders.where((x) => x.id == widget.editId).firstOrNull;
+    final rescheduled = old == null ||
+        changesSchedule(old,
+            rule: _rule,
+            due: usesDate ? _due : null,
+            dueKm: usesKm ? dueKm : null,
+            months: repeats ? months : null,
+            days: repeats ? days : null,
+            everyKm: usesKm ? everyKm : null,
+            repeatFrom: _repeatFrom);
     final c = RemindersCompanion(
       assetId: Value(_assetId!),
       title: Value(_title.text.trim()),
@@ -337,8 +366,8 @@ class _ReminderFormState extends State<ReminderFormScreen> {
       estimated: Value(_estimated),
       note: Value(_note),
       confirmWith: Value(_confirm),
-      snoozedUntil: const Value(null),
-      done: const Value(false),
+      snoozedUntil: rescheduled ? const Value(null) : const Value.absent(),
+      done: rescheduled ? const Value(false) : const Value.absent(),
     );
     final db = context.db;
     if (widget.editId == null) {

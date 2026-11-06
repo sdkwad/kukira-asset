@@ -719,10 +719,18 @@ class _DocumentFormState extends State<DocumentFormScreen> {
             await db.deleteReminder(remId);
             remId = null;
           } else if (remId != null) {
-            // The reminder follows the document, also to another asset.
+            // The reminder follows the document, also to another asset. Only a new expiry
+            // brings back a reminder that was marked done or snoozed.
+            final moved = _expiry != d.expiry;
             await db.updateReminder(
               remId,
-              RemindersCompanion(assetId: Value(_assetId!), title: Value(s.docExpires(title)), dueDate: Value(_expiry), done: const Value(false)),
+              RemindersCompanion(
+                assetId: Value(_assetId!),
+                title: Value(s.docExpires(title)),
+                dueDate: Value(_expiry),
+                done: moved ? const Value(false) : const Value.absent(),
+                snoozedUntil: moved ? const Value(null) : const Value.absent(),
+              ),
             );
           } else if (_expiry != null && _remind) {
             remId = await db.addReminder(RemindersCompanion(
