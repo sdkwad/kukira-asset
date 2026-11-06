@@ -51,6 +51,8 @@ class StrMs extends Str {
         'pest_control' => 'Kawalan perosak',
         'appliance' => 'Perkakas',
         'septic' => 'Tangki septik',
+        'contents_insurance' => 'Insurans isi rumah',
+        'monsoon' => 'Semakan tengkujuh',
         'minor' => 'Kecil',
         'major' => 'Besar',
         'leak' => 'Bocor',
@@ -135,6 +137,8 @@ class StrMs extends Str {
         'nextService' => 'Servis seterusnya',
         'nextOilChange' => 'Tukar minyak seterusnya',
         'desludging' || 'desludgingRural' => 'Kosongkan tangki septik (IWK)',
+        'householderInsurance' => 'Pembaharuan insurans isi rumah',
+        'monsoonCheck' || 'monsoonCheckEast' => 'Semakan sebelum tengkujuh',
         _ => k,
       };
   @override
@@ -142,7 +146,10 @@ class StrMs extends Str {
         'cukaiTanah' => 'Anggaran 31 Mei. Berbeza ikut negeri. Sahkan dengan pejabat tanah.',
         'cukaiPetak' => 'Anggaran 31 Mei. Selagi hakmilik strata belum dikeluarkan, pejabat pengurusan yang bayar.',
         'cukaiTaksiran' => 'Anggaran: separuh tahun pertama sebelum hujung Feb, kedua sebelum hujung Ogos.',
-        'houseInsurance' => 'Anda insuranskan bangunan sendiri. Pilih tarikh tamat polisi.',
+        'houseInsurance' => 'Houseowner: anda insuranskan bangunan sendiri. MRTA atau MLTA melindungi pinjaman, bukan rumah. Pilih tarikh tamat polisi.',
+        'householderInsurance' => 'Householder: isi rumah seperti perabot dan perkakas. Polisi kebakaran JMB atau MC tidak melindunginya. Pilih tarikh tamat polisi.',
+        'monsoonCheck' => 'Setiap tahun, sebelum hujan lebat Oktober. Tukar tarikh jika perlu.',
+        'monsoonCheckEast' => 'Setiap tahun, sebelum monsun timur laut bermula awal November. Tukar tarikh jika perlu.',
         'maintenanceCharge' => 'Bulanan, ikut unit syer. Pilih tarikh bayaran seterusnya.',
         'roadTax' => 'Pilih tarikh tamat cukai jalan anda.',
         'vehicleInsurance' => 'Pilih tarikh tamat polisi anda.',
@@ -157,6 +164,7 @@ class StrMs extends Str {
         'cukaiTanah' => '31 Mei ialah tarikh akhir biasa, tetapi berbeza ikut negeri dan tahun.',
         'cukaiPetak' => '31 Mei ialah tarikh akhir biasa. Jika hakmilik strata belum dikeluarkan, pejabat pengurusan membayar bagi semua pemilik.',
         'cukaiTaksiran' => 'Dua kali setahun, dibayar Januari dan Julai; tunggakan selepas hujung Februari dan hujung Ogos.',
+        'monsoonCheck' || 'monsoonCheckEast' => 'Semak bumbung dan talang, longkang dan pam, alihkan barang berharga ke tempat tinggi, dan semak sama ada polisi rumah melindungi banjir (tanah runtuh biasanya dikecualikan). Tarikh ialah anggaran.',
         'desludging' || 'desludgingRural' => 'Wajib di bawah peraturan perkhidmatan pembetungan 2021: setiap 24 bulan dalam kawasan PBT, 36 bulan di luar. Kos rujukan RM192 setiap kali. Sabah dan Sarawak ada peraturan sendiri.',
         _ => '',
       };
@@ -164,6 +172,7 @@ class StrMs extends Str {
   String presetConfirm(String k) => switch (k) {
         'cukaiTaksiran' => 'PBT (majlis) anda',
         'cukaiPetak' => 'pejabat tanah atau pejabat pengurusan anda',
+        'monsoonCheck' || 'monsoonCheckEast' => 'amaran cuaca MetMalaysia',
         'desludging' || 'desludgingRural' => 'IWK (Indah Water)',
         _ => 'pejabat tanah anda',
       };

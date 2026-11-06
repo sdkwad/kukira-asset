@@ -79,6 +79,25 @@ const desludgingRural = Preset(key: 'desludgingRural', rule: 'repeat', repeatMon
 /// The desludging preset for a house inside a PBT area, or outside one ([insidePbt] false).
 Preset desludgingFor(bool? insidePbt) => insidePbt == false ? desludgingRural : desludging;
 
+/// Householder insurance: the contents (furniture, appliances). Every home needs its own; a
+/// strata building's fire policy, held by the JMB or MC, does not cover them.
+const householderInsurance = Preset(key: 'householderInsurance', rule: 'fixed', category: 'contents_insurance', leadDays: 30);
+
+/// A yearly check before the monsoon (0.3): roof and gutters, drains, the pump, valuables up
+/// high, and whether the policies cover floods. States the northeast monsoon reaches (from
+/// early November) check on 1 October; the others before the heavy rain of the October
+/// inter-monsoon, on 15 September. An estimate to adjust.
+final monsoonCheck = Preset(key: 'monsoonCheck', rule: 'repeat', repeatMonths: 12, repeatFrom: 'due', estimated: true, category: 'monsoon', leadDays: 14, defaultDue: (t) => nextOn(t, 9, 15));
+final monsoonCheckEast = Preset(key: 'monsoonCheckEast', rule: 'repeat', repeatMonths: 12, repeatFrom: 'due', estimated: true, category: 'monsoon', leadDays: 14, defaultDue: (t) => nextOn(t, 10, 1));
+
+const eastMonsoonStates = ['kelantan', 'terengganu', 'pahang', 'johor', 'sabah', 'sarawak'];
+
+/// The monsoon check for a house in [state] (as typed in the house details).
+Preset monsoonCheckFor(String? state) {
+  final st = state?.toLowerCase() ?? '';
+  return eastMonsoonStates.any(st.contains) ? monsoonCheckEast : monsoonCheck;
+}
+
 /// Two or three chips offered right after adding an asset. Each needs only a date.
 List<Preset> suggestionsFor(String category, String? propertyType) {
   switch (category) {
@@ -102,17 +121,19 @@ List<Preset> suggestionsFor(String category, String? propertyType) {
 /// Strata titles pay cukai petak and a maintenance charge; a condo or apartment owner does not
 /// clean a water tank or insure the building (the JMB or MC does). A landed house with its own
 /// septic tank ([septicTank]) also gets IWK desludging, every 2 or 3 years ([insidePbt]).
-List<Preset> templatesFor(String category, String? propertyType, {bool septicTank = false, bool? insidePbt}) {
+List<Preset> templatesFor(String category, String? propertyType, {bool septicTank = false, bool? insidePbt, String? state}) {
   switch (category) {
     case 'house':
       final septic = [if (septicTank && propertyType != 'strata') desludgingFor(insidePbt)];
+      // Every home: its contents, and a check before the monsoon.
+      final every = [householderInsurance, monsoonCheckFor(state)];
       switch (propertyType) {
         case 'strata':
-          return [aircond, pestControl, cukaiPetak, cukaiTaksiran, maintenanceCharge];
+          return [aircond, pestControl, cukaiPetak, cukaiTaksiran, maintenanceCharge, ...every];
         case 'strata_landed':
-          return [aircond, pestControl, waterTank, ...septic, cukaiPetak, cukaiTaksiran, maintenanceCharge, houseInsurance];
+          return [aircond, pestControl, waterTank, ...septic, cukaiPetak, cukaiTaksiran, maintenanceCharge, houseInsurance, ...every];
         default:
-          return [aircond, pestControl, waterTank, ...septic, cukaiTanah, cukaiTaksiran, houseInsurance];
+          return [aircond, pestControl, waterTank, ...septic, cukaiTanah, cukaiTaksiran, houseInsurance, ...every];
       }
     case 'car':
       return [carService, roadTax, vehicleInsurance, tyres, battery];
@@ -130,7 +151,7 @@ List<String> titleOptionsFor(String? propertyType) =>
 final allPresets = <Preset>[
   cukaiTanah, cukaiPetak, cukaiTaksiran, houseInsurance, maintenanceCharge, aircond, pestControl, waterTank,
   roadTax, vehicleInsurance, carService, motoOil, tyres, battery, chain, nextServiceCar, nextServiceMoto,
-  desludging, desludgingRural,
+  desludging, desludgingRural, householderInsurance, monsoonCheck, monsoonCheckEast,
 ];
 
 Preset? presetByKey(String key) => allPresets.where((p) => p.key == key).firstOrNull;
@@ -161,9 +182,9 @@ List<String> categoriesFor(String assetCategory, String kind) {
       case 'defect':
         return const ['wall_crack', 'floor_tiles', 'door_window', 'plumbing', 'electrical', 'roof', 'other'];
       case 'payment':
-        return const ['cukai_tanah', 'cukai_petak', 'cukai_taksiran', 'maintenance_charge', 'sinking_fund', 'insurance_premium'];
+        return const ['cukai_tanah', 'cukai_petak', 'cukai_taksiran', 'maintenance_charge', 'sinking_fund', 'insurance_premium', 'contents_insurance'];
       default:
-        return const ['plumbing', 'bathroom', 'roof', 'leakage', 'electrical', 'aircond', 'painting', 'pest_control', 'appliance', 'septic', 'other'];
+        return const ['plumbing', 'bathroom', 'roof', 'leakage', 'electrical', 'aircond', 'painting', 'pest_control', 'appliance', 'septic', 'monsoon', 'other'];
     }
   }
   switch (kind) {

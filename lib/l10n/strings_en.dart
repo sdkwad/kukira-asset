@@ -51,6 +51,8 @@ class StrEn extends Str {
         'pest_control' => 'Pest control',
         'appliance' => 'Appliance',
         'septic' => 'Septic tank',
+        'contents_insurance' => 'Contents insurance',
+        'monsoon' => 'Monsoon check',
         'minor' => 'Minor',
         'major' => 'Major',
         'leak' => 'Leak',
@@ -135,6 +137,8 @@ class StrEn extends Str {
         'nextService' => 'Next service',
         'nextOilChange' => 'Next oil change',
         'desludging' || 'desludgingRural' => 'Septic tank desludging (IWK)',
+        'householderInsurance' => 'Contents insurance renewal',
+        'monsoonCheck' || 'monsoonCheckEast' => 'Check before the monsoon',
         _ => k,
       };
   @override
@@ -142,7 +146,10 @@ class StrEn extends Str {
         'cukaiTanah' => 'Est. 31 May. Varies by state. Confirm with your land office.',
         'cukaiPetak' => 'Est. 31 May. Until strata title is issued, your management office pays it.',
         'cukaiTaksiran' => 'Est.: first half due by end Feb, second by end Aug.',
-        'houseInsurance' => 'You insure your own building. Pick the policy expiry date.',
+        'houseInsurance' => 'Houseowner: you insure your own building. MRTA or MLTA covers the loan, not the house. Pick the policy expiry date.',
+        'householderInsurance' => 'Householder: the contents, such as furniture and appliances. The JMB or MC fire policy does not cover them. Pick the policy expiry date.',
+        'monsoonCheck' => 'Every year, before the heavy rain of October. Change the date if needed.',
+        'monsoonCheckEast' => 'Every year, before the northeast monsoon starts in early November. Change the date if needed.',
         'maintenanceCharge' => 'Monthly, by share units. Pick the next due date.',
         'roadTax' => 'Pick the expiry date on your road tax.',
         'vehicleInsurance' => 'Pick the expiry date on your policy.',
@@ -157,6 +164,7 @@ class StrEn extends Str {
         'cukaiTanah' => '31 May is a common deadline, but it varies by state and year.',
         'cukaiPetak' => '31 May is a common deadline. If strata title is not issued yet, the management office pays for all owners.',
         'cukaiTaksiran' => 'Two halves a year, payable in January and July; in arrears after the end of February and the end of August.',
+        'monsoonCheck' || 'monsoonCheckEast' => 'Check the roof and gutters, drains and pump, move valuables up high, and check whether the house policies cover floods (landslides are usually excluded). The date is an estimate.',
         'desludging' || 'desludgingRural' => 'Required by the 2021 sewage services regulations: every 24 months inside a PBT area, 36 months outside. About RM192 each time. Sabah and Sarawak have their own rules.',
         _ => '',
       };
@@ -164,6 +172,7 @@ class StrEn extends Str {
   String presetConfirm(String k) => switch (k) {
         'cukaiTaksiran' => 'your council',
         'cukaiPetak' => 'your land office or management office',
+        'monsoonCheck' || 'monsoonCheckEast' => 'MetMalaysia weather warnings',
         'desludging' || 'desludgingRural' => 'IWK (Indah Water)',
         _ => 'your land office',
       };

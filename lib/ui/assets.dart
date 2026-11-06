@@ -1735,7 +1735,7 @@ class _HouseEditState extends State<HouseEditScreen> {
           ],
           FieldLabel(s.suggestedForType),
           Builder(builder: (context) {
-            final open = templatesFor('house', _ptype, septicTank: _septic, insidePbt: _insidePbt)
+            final open = templatesFor('house', _ptype, septicTank: _septic, insidePbt: _insidePbt, state: _state.text)
                 .where((p) => !w.reminders.any((r) => r.assetId == a.id && !r.done && r.category == p.category))
                 .toList();
             if (open.isEmpty) return Text(s.allSuggestedAdded, style: help);
