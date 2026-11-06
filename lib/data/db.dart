@@ -46,6 +46,15 @@ class HouseProfiles extends Table {
   DateTimeColumn get tenancyEnd => dateTime().nullable()();
   IntColumn get rentDueDay => integer().nullable()();
 
+  /// Added in schema 6: the certificate of completion and compliance, from which a claim
+  /// to the homebuyer tribunal that is not about defects is counted.
+  DateTimeColumn get cccDate => dateTime().nullable()();
+
+  /// Added in schema 6: the house has its own septic tank, and lies inside a local
+  /// authority (PBT) area. Together they set how often it must be desludged.
+  BoolColumn get septicTank => boolean().nullable()();
+  BoolColumn get insidePbt => boolean().nullable()();
+
   @override
   Set<Column> get primaryKey => {assetId};
 }
@@ -158,6 +167,91 @@ class Records extends Table {
   DateTimeColumn get coverEnd => dateTime().nullable()();
 }
 
+/// Added in schema 6: one tenancy of a house. Every tenancy is kept, ended ones too, so the
+/// house keeps its whole rental history.
+@DataClassName('Tenancy')
+class Tenancies extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get assetId => integer().references(Assets, #id, onDelete: KeyAction.cascade)();
+  TextColumn get tenantName => text().nullable()();
+  TextColumn get tenantPhone => text().nullable()();
+  DateTimeColumn get startDate => dateTime().nullable()();
+  DateTimeColumn get endDate => dateTime().nullable()();
+  RealColumn get rent => real().nullable()();
+
+  /// Day of the month the rent is due (1 to 28).
+  IntColumn get dueDay => integer().nullable()();
+  RealColumn get deposit => real().nullable()();
+  DateTimeColumn get signedOn => dateTime().nullable()();
+  DateTimeColumn get stampedOn => dateTime().nullable()();
+  IntColumn get agreementDocId => integer().nullable().references(Documents, #id, onDelete: KeyAction.setNull)();
+
+  /// When the tenancy actually ended (moved out), which may differ from [endDate].
+  DateTimeColumn get endedOn => dateTime().nullable()();
+  TextColumn get notes => text().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Added in schema 6: the rent paid for one month of a tenancy ([month] is year * 100 + month).
+@DataClassName('RentPayment')
+class RentPayments extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get tenancyId => integer().references(Tenancies, #id, onDelete: KeyAction.cascade)();
+  IntColumn get month => integer()();
+  DateTimeColumn get paidOn => dateTime()();
+  RealColumn get amount => real().nullable()();
+  TextColumn get notes => text().nullable()();
+
+  @override
+  List<Set<Column>> get uniqueKeys => [
+        {tenancyId, month},
+      ];
+}
+
+/// Added in schema 6: a room-by-room check of a house, at vacant possession ('vp') or before
+/// the defects liability period ends ('dlp').
+@DataClassName('Inspection')
+class Inspections extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get assetId => integer().references(Assets, #id, onDelete: KeyAction.cascade)();
+  TextColumn get kind => text()();
+  DateTimeColumn get date => dateTime()();
+  IntColumn get bedrooms => integer().withDefault(const Constant(3))();
+  IntColumn get bathrooms => integer().withDefault(const Constant(2))();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+/// Added in schema 6: one thing checked in one room. [result] is ok | defect | na; a defect
+/// keeps the defect record it made.
+@DataClassName('InspectionCheck')
+class InspectionChecks extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get inspectionId => integer().references(Inspections, #id, onDelete: KeyAction.cascade)();
+  TextColumn get room => text()();
+  TextColumn get item => text()();
+  TextColumn get result => text().nullable()();
+  IntColumn get recordId => integer().nullable().references(Records, #id, onDelete: KeyAction.setNull)();
+}
+
+/// Added in schema 6: a checklist used again and again, such as before a long trip.
+@DataClassName('Checklist')
+class Checklists extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get assetId => integer().nullable().references(Assets, #id, onDelete: KeyAction.cascade)();
+  TextColumn get title => text()();
+  DateTimeColumn get lastUsed => dateTime().nullable()();
+  DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
+}
+
+@DataClassName('ChecklistItem')
+class ChecklistItems extends Table {
+  IntColumn get id => integer().autoIncrement()();
+  IntColumn get checklistId => integer().references(Checklists, #id, onDelete: KeyAction.cascade)();
+  TextColumn get label => text()();
+  IntColumn get position => integer().withDefault(const Constant(0))();
+  BoolColumn get checked => boolean().withDefault(const Constant(false))();
+}
+
 /// Optional cost breakdown for a record (added in schema 2).
 class CostItems extends Table {
   IntColumn get id => integer().autoIncrement()();
@@ -214,6 +308,12 @@ class World {
     required this.documents,
     required this.settings,
     required this.costItems,
+    this.tenancies = const [],
+    this.rentPayments = const {},
+    this.inspections = const [],
+    this.inspectionChecks = const {},
+    this.checklists = const [],
+    this.checklistItems = const {},
   });
 
   final List<Asset> assets;
@@ -226,6 +326,14 @@ class World {
   final List<AssetDocument> documents;
   final Map<String, String> settings;
   final Map<int, List<CostItem>> costItems;
+
+  /// Schema 6. Rent payments by tenancy, checks by inspection, items by checklist.
+  final List<Tenancy> tenancies;
+  final Map<int, List<RentPayment>> rentPayments;
+  final List<Inspection> inspections;
+  final Map<int, List<InspectionCheck>> inspectionChecks;
+  final List<Checklist> checklists;
+  final Map<int, List<ChecklistItem>> checklistItems;
 
   List<AssetDocument> photosOf(int recordId) =>
       documents.where((d) => d.docType == 'photo' && d.linkedRecordId == recordId).toList();
@@ -287,13 +395,19 @@ extension ReminderInfo on Reminder {
   Documents,
   Vendors,
   Settings,
+  Tenancies,
+  RentPayments,
+  Inspections,
+  InspectionChecks,
+  Checklists,
+  ChecklistItems,
 ])
 class AppDb extends _$AppDb {
   AppDb(super.e);
 
   /// Bump together with a migration step below. Backups record it, and a backup made by a
   /// newer schema is refused instead of silently losing the fields this app doesn't know.
-  static const latestSchema = 5;
+  static const latestSchema = 6;
 
   @override
   int get schemaVersion => latestSchema;
@@ -311,6 +425,17 @@ class AppDb extends _$AppDb {
           if (from < 5) {
             await m.addColumn(records, records.coverStart);
             await m.addColumn(records, records.coverEnd);
+          }
+          if (from < 6) {
+            await m.addColumn(houseProfiles, houseProfiles.cccDate);
+            await m.addColumn(houseProfiles, houseProfiles.septicTank);
+            await m.addColumn(houseProfiles, houseProfiles.insidePbt);
+            await m.createTable(tenancies);
+            await m.createTable(rentPayments);
+            await m.createTable(inspections);
+            await m.createTable(inspectionChecks);
+            await m.createTable(checklists);
+            await m.createTable(checklistItems);
           }
           // Linking reads the columns added above, so it runs after all of them.
           if (from < 4) await linkExistingAutoReminders();
@@ -379,6 +504,21 @@ class AppDb extends _$AppDb {
     for (final i in items) {
       (byRecord[i.recordId] ??= []).add(i);
     }
+    final ten = await (select(tenancies)..orderBy([(t) => OrderingTerm.desc(t.startDate), (t) => OrderingTerm.desc(t.id)])).get();
+    final pay = <int, List<RentPayment>>{};
+    for (final x in await (select(rentPayments)..orderBy([(t) => OrderingTerm.asc(t.month)])).get()) {
+      (pay[x.tenancyId] ??= []).add(x);
+    }
+    final ins = await (select(inspections)..orderBy([(t) => OrderingTerm.desc(t.date), (t) => OrderingTerm.desc(t.id)])).get();
+    final checks = <int, List<InspectionCheck>>{};
+    for (final x in await (select(inspectionChecks)..orderBy([(t) => OrderingTerm.asc(t.id)])).get()) {
+      (checks[x.inspectionId] ??= []).add(x);
+    }
+    final lists = await (select(checklists)..orderBy([(t) => OrderingTerm.asc(t.id)])).get();
+    final listItems = <int, List<ChecklistItem>>{};
+    for (final x in await (select(checklistItems)..orderBy([(t) => OrderingTerm.asc(t.position), (t) => OrderingTerm.asc(t.id)])).get()) {
+      (listItems[x.checklistId] ??= []).add(x);
+    }
     final latest = <int, OdometerReading>{};
     for (final x in o) {
       final cur = latest[x.assetId];
@@ -395,6 +535,12 @@ class AppDb extends _$AppDb {
       documents: docs,
       settings: {for (final x in st) x.key: x.value},
       costItems: byRecord,
+      tenancies: ten,
+      rentPayments: pay,
+      inspections: ins,
+      inspectionChecks: checks,
+      checklists: lists,
+      checklistItems: listItems,
     );
   }
 
@@ -508,6 +654,12 @@ class AppDb extends _$AppDb {
         'documents': (await select(documents).get()).map((e) => e.toJson()).toList(),
         'costItems': (await select(costItems).get()).map((e) => e.toJson()).toList(),
         'vendors': (await select(vendors).get()).map((e) => e.toJson()).toList(),
+        'tenancies': (await select(tenancies).get()).map((e) => e.toJson()).toList(),
+        'rentPayments': (await select(rentPayments).get()).map((e) => e.toJson()).toList(),
+        'inspections': (await select(inspections).get()).map((e) => e.toJson()).toList(),
+        'inspectionChecks': (await select(inspectionChecks).get()).map((e) => e.toJson()).toList(),
+        'checklists': (await select(checklists).get()).map((e) => e.toJson()).toList(),
+        'checklistItems': (await select(checklistItems).get()).map((e) => e.toJson()).toList(),
       };
 
   /// Names of the encrypted files that documents, photos and asset pictures point to.
@@ -524,6 +676,14 @@ class AppDb extends _$AppDb {
     List<Map<String, dynamic>> rows(String k) =>
         ((t[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
     return transaction(() async {
+      // Schema 6 tables first: they point at the older ones. A backup from before schema 6
+      // has none of them, so they come back empty.
+      await delete(checklistItems).go();
+      await delete(checklists).go();
+      await delete(inspectionChecks).go();
+      await delete(inspections).go();
+      await delete(rentPayments).go();
+      await delete(tenancies).go();
       await delete(documents).go();
       await delete(costItems).go();
       await delete(records).go();
@@ -543,6 +703,12 @@ class AppDb extends _$AppDb {
         b.insertAll(records, rows('records').map(UpkeepRecord.fromJson));
         b.insertAll(costItems, rows('costItems').map(CostItem.fromJson));
         b.insertAll(documents, rows('documents').map(AssetDocument.fromJson));
+        b.insertAll(tenancies, rows('tenancies').map(Tenancy.fromJson));
+        b.insertAll(rentPayments, rows('rentPayments').map(RentPayment.fromJson));
+        b.insertAll(inspections, rows('inspections').map(Inspection.fromJson));
+        b.insertAll(inspectionChecks, rows('inspectionChecks').map(InspectionCheck.fromJson));
+        b.insertAll(checklists, rows('checklists').map(Checklist.fromJson));
+        b.insertAll(checklistItems, rows('checklistItems').map(ChecklistItem.fromJson));
       });
       if (linkOldReminders) await linkExistingAutoReminders();
     });
