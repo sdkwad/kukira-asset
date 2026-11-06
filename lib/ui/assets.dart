@@ -1609,6 +1609,8 @@ class _HouseEditState extends State<HouseEditScreen> {
   DateTime? _tenancyStart;
   DateTime? _tenancyEnd;
   int? _rentDay;
+  bool _septic = false;
+  bool? _insidePbt;
 
   /// Subsale only: whether the developer's 24-month DLP still runs. When it does not, the VP
   /// and DLP dates are not asked, and are cleared on save.
@@ -1652,6 +1654,8 @@ class _HouseEditState extends State<HouseEditScreen> {
         _tenancyStart = h.tenancyStart;
         _tenancyEnd = h.tenancyEnd;
         _rentDay = h.rentDueDay;
+        _septic = h.septicTank == true;
+        _insidePbt = h.insidePbt;
         _council.text = h.council ?? '';
         _state.text = h.state ?? '';
         _address.text = h.address ?? '';
@@ -1689,9 +1693,30 @@ class _HouseEditState extends State<HouseEditScreen> {
             }),
           ),
           const SizedBox(height: 14),
+          // A condo or apartment is on the building's sewer; a landed house may have its own tank.
+          if (_ptype != 'strata') ...[
+            Card(
+              margin: const EdgeInsets.only(bottom: 12),
+              child: Column(children: [
+                SwitchListTile(
+                  value: _septic,
+                  title: Text(s.septicQ, style: KText.row.copyWith(color: k.text)),
+                  subtitle: Text(s.septicHelp),
+                  onChanged: (v) => setState(() => _septic = v),
+                ),
+                if (_septic)
+                  SwitchListTile(
+                    value: _insidePbt != false,
+                    title: Text(s.insidePbtQ, style: KText.row.copyWith(color: k.text)),
+                    subtitle: Text(s.insidePbtHelp),
+                    onChanged: (v) => setState(() => _insidePbt = v),
+                  ),
+              ]),
+            ),
+          ],
           FieldLabel(s.suggestedForType),
           Builder(builder: (context) {
-            final open = templatesFor('house', _ptype)
+            final open = templatesFor('house', _ptype, septicTank: _septic, insidePbt: _insidePbt)
                 .where((p) => !w.reminders.any((r) => r.assetId == a.id && !r.done && r.category == p.category))
                 .toList();
             if (open.isEmpty) return Text(s.allSuggestedAdded, style: help);
@@ -1843,6 +1868,8 @@ class _HouseEditState extends State<HouseEditScreen> {
                   tenancyStart: Value(_tenancyStart),
                   tenancyEnd: Value(_tenancyEnd),
                   rentDueDay: Value(_rentDay),
+                  septicTank: Value(_ptype == 'strata' ? h.septicTank : _septic),
+                  insidePbt: Value(_septic ? (_insidePbt ?? true) : h.insidePbt),
                   council: Value(nn(_council.text)),
                   state: Value(nn(_state.text)),
                   address: Value(nn(_address.text)),

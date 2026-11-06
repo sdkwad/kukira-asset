@@ -794,4 +794,10 @@ abstract class Str {
   String dlpEndedTribunal(String date);
   String get cccDateLabel;
   String get cccHelp;
+
+  // ------------------------------------------------ 0.3 IWK
+  String get septicQ;
+  String get septicHelp;
+  String get insidePbtQ;
+  String get insidePbtHelp;
 }

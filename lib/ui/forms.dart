@@ -431,7 +431,7 @@ class _ReminderFormState extends State<ReminderFormScreen> {
             const SizedBox(height: 14),
             FieldLabel(s.startFromTemplate),
             Wrap(spacing: 6, runSpacing: 6, children: [
-              for (final p in templatesFor(a.category, ptype))
+              for (final p in templatesFor(a.category, ptype, septicTank: w.houses[a.id]?.septicTank == true, insidePbt: w.houses[a.id]?.insidePbt))
                 ChoiceChip(label: Text(p.title(s)), selected: _template == p.key, onSelected: (_) => _applyTemplate(p, w)),
             ]),
             const SizedBox(height: 14),
