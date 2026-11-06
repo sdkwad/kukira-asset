@@ -1563,4 +1563,130 @@ class StrEn extends Str {
   String get depositTitle => 'Return or settle the deposit';
   @override
   String get depositNote => 'The actual time is set by your tenancy agreement.';
+
+  // ------------------------------------------------ 0.3 Rent screen
+  @override
+  String rentTitle(String house) => 'Rent · $house';
+  @override
+  String get addTenancy => 'Add a tenant';
+  @override
+  String get rentNoTenancy => 'No tenant recorded for this house yet. Add one to track the rent every month, the stamping of the agreement and the deposit.';
+  @override
+  String get tenantUnnamed => 'Tenant';
+  @override
+  String get tenancyActive => 'Active';
+  @override
+  String get tenancyEnded => 'Ended';
+  @override
+  String get rentWord => 'Rent';
+  @override
+  String get depositWord => 'Deposit';
+  @override
+  String get stampWord => 'Stamped';
+  @override
+  String get stampNotYet => 'Not yet';
+  @override
+  String get phoneWord => 'Phone';
+  @override
+  String receivedIn(int year) => 'Received $year';
+  @override
+  String get owedWord => 'Owed';
+  @override
+  String get nextDueWord => 'Next due';
+  @override
+  String get previousYear => 'Previous year';
+  @override
+  String get nextYear => 'Next year';
+  @override
+  String paidOfDue(int paid, int due) => due == 0 ? 'No month due yet' : '$paid of $due months paid';
+  @override
+  String get legendPaid => 'Paid';
+  @override
+  String get legendLate => 'Paid late';
+  @override
+  String get legendUnpaid => 'Not paid';
+  @override
+  String get legendUpcoming => 'Not due yet';
+  @override
+  String get tenancyHistory => 'Earlier tenants';
+  @override
+  String get rentNewTenancyHint => 'This tenancy has ended. Add a new tenant when the house is let again; this history stays.';
+  @override
+  String monthsPaid(int paid, int due) => '$paid/$due paid';
+  @override
+  String get stampedSaved => 'Agreement marked as stamped.';
+  @override
+  String get endTenancyQ => 'End this tenancy?';
+  @override
+  String get endTenancyBody => 'It stays in the history with all its payments. Rent reminders stop, and Kukira reminds you about the deposit.';
+  @override
+  String get endTenancyAction => 'End tenancy';
+  @override
+  String get tenancyEndedSaved => 'Tenancy ended and kept in the history.';
+  @override
+  String get depositSettledSaved => 'Deposit marked as settled.';
+  @override
+  String get deleteTenancyQ => 'Delete this tenancy?';
+  @override
+  String get editTenancy => 'Edit tenancy';
+  @override
+  String get markStampedAction => 'Mark as stamped';
+  @override
+  String get settleDepositAction => 'Deposit settled';
+  @override
+  String get deleteTenancy => 'Delete tenancy';
+  @override
+  String monthStateName(String state) => switch (state) { 'paid' => 'paid', 'late' => 'paid late', 'unpaid' => 'not paid', 'upcoming' => 'not due yet', _ => 'not tracked' };
+  @override
+  String rentForMonth(String month) => 'Rent for $month';
+  @override
+  String rentDueOnLine(String date) => 'Due $date';
+  @override
+  String get paidOnLabel => 'Paid on';
+  @override
+  String get amountLabel => 'Amount';
+  @override
+  String get unmarkPaid => 'Remove this payment';
+  @override
+  String rentUnmarked(String month) => 'Rent payment for $month removed.';
+  @override
+  String rentMarked(String month) => 'Rent for $month marked as paid.';
+  @override
+  String get markPaid => 'Mark as paid';
+  @override
+  String get newTenancy => 'New tenant';
+  @override
+  String get tenantName => 'Tenant name';
+  @override
+  String get tenantPhone => 'Tenant phone (optional)';
+  @override
+  String get rentDueHelp => 'If the rent is not marked as paid 7 days after the due day, Kukira reminds you.';
+  @override
+  String get rentAmountLabel => 'Monthly rent';
+  @override
+  String get signedOnLabel => 'Agreement signed on';
+  @override
+  String get stampedOnLabel => 'Stamped on';
+  @override
+  String get stampHelp => 'A tenancy agreement is stamped within 30 days of signing (an estimate; confirm with LHDN). Kukira reminds you until the stamped date is filled in.';
+  @override
+  String get rentPrivacyNote => 'The tenant name, phone and payments stay on this phone, encrypted, like your other records.';
+  @override
+  String get saveTenancy => 'Save tenancy';
+  @override
+  String get tenancySaved => 'Tenancy saved.';
+  @override
+  String get rentRowTitle => 'Rent';
+  @override
+  String rentRowMeta(String tenant, String state) => '$tenant · this month $state';
+  @override
+  String get rentRowNone => 'Add a tenant to track the rent';
+  @override
+  String get houseRentNote => 'Tenants, monthly rent, stamping and the deposit are kept on the Rent page.';
+  @override
+  String get manageRent => 'Manage rent';
+  @override
+  String markMonthPaid(String month) => 'Mark $month as paid';
+  @override
+  String get openRent => 'Open rent';
 }

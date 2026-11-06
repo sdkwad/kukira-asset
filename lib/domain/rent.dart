@@ -93,6 +93,20 @@ int? oldestOwed(Tenancy t, List<RentPayment> payments, {required DateTime today}
   return null;
 }
 
+/// Months whose due date has passed unpaid, over the whole tenancy so far.
+int owedMonths(Tenancy t, List<RentPayment> payments, {required DateTime today}) {
+  final from = trackedFrom(t);
+  if (from == null) return 0;
+  final now = monthKey(today);
+  final last = lastMonth(t);
+  final until = last == null || last > now ? now : last;
+  var n = 0;
+  for (var m = from; m <= until; m = nextMonth(m)) {
+    if (monthState(t, m, paymentFor(payments, m), today: today) == MonthState.unpaid) n++;
+  }
+  return n;
+}
+
 /// How long after the due date unpaid rent is notified (the owner's choice: 7 days).
 const rentGraceDays = 7;
 
@@ -112,7 +126,8 @@ class RentYear {
   final int paidMonths;
   final int dueMonths;
 
-  /// The next due date still to be paid.
+  /// The next due date still ahead (today or later) and not paid yet. Months already past
+  /// their due date are counted in [owedMonths] instead.
   final DateTime? nextDue;
 }
 
@@ -137,7 +152,7 @@ RentYear rentYear(Tenancy t, List<RentPayment> payments, int year, {required Dat
         break;
     }
   }
-  final next = oldestOwed(t, payments, today: today);
+  final next = nextToPay(t, payments, today: today);
   return RentYear(
     received: received,
     owedMonths: owed,
@@ -146,6 +161,21 @@ RentYear rentYear(Tenancy t, List<RentPayment> payments, int year, {required Dat
     dueMonths: due,
     nextDue: next == null ? null : rentDueOn(next, t.dueDay),
   );
+}
+
+/// The next month whose due date is today or later and that is not paid yet, from this month
+/// to the end of the tenancy (or the month after this one, while it runs).
+int? nextToPay(Tenancy t, List<RentPayment> payments, {required DateTime today}) {
+  final day = dayOnly(today);
+  final now = monthKey(day);
+  final until = lastMonth(t) ?? nextMonth(now);
+  final paid = {for (final p in payments) p.month};
+  final from = trackedFrom(t);
+  for (var m = now; m <= until; m = nextMonth(m)) {
+    if (from == null || m < from || !covers(t, m) || paid.contains(m)) continue;
+    if (!rentDueOn(m, t.dueDay).isBefore(day)) return m;
+  }
+  return null;
 }
 
 /// The tenancy that is running now (or about to start): the latest one not ended.

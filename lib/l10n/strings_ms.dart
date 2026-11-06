@@ -1560,4 +1560,130 @@ class StrMs extends Str {
   String get depositTitle => 'Pulangkan atau selesaikan deposit';
   @override
   String get depositNote => 'Tempoh sebenar ikut perjanjian sewa anda.';
+
+  // ------------------------------------------------ 0.3 Rent screen
+  @override
+  String rentTitle(String house) => 'Sewa · $house';
+  @override
+  String get addTenancy => 'Tambah penyewa';
+  @override
+  String get rentNoTenancy => 'Belum ada penyewa direkod untuk rumah ini. Tambah penyewa untuk menjejak sewa setiap bulan, setem perjanjian dan deposit.';
+  @override
+  String get tenantUnnamed => 'Penyewa';
+  @override
+  String get tenancyActive => 'Aktif';
+  @override
+  String get tenancyEnded => 'Tamat';
+  @override
+  String get rentWord => 'Sewa';
+  @override
+  String get depositWord => 'Deposit';
+  @override
+  String get stampWord => 'Setem';
+  @override
+  String get stampNotYet => 'Belum';
+  @override
+  String get phoneWord => 'Telefon';
+  @override
+  String receivedIn(int year) => 'Diterima $year';
+  @override
+  String get owedWord => 'Tertunggak';
+  @override
+  String get nextDueWord => 'Seterusnya';
+  @override
+  String get previousYear => 'Tahun sebelumnya';
+  @override
+  String get nextYear => 'Tahun seterusnya';
+  @override
+  String paidOfDue(int paid, int due) => due == 0 ? 'Belum ada bulan yang perlu dibayar' : '$paid daripada $due bulan dibayar';
+  @override
+  String get legendPaid => 'Dibayar';
+  @override
+  String get legendLate => 'Dibayar lewat';
+  @override
+  String get legendUnpaid => 'Belum dibayar';
+  @override
+  String get legendUpcoming => 'Belum tiba';
+  @override
+  String get tenancyHistory => 'Sejarah penyewa';
+  @override
+  String get rentNewTenancyHint => 'Penyewaan ini sudah tamat. Tambah penyewa baharu bila rumah disewa semula; sejarah ini kekal.';
+  @override
+  String monthsPaid(int paid, int due) => '$paid/$due dibayar';
+  @override
+  String get stampedSaved => 'Perjanjian ditanda sudah disetem.';
+  @override
+  String get endTenancyQ => 'Tamatkan penyewaan ini?';
+  @override
+  String get endTenancyBody => 'Ia kekal dalam sejarah bersama semua bayarannya. Peringatan sewa berhenti, dan Kukira mengingatkan anda tentang deposit.';
+  @override
+  String get endTenancyAction => 'Tamatkan penyewaan';
+  @override
+  String get tenancyEndedSaved => 'Penyewaan ditamatkan dan disimpan dalam sejarah.';
+  @override
+  String get depositSettledSaved => 'Deposit ditanda sudah diselesaikan.';
+  @override
+  String get deleteTenancyQ => 'Padam penyewaan ini?';
+  @override
+  String get editTenancy => 'Ubah penyewaan';
+  @override
+  String get markStampedAction => 'Tanda sudah disetem';
+  @override
+  String get settleDepositAction => 'Deposit sudah diselesaikan';
+  @override
+  String get deleteTenancy => 'Padam penyewaan';
+  @override
+  String monthStateName(String state) => switch (state) { 'paid' => 'dibayar', 'late' => 'dibayar lewat', 'unpaid' => 'belum dibayar', 'upcoming' => 'belum tiba', _ => 'tidak dijejak' };
+  @override
+  String rentForMonth(String month) => 'Sewa $month';
+  @override
+  String rentDueOnLine(String date) => 'Perlu dibayar $date';
+  @override
+  String get paidOnLabel => 'Tarikh dibayar';
+  @override
+  String get amountLabel => 'Jumlah';
+  @override
+  String get unmarkPaid => 'Buang bayaran ini';
+  @override
+  String rentUnmarked(String month) => 'Bayaran sewa $month dibuang.';
+  @override
+  String rentMarked(String month) => 'Sewa $month ditanda dibayar.';
+  @override
+  String get markPaid => 'Tanda dibayar';
+  @override
+  String get newTenancy => 'Penyewa baharu';
+  @override
+  String get tenantName => 'Nama penyewa';
+  @override
+  String get tenantPhone => 'Telefon penyewa (pilihan)';
+  @override
+  String get rentDueHelp => 'Jika sewa belum ditanda dibayar 7 hari selepas hari bayar, Kukira mengingatkan anda.';
+  @override
+  String get rentAmountLabel => 'Sewa sebulan';
+  @override
+  String get signedOnLabel => 'Tarikh perjanjian ditandatangani';
+  @override
+  String get stampedOnLabel => 'Tarikh disetem';
+  @override
+  String get stampHelp => 'Perjanjian sewa disetem dalam 30 hari selepas ditandatangani (anggaran; sahkan dengan LHDN). Kukira mengingatkan anda sehingga tarikh disetem diisi.';
+  @override
+  String get rentPrivacyNote => 'Nama, telefon dan bayaran penyewa kekal dalam telefon ini, bersulit, seperti rekod lain.';
+  @override
+  String get saveTenancy => 'Simpan penyewaan';
+  @override
+  String get tenancySaved => 'Penyewaan disimpan.';
+  @override
+  String get rentRowTitle => 'Sewa';
+  @override
+  String rentRowMeta(String tenant, String state) => '$tenant · bulan ini $state';
+  @override
+  String get rentRowNone => 'Tambah penyewa untuk menjejak sewa';
+  @override
+  String get houseRentNote => 'Penyewa, sewa bulanan, setem dan deposit diurus di halaman Sewa.';
+  @override
+  String get manageRent => 'Urus sewa';
+  @override
+  String markMonthPaid(String month) => 'Tanda $month dibayar';
+  @override
+  String get openRent => 'Buka sewa';
 }

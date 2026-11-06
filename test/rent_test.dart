@@ -104,7 +104,7 @@ void main() {
       expect(y.dueMonths, 4);
       expect(y.owedMonths, 2);
       expect(y.owedAmount, 3600);
-      expect(y.nextDue, DateTime(2026, 3, 5));
+      expect(y.nextDue, DateTime(2026, 5, 5), reason: 'March and April are owed; May is the next one ahead');
     });
   });
 

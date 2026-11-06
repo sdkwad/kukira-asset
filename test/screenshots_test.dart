@@ -18,6 +18,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:kukira_asset/data/db.dart';
 import 'package:kukira_asset/domain/renewal.dart';
+import 'package:kukira_asset/domain/rent.dart';
 import 'package:kukira_asset/l10n/strings.dart';
 import 'package:kukira_asset/services/error_log.dart';
 import 'package:kukira_asset/ui/add_asset.dart';
@@ -29,6 +30,7 @@ import 'package:kukira_asset/ui/forms.dart';
 import 'package:kukira_asset/ui/lock.dart';
 import 'package:kukira_asset/ui/more.dart';
 import 'package:kukira_asset/ui/renew.dart';
+import 'package:kukira_asset/ui/rent.dart';
 import 'package:kukira_asset/ui/vendors.dart';
 import 'package:kukira_asset/ui/welcome.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -365,6 +367,72 @@ void main() {
   }, height: 1100, act: (t) async {
     FlutterSecureStorage.setMockInitialValues({});
   });
+
+  // 0.3: the rent of a let house.
+  shot('90-sewa', () => const RentScreen(assetId: 1), world: _rentWorld(), height: 1300);
+  shot('91-sewa-bulan', () => const RentScreen(assetId: 1), world: _rentWorld(), height: 1300, act: (t) async {
+    await t.tap(find.byKey(rentMonthKey(monthKey(DateTime.now()))));
+  });
+  shot('92-penyewa-baharu', () => const TenancyFormScreen(assetId: 1), world: _rentWorld(), height: 1500);
+  shot('93-besar-sewa', () => const RentScreen(assetId: 1), world: _rentWorld(), textScale: 1.3, height: 1600);
+  shot('94-gelap-sewa', () => const RentScreen(assetId: 1), world: _rentWorld(), brightness: Brightness.dark, height: 1300);
+}
+
+/// The demo house let since January last year, with this year's rent mostly paid (one month
+/// late, one missing) and an earlier tenant.
+World _rentWorld() {
+  final w = demoWorld();
+  final now = DateTime.now();
+  final y = now.year;
+  final cur = Tenancy(
+    id: 1,
+    assetId: 1,
+    tenantName: 'Encik Hafiz',
+    tenantPhone: '012-345 6789',
+    startDate: DateTime(y - 1, 1, 1),
+    endDate: DateTime(y + 1, 12, 31),
+    rent: 1800,
+    dueDay: 5,
+    deposit: 5400,
+    signedOn: DateTime(y - 1, 12, 20),
+    stampedOn: DateTime(y - 1, 12, 28),
+    createdAt: DateTime(y - 1, 1, 1),
+  );
+  final old = Tenancy(
+    id: 2,
+    assetId: 1,
+    tenantName: 'Puan Aini',
+    startDate: DateTime(y - 3, 1, 1),
+    endDate: DateTime(y - 2, 12, 31),
+    endedOn: DateTime(y - 2, 12, 31),
+    rent: 1600,
+    dueDay: 1,
+    deposit: 4800,
+    depositReturnedOn: DateTime(y - 1, 1, 10),
+    createdAt: DateTime(y - 3, 1, 1),
+  );
+  final pays = <RentPayment>[
+    for (var m = 1; m <= 12; m++) RentPayment(id: 50 + m, tenancyId: 1, month: (y - 1) * 100 + m, paidOn: DateTime(y - 1, m, 3), amount: 1800),
+    for (var m = 1; m < now.month; m++)
+      if (m != now.month - 2) RentPayment(id: m, tenancyId: 1, month: y * 100 + m, paidOn: DateTime(y, m, m == 3 ? 12 : 4), amount: 1800),
+  ];
+  final oldPays = <RentPayment>[
+    for (var m = 0; m < 24; m++) RentPayment(id: 100 + m, tenancyId: 2, month: (y - 3 + m ~/ 12) * 100 + m % 12 + 1, paidOn: DateTime(y - 3 + m ~/ 12, m % 12 + 1, 1), amount: 1600),
+  ];
+  return World(
+    tenancies: [cur, old],
+    rentPayments: {1: pays, 2: oldPays},
+    assets: w.assets,
+    houses: {for (final e in w.houses.entries) e.key: e.key == 1 ? e.value.copyWith(occupancy: const Value('rented')) : e.value},
+    vehicles: w.vehicles,
+    reminders: w.reminders,
+    records: w.records,
+    odometer: w.odometer,
+    vendors: w.vendors,
+    documents: w.documents,
+    settings: w.settings,
+    costItems: w.costItems,
+  );
 }
 
 /// The demo with nothing overdue or due in 30 days, and a backup two days ago.

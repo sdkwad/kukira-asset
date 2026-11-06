@@ -19,6 +19,7 @@ import 'package:kukira_asset/services/renewal.dart';
 import 'package:kukira_asset/ui/assets.dart';
 import 'package:kukira_asset/ui/documents.dart';
 import 'package:kukira_asset/ui/forms.dart';
+import 'package:kukira_asset/ui/rent.dart';
 
 import 'helpers.dart';
 
@@ -141,12 +142,29 @@ void main() {
       });
     }
 
+    // Since 0.3 the tenancy is kept on its own form (lib/ui/rent.dart).
     testWidgets('a tenancy cannot end before it starts', (tester) async {
       setPhone(tester, height: 3200);
-      final h = HouseProfile(assetId: 1, propertyType: 'landed', occupancy: 'rented', tenancyStart: DateTime(2027, 3, 1), tenancyEnd: DateTime(2027, 1, 1));
-      await tester.pumpWidget(harness(const HouseEditScreen(assetId: 1), with1(fakeWorld(), house: h)));
+      final t = Tenancy(id: 1, assetId: 1, startDate: DateTime(2027, 3, 1), endDate: DateTime(2027, 1, 1), createdAt: DateTime(2026, 11, 1));
+      final base = fakeWorld();
+      final w = World(
+        tenancies: [t],
+        assets: base.assets,
+        houses: base.houses,
+        vehicles: base.vehicles,
+        reminders: base.reminders,
+        records: base.records,
+        odometer: base.odometer,
+        vendors: base.vendors,
+        documents: base.documents,
+        settings: base.settings,
+        costItems: base.costItems,
+      );
+      await tester.pumpWidget(harness(const TenancyFormScreen(assetId: 1, editId: 1), w));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(s.saveChanges));
+      final save = find.text(s.saveTenancy);
+      await tester.scrollUntilVisible(save, 200, scrollable: find.byType(Scrollable).first);
+      await tester.tap(save);
       await tester.pump();
       expect(find.text(s.endBeforeStart), findsOneWidget);
     });
