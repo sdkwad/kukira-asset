@@ -202,6 +202,43 @@ void main() {
     await b.close();
   });
 
+  test('tenancies, rent, room checks and checklists (schema 6) go into a backup and come back', () async {
+    final a = await sampleDb();
+    final car = (await a.select(a.assets).getSingle()).id;
+    final house = await a.createAsset(category: 'house', nickname: 'Rumah Setia Alam', propertyType: 'landed');
+    await a.updateHouse(house, HouseProfilesCompanion(cccDate: Value(DateTime(2025, 1, 10)), septicTank: const Value(true), insidePbt: const Value(true)));
+    final ten = await a.into(a.tenancies).insert(TenanciesCompanion.insert(
+      assetId: house,
+      tenantName: const Value('Encik Hafiz'),
+      startDate: Value(DateTime(2026, 1, 1)),
+      rent: const Value(1800),
+      dueDay: const Value(5),
+    ));
+    await a.into(a.rentPayments).insert(RentPaymentsCompanion.insert(tenancyId: ten, month: 202601, paidOn: DateTime(2026, 1, 5), amount: const Value(1800)));
+    final rec = await a.addRecord(RecordsCompanion.insert(assetId: house, kind: 'defect', title: 'Retak siling dapur', date: DateTime(2025, 1, 20)));
+    final ins = await a.into(a.inspections).insert(InspectionsCompanion.insert(assetId: house, kind: 'vp', date: DateTime(2025, 1, 20)));
+    await a.into(a.inspectionChecks).insert(InspectionChecksCompanion.insert(inspectionId: ins, room: 'Dapur', item: 'Siling', result: const Value('defect'), recordId: Value(rec)));
+    final list = await a.into(a.checklists).insert(ChecklistsCompanion.insert(title: 'Balik kampung', assetId: Value(car)));
+    await a.into(a.checklistItems).insert(ChecklistItemsCompanion.insert(checklistId: list, label: 'Tekanan tayar'));
+
+    final c = await Backup.openFile((await Backup.create(a, pass)).file, pass);
+    expect(c.count('tenancies'), 1);
+    final b = AppDb(NativeDatabase.memory());
+    await Backup.restore(b, c);
+    final mine = await a.exportTables();
+    final back = await b.exportTables();
+    for (final t in ['tenancies', 'rentPayments', 'inspections', 'inspectionChecks', 'checklists', 'checklistItems']) {
+      expect(back[t], mine[t], reason: t);
+      expect(back[t], isNotEmpty, reason: t);
+    }
+    // House fields are kept with the house.
+    final h = (await b.loadWorld()).houses[house]!;
+    expect(h.cccDate, DateTime(2025, 1, 10));
+    expect(h.septicTank, isTrue);
+    await a.close();
+    await b.close();
+  });
+
   test('documents that cannot be read are counted, and the rest is still backed up', () async {
     final a = await sampleDb();
     final car = (await a.select(a.assets).getSingle()).id;
