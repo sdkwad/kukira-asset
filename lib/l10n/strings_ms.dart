@@ -1657,7 +1657,7 @@ class StrMs extends Str {
   @override
   String get tenantPhone => 'Telefon penyewa (pilihan)';
   @override
-  String get rentDueHelp => 'Jika sewa belum ditanda dibayar 7 hari selepas hari ini, Kukira mengingatkan anda.';
+  String get rentDueHelp => 'Jika sewa belum ditanda dibayar 7 hari selepas hari bayar, Kukira mengingatkan anda.';
   @override
   String get rentAmountLabel => 'Sewa sebulan';
   @override

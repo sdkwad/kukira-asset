@@ -1660,7 +1660,7 @@ class StrEn extends Str {
   @override
   String get tenantPhone => 'Tenant phone (optional)';
   @override
-  String get rentDueHelp => 'If the rent is not marked as paid 7 days after this day, Kukira reminds you.';
+  String get rentDueHelp => 'If the rent is not marked as paid 7 days after the due day, Kukira reminds you.';
   @override
   String get rentAmountLabel => 'Monthly rent';
   @override

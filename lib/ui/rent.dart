@@ -106,13 +106,20 @@ class _RentScreenState extends State<RentScreen> {
       const SizedBox(height: 12),
 
       // ---- the year at a glance
-      Row(children: [
-        Expanded(child: _metric(context, s.receivedIn(year), s.rm(y.received))),
-        const SizedBox(width: 8),
-        Expanded(child: _metric(context, s.owedWord, y.owedAmount != null ? s.rm(y.owedAmount!) : s.monthsCount(y.owedMonths), danger: y.owedMonths > 0)),
-        const SizedBox(width: 8),
-        Expanded(child: _metric(context, s.nextDueWord, y.nextDue == null ? '–' : s.dShort(y.nextDue!))),
-      ]),
+      // Three in a row while each label fits whole; fewer at large text sizes.
+      LayoutBuilder(builder: (context, c) {
+        final scale = MediaQuery.textScalerOf(context).scale(1);
+        final cols = (c.maxWidth / (112 * scale)).floor().clamp(1, 3);
+        final width = (c.maxWidth - 8 * (cols - 1)) / cols;
+        return Wrap(spacing: 8, runSpacing: 8, children: [
+          for (final m in [
+            _metric(context, s.receivedIn(year), s.rm(y.received)),
+            _metric(context, s.owedWord, y.owedAmount != null ? s.rm(y.owedAmount!) : s.monthsCount(y.owedMonths), danger: y.owedMonths > 0),
+            _metric(context, s.nextDueWord, y.nextDue == null ? '–' : s.dShort(y.nextDue!)),
+          ])
+            SizedBox(width: width, child: m),
+        ]);
+      }),
       const SizedBox(height: 16),
 
       // ---- twelve months
