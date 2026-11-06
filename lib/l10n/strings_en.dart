@@ -1689,4 +1689,68 @@ class StrEn extends Str {
   String markMonthPaid(String month) => 'Mark $month as paid';
   @override
   String get openRent => 'Open rent';
+
+  // ------------------------------------------------ 0.3 Room check
+  @override
+  String roomName(String key) {
+    final m = RegExp(r'^([a-z]+)(\d+)$').firstMatch(key);
+    final n = m?.group(2);
+    return switch (m?.group(1) ?? key) {
+      'living' => 'Living room',
+      'kitchen' => 'Kitchen',
+      'bed' => 'Bedroom $n',
+      'bath' => 'Bathroom $n',
+      'balcony' => 'Balcony',
+      'outside' => 'Outside',
+      _ => key,
+    };
+  }
+  @override
+  String inspectionItemName(String item) => switch (item) { 'ceiling' => 'Ceiling', 'walls' => 'Walls', 'floor' => 'Floor and tiles', 'door' => 'Door', 'window' => 'Windows', 'sink' => 'Sink and pipes', 'switches' => 'Switches and sockets', 'paint' => 'Paint', 'toilet' => 'Toilet bowl', 'shower' => 'Shower and waterproofing', 'railing' => 'Balcony railing', 'drain' => 'Drain', 'gate' => 'Gate', 'porch' => 'Porch', 'roof' => 'Roof and gutters', _ => item };
+  @override
+  String get inspectionTitle => 'Room-by-room checks';
+  @override
+  String inspectionKindName(String kind) => kind == 'dlp' ? 'Check before the DLP ends' : 'Check at key handover (VP)';
+  @override
+  String get startInspection => 'Start a room check';
+  @override
+  String get inspectionStartTitle => 'New check';
+  @override
+  String get bedroomsLabel => 'Bedrooms';
+  @override
+  String get bathroomsLabel => 'Bathrooms';
+  @override
+  String get fewer => 'Fewer';
+  @override
+  String get more => 'More';
+  @override
+  String inspectionProgress(int checked, int total, int defects) => '$checked/$total checked · $defects defects';
+  @override
+  String get resultOk => 'OK';
+  @override
+  String get resultDefect => 'Defect';
+  @override
+  String get resultNa => 'None';
+  @override
+  String get addDefectDetails => 'Add photos or notes';
+  @override
+  String get inspectionHint => 'Mark each thing: OK, Defect, or None if the house does not have it. A defect is recorded at once; photos and notes can be added later.';
+  @override
+  String get sendDefects => 'Send the list to the developer';
+  @override
+  String get sendDefectsQ => 'Send the defect list?';
+  @override
+  String sendDefectsBody(int n) => '$n defects not fixed yet, with their photos, are sent through the app you pick, such as WhatsApp. This text and these photos leave the phone and are no longer encrypted.';
+  @override
+  String get sendDefectsAction => 'Send';
+  @override
+  String defectsSentSaved(int n) => '$n defects marked as reported today.';
+  @override
+  String defectReportHeading(String house) => 'Defect list · $house';
+  @override
+  String defectReportDate(String date) => 'Date: $date';
+  @override
+  String get otherArea => 'Other';
+  @override
+  String get defectReportFooter => 'Sent from Kukira Asset.';
 }
