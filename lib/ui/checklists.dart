@@ -143,7 +143,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
             TextField(
               controller: _add,
               textCapitalization: TextCapitalization.sentences,
-              decoration: InputDecoration(labelText: s.addItem, border: const OutlineInputBorder(), suffixIcon: const Icon(Icons.add)),
+              decoration: InputDecoration(labelText: s.addChecklistItem, border: const OutlineInputBorder(), suffixIcon: const Icon(Icons.add)),
               onSubmitted: (v) async {
                 if (v.trim().isEmpty) return;
                 await addChecklistItem(db, list, v, position: items.length);
@@ -168,7 +168,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
               Expanded(
                 child: OutlinedButton.icon(
                   icon: const Icon(Icons.alarm_add_outlined),
-                  label: Text(s.remindMe),
+                  label: Text(s.remindChecklistAction),
                   onPressed: () async {
                     final d = await showDatePicker(context: context, initialDate: today().add(const Duration(days: 7)), firstDate: today(), lastDate: DateTime(2100));
                     if (d == null || !context.mounted) return;

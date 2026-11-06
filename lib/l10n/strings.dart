@@ -917,10 +917,10 @@ abstract class Str {
   String get checklistBlank;
   String get deleteChecklistQ;
   String get removeItem;
-  String get addItem;
+  String get addChecklistItem;
   String get restartChecklist;
   String get checklistRestarted;
-  String get remindMe;
+  String get remindChecklistAction;
   String checklistReminded(String date);
   String checklistReminderTitle(String list);
 }

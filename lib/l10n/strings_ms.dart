@@ -1789,13 +1789,13 @@ class StrMs extends Str {
   @override
   String get removeItem => 'Buang';
   @override
-  String get addItem => 'Tambah perkara';
+  String get addChecklistItem => 'Tambah perkara';
   @override
   String get restartChecklist => 'Mula semula';
   @override
   String get checklistRestarted => 'Semua tanda dikosongkan untuk perjalanan seterusnya.';
   @override
-  String get remindMe => 'Ingatkan saya';
+  String get remindChecklistAction => 'Ingatkan saya';
   @override
   String checklistReminded(String date) => 'Kukira mengingatkan anda pada $date.';
   @override

@@ -1792,13 +1792,13 @@ class StrEn extends Str {
   @override
   String get removeItem => 'Remove';
   @override
-  String get addItem => 'Add an item';
+  String get addChecklistItem => 'Add an item';
   @override
   String get restartChecklist => 'Start again';
   @override
   String get checklistRestarted => 'All ticks cleared for the next trip.';
   @override
-  String get remindMe => 'Remind me';
+  String get remindChecklistAction => 'Remind me';
   @override
   String checklistReminded(String date) => 'Kukira reminds you on $date.';
   @override
