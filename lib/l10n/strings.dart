@@ -17,6 +17,9 @@ abstract class Str {
 
   String dShort(DateTime d) => d.year == DateTime.now().year ? '${d.day} ${monthsShort[d.month - 1]}' : dLong(d);
   String dLong(DateTime d) => '${d.day} ${monthsShort[d.month - 1]} ${d.year}';
+
+  /// Month [key] (year * 100 + month, see lib/domain/rent.dart): "Dis 2026".
+  String monthYear(int key) => '${monthsShort[key % 100 - 1]} ${key ~/ 100}';
   String weekdayDate(DateTime d) => '${weekdays[d.weekday - 1]}, ${dLong(d)}';
   String hm(int h, int m) => '${h.toString().padLeft(2, '0')}:${m.toString().padLeft(2, '0')}';
   String timeOfDay(DateTime d) => '${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}';
@@ -800,4 +803,13 @@ abstract class Str {
   String get septicHelp;
   String get insidePbtQ;
   String get insidePbtHelp;
+
+  // ------------------------------------------------ 0.3 Rent reminders
+  String rentUnpaidTitle(String month);
+  String get rentStampTitle;
+  String get rentStampNote;
+  String get rentStampConfirm;
+  String get tenancyEndTitle;
+  String get depositTitle;
+  String get depositNote;
 }

@@ -1547,4 +1547,20 @@ class StrEn extends Str {
   String get insidePbtQ => 'Inside a local council (PBT) area?';
   @override
   String get insidePbtHelp => 'Inside a PBT area: every 2 years. Outside one: every 3 years.';
+
+  // ------------------------------------------------ 0.3 Rent reminders
+  @override
+  String rentUnpaidTitle(String month) => 'Rent for $month not received';
+  @override
+  String get rentStampTitle => 'Stamp the tenancy agreement';
+  @override
+  String get rentStampNote => 'Estimate: a tenancy agreement is stamped within 30 days of signing (Stamp Act 1949), through e-Duti Setem on MyTax. Late stamping carries a penalty.';
+  @override
+  String get rentStampConfirm => 'LHDN';
+  @override
+  String get tenancyEndTitle => 'Tenancy agreement ends';
+  @override
+  String get depositTitle => 'Return or settle the deposit';
+  @override
+  String get depositNote => 'The actual time is set by your tenancy agreement.';
 }

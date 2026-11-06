@@ -1544,4 +1544,20 @@ class StrMs extends Str {
   String get insidePbtQ => 'Dalam kawasan PBT (majlis)?';
   @override
   String get insidePbtHelp => 'Dalam kawasan PBT: setiap 2 tahun. Di luar kawasan PBT: setiap 3 tahun.';
+
+  // ------------------------------------------------ 0.3 Rent reminders
+  @override
+  String rentUnpaidTitle(String month) => 'Sewa $month belum diterima';
+  @override
+  String get rentStampTitle => 'Setemkan perjanjian sewa';
+  @override
+  String get rentStampNote => 'Anggaran: perjanjian sewa disetem dalam 30 hari selepas ditandatangani (Akta Setem 1949), melalui e-Duti Setem di MyTax. Lewat dikenakan penalti.';
+  @override
+  String get rentStampConfirm => 'LHDN';
+  @override
+  String get tenancyEndTitle => 'Perjanjian sewa tamat';
+  @override
+  String get depositTitle => 'Pulangkan atau selesaikan deposit';
+  @override
+  String get depositNote => 'Tempoh sebenar ikut perjanjian sewa anda.';
 }

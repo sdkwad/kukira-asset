@@ -54,7 +54,7 @@ Future<void> runAddAction(BuildContext context, AddKind k, int assetId) async {
 /// The reminders worth acting on from Tambah: overdue, then due soon, in Today's order, at
 /// most [max]. With [assetId], only that asset's.
 List<Reminder> addSuggestions(World w, {int? assetId, int max = 3}) {
-  final due = w.reminders.where((r) {
+  final due = w.listed.where((r) {
     if (r.done || (assetId != null && r.assetId != assetId)) return false;
     final st = remStatus(r, w);
     return st == RStatus.overdue || st == RStatus.dueSoon;
@@ -110,6 +110,7 @@ String suggestionTitle(Str s, Reminder r) => switch (r.autoSource) {
 IconData _suggestionIcon(Reminder r) => switch (r.autoSource) {
       'roadTax' || 'insurance' => Icons.sell_outlined,
       'dlp' => Icons.construction_outlined,
+      'rent' => Icons.key_outlined,
       'tribunal' => Icons.gavel,
       _ => r.category == 'odometer' ? Icons.speed_outlined : Icons.build_outlined,
     };

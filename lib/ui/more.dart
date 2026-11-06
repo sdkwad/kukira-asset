@@ -56,7 +56,7 @@ class MoreScreen extends StatelessWidget {
               ListTile(
                 leading: const Icon(Icons.list_alt_outlined),
                 title: Text(s.allRemindersTitle),
-                subtitle: Text(s.activeCount(w.reminders.where((r) => !r.done).length)),
+                subtitle: Text(s.activeCount(w.listed.where((r) => !r.done).length)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => go(const AllRemindersScreen()),
               ),
@@ -141,7 +141,7 @@ class _AllRemindersState extends State<AllRemindersScreen> {
   Widget build(BuildContext context) {
     return WorldView(builder: (context, w) {
       final s = context.s;
-      final rs = w.reminders.where((r) => !r.done && (_f == 'all' || w.asset(r.assetId)?.category == _f)).toList()..sort(remOrder(w));
+      final rs = w.listed.where((r) => !r.done && (_f == 'all' || w.asset(r.assetId)?.category == _f)).toList()..sort(remOrder(w));
       return SafeScaffold(
         appBar: AppBar(title: Text(s.allRemindersTitle)),
         body: ListView(padding: const EdgeInsets.all(16), children: [
