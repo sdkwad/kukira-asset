@@ -26,17 +26,21 @@ AutoChange planChange(Iterable<Reminder> reminders, int assetId, String source,
 String autoTitle(Str s, String source) => switch (source) {
       autoRoadTax => s.presetTitle('roadTax'),
       autoInsurance => s.presetTitle('vehicleInsurance'),
+      autoTribunal => s.tribunalReminderTitle,
       _ => s.dlpReminderTitle,
     };
 
 String _category(String source) => switch (source) {
       autoRoadTax => 'road_tax',
       autoInsurance => 'insurance_premium',
+      autoTribunal => 'tribunal',
       _ => 'dlp',
     };
 
 int _lead(String source) => switch (source) {
       autoRoadTax => 14,
+      // Time to get advice and file the claim.
+      autoTribunal => 60,
       _ => 30,
     };
 
@@ -53,6 +57,7 @@ Future<List<String>> applyAuto(AppDb db, Str s, int assetId, List<AutoChange> ch
         break;
       case AutoKind.create:
         final dlp = c.source == autoDlp;
+        final tribunal = c.source == autoTribunal;
         await db.addReminder(RemindersCompanion(
           assetId: Value(assetId),
           title: Value(title),
@@ -61,9 +66,10 @@ Future<List<String>> applyAuto(AppDb db, Str s, int assetId, List<AutoChange> ch
           dueDate: Value(p.due),
           leadDays: Value(_lead(c.source)),
           source: const Value('auto'),
-          estimated: Value(dlp),
-          note: Value(dlp ? s.dlpAutoNote : null),
-          confirmWith: Value(dlp ? s.yourSpa : null),
+          // Legal dates are estimates, with who to confirm them with (SPEC rule 5).
+          estimated: Value(dlp || tribunal),
+          note: Value(dlp ? s.dlpAutoNote : (tribunal ? s.tribunalAutoNote : null)),
+          confirmWith: Value(dlp ? s.yourSpa : (tribunal ? s.tribunalConfirm : null)),
           autoSource: Value(c.source),
         ));
         msgs.add(s.autoCreated(title, s.dLong(p.due!)));

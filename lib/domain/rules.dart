@@ -47,10 +47,12 @@ DateTime dayOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 int daysBetween(DateTime a, DateTime b) =>
     (dayOnly(b).difference(dayOnly(a)).inHours / 24).round();
 
-/// Adds calendar months, clamping to the last day (31 Aug + 6 months = 28/29 Feb).
+/// Adds calendar months, clamping to the last day (31 Aug + 6 months = 28/29 Feb). Months may
+/// be negative: the year is floored, so Nov 2026 less 25 months is Oct 2024 (`~/` rounds
+/// towards zero and gave Oct 2025).
 DateTime addMonths(DateTime d, int months) {
   final total = d.month - 1 + months;
-  final y = d.year + (total ~/ 12);
+  final y = d.year + (total / 12).floor();
   final m = total % 12 + 1;
   final last = DateTime(y, m + 1, 0).day;
   return DateTime(y, m, d.day > last ? last : d.day);
