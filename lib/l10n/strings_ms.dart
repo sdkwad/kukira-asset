@@ -1762,4 +1762,42 @@ class StrMs extends Str {
   String get otherArea => 'Lain-lain';
   @override
   String get defectReportFooter => 'Dihantar dari Kukira Asset.';
+
+  // ------------------------------------------------ 0.3 Checklists
+  @override
+  String get checklistsTitle => 'Senarai semak';
+  @override
+  String checklistsCount(int n) => n == 0 ? 'Balik kampung, cuti panjang' : '$n senarai';
+  @override
+  String get newChecklist => 'Senarai baharu';
+  @override
+  String get checklistsEmpty => 'Senarai semak untuk perkara yang berulang: sebelum memandu balik kampung, atau sebelum meninggalkan rumah lama. Tanda satu demi satu, kemudian mula semula untuk perjalanan seterusnya.';
+  @override
+  String checkedCount(int done, int total) => '$done/$total ditanda';
+  @override
+  String lastUsedOn(String date) => 'Terakhir digunakan $date';
+  @override
+  String checklistTemplateTitle(String t) => t == 'tripCar' ? 'Kereta: sebelum perjalanan jauh' : 'Rumah: sebelum tinggal lama';
+  @override
+  String checklistTemplateHint(String t) => t == 'tripCar' ? 'Tayar, minyak, lampu, dokumen' : 'Suis, paip, gas, kunci, jiran';
+  @override
+  List<String> checklistTemplateItems(String t) => t == 'tripCar' ? const ['Tekanan tayar, termasuk tayar ganti', 'Minyak hitam dan air radiator', 'Air pencuci dan wiper', 'Lampu dan lampu isyarat', 'Brek', 'Cukai jalan, insurans dan lesen memandu', 'Segi tiga kecemasan dan kit kecemasan', 'Baki Touch n Go untuk tol'] : const ['Kunci semua pintu dan tingkap', 'Tutup suis utama, kecuali peti sejuk', 'Tutup paip air utama', 'Tutup gas', 'Cabut plag perkakas', 'Buang sampah', 'Kunci pintu pagar', 'Minta jiran tengokkan rumah'];
+  @override
+  String get checklistBlank => 'Senarai kosong';
+  @override
+  String get deleteChecklistQ => 'Padam senarai ini?';
+  @override
+  String get removeItem => 'Buang';
+  @override
+  String get addItem => 'Tambah perkara';
+  @override
+  String get restartChecklist => 'Mula semula';
+  @override
+  String get checklistRestarted => 'Semua tanda dikosongkan untuk perjalanan seterusnya.';
+  @override
+  String get remindMe => 'Ingatkan saya';
+  @override
+  String checklistReminded(String date) => 'Kukira mengingatkan anda pada $date.';
+  @override
+  String checklistReminderTitle(String list) => 'Senarai semak: $list';
 }

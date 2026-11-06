@@ -12,6 +12,7 @@ import '../services/backup.dart';
 import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
+import 'checklists.dart';
 import 'common.dart';
 import 'forms.dart';
 import 'lock.dart';
@@ -59,6 +60,13 @@ class MoreScreen extends StatelessWidget {
                 subtitle: Text(s.activeCount(w.listed.where((r) => !r.done).length)),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => go(const AllRemindersScreen()),
+              ),
+              ListTile(
+                leading: const Icon(Icons.checklist),
+                title: Text(s.checklistsTitle),
+                subtitle: Text(s.checklistsCount(w.checklists.length)),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => go(const ChecklistsScreen()),
               ),
               ListTile(
                 leading: const Icon(Icons.contacts_outlined),

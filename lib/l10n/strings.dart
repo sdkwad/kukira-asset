@@ -903,4 +903,24 @@ abstract class Str {
   String defectReportDate(String date);
   String get otherArea;
   String get defectReportFooter;
+
+  // ------------------------------------------------ 0.3 Checklists
+  String get checklistsTitle;
+  String checklistsCount(int n);
+  String get newChecklist;
+  String get checklistsEmpty;
+  String checkedCount(int done, int total);
+  String lastUsedOn(String date);
+  String checklistTemplateTitle(String t);
+  String checklistTemplateHint(String t);
+  List<String> checklistTemplateItems(String t);
+  String get checklistBlank;
+  String get deleteChecklistQ;
+  String get removeItem;
+  String get addItem;
+  String get restartChecklist;
+  String get checklistRestarted;
+  String get remindMe;
+  String checklistReminded(String date);
+  String checklistReminderTitle(String list);
 }

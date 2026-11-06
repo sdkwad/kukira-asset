@@ -1765,4 +1765,42 @@ class StrEn extends Str {
   String get otherArea => 'Other';
   @override
   String get defectReportFooter => 'Sent from Kukira Asset.';
+
+  // ------------------------------------------------ 0.3 Checklists
+  @override
+  String get checklistsTitle => 'Checklists';
+  @override
+  String checklistsCount(int n) => n == 0 ? 'Long trips, time away' : '$n lists';
+  @override
+  String get newChecklist => 'New list';
+  @override
+  String get checklistsEmpty => 'Checklists for things you do again and again: before driving back to the kampung, or before leaving the house for a while. Tick each one, then start again for the next trip.';
+  @override
+  String checkedCount(int done, int total) => '$done/$total ticked';
+  @override
+  String lastUsedOn(String date) => 'Last used $date';
+  @override
+  String checklistTemplateTitle(String t) => t == 'tripCar' ? 'Car: before a long drive' : 'House: before time away';
+  @override
+  String checklistTemplateHint(String t) => t == 'tripCar' ? 'Tyres, oil, lights, papers' : 'Mains, water, gas, locks, neighbours';
+  @override
+  List<String> checklistTemplateItems(String t) => t == 'tripCar' ? const ['Tyre pressure, the spare too', 'Engine oil and radiator water', 'Washer fluid and wipers', 'Lights and indicators', 'Brakes', 'Road tax, insurance and driving licence', 'Warning triangle and emergency kit', 'Touch n Go balance for tolls'] : const ['Lock every door and window', 'Switch off the mains, except the fridge', 'Turn off the main water tap', 'Turn off the gas', 'Unplug appliances', 'Take out the rubbish', 'Lock the gate', 'Ask a neighbour to look in'];
+  @override
+  String get checklistBlank => 'Blank list';
+  @override
+  String get deleteChecklistQ => 'Delete this list?';
+  @override
+  String get removeItem => 'Remove';
+  @override
+  String get addItem => 'Add an item';
+  @override
+  String get restartChecklist => 'Start again';
+  @override
+  String get checklistRestarted => 'All ticks cleared for the next trip.';
+  @override
+  String get remindMe => 'Remind me';
+  @override
+  String checklistReminded(String date) => 'Kukira reminds you on $date.';
+  @override
+  String checklistReminderTitle(String list) => 'Checklist: $list';
 }
