@@ -49,9 +49,11 @@ void main() {
   );
   RentPayment pay(int m, DateTime on) => RentPayment(id: m, tenancyId: 1, month: year * 100 + m, paidOn: on, amount: 1800);
 
+  /// What month [m] of this year says it is, to a screen reader.
+  String? said(WidgetTester tester, int m) =>
+      tester.widget<Semantics>(find.descendant(of: find.byKey(rentMonthKey(year * 100 + m)), matching: find.byType(Semantics)).first).properties.label;
+
   testWidgets('the rent page shows the tenant, the year and each month by what happened', (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     setPhone(tester, height: 1600);
     final w = withRent(fakeWorld(), tenancies: [t], payments: {
       1: [pay(1, DateTime(year, 1, 1)), pay(2, DateTime(year, 2, 9))],
@@ -63,16 +65,13 @@ void main() {
     expect(find.text(s.receivedIn(year)), findsOneWidget);
     expect(find.text(s.rm(3600)), findsOneWidget, reason: 'two months received');
 
-    String label(int m) => '${s.monthYear(year * 100 + m)}: ${s.monthStateName(monthState(t, year * 100 + m, null, today: today).name)}';
-    expect(find.bySemanticsLabel('${s.monthYear(year * 100 + 1)}: ${s.monthStateName('paid')}'), findsOneWidget);
-    expect(find.bySemanticsLabel('${s.monthYear(year * 100 + 2)}: ${s.monthStateName('late')}'), findsOneWidget, reason: 'paid on the 9th, due on the 1st');
-    if (today.month > 3) expect(find.bySemanticsLabel(label(3)), findsOneWidget);
+    expect(said(tester, 1), '${s.monthYear(year * 100 + 1)}: ${s.monthStateName('paid')}');
+    expect(said(tester, 2), '${s.monthYear(year * 100 + 2)}: ${s.monthStateName('late')}', reason: 'paid on the 9th, due on the 1st');
+    expect(said(tester, 12), '${s.monthYear(year * 100 + 12)}: ${s.monthStateName(today.month == 12 && today.day > 1 ? 'unpaid' : 'upcoming')}');
     expect(find.text(s.legendUnpaid), findsOneWidget);
   });
 
   testWidgets('a month is marked paid from its sheet, with the full rent and today as the defaults', (tester) async {
-    final semantics = tester.ensureSemantics();
-    addTearDown(semantics.dispose);
     setPhone(tester, height: 1600);
     final db = AppDb(NativeDatabase.memory());
     final house = (await tester.runAsync(() async {
@@ -85,7 +84,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(house, 1);
     final month = monthKey(today);
-    await tester.tap(find.bySemanticsLabel(RegExp('^${RegExp.escape(s.monthYear(month))}:')));
+    await tester.tap(find.byKey(rentMonthKey(month)));
     await tester.pumpAndSettle();
     expect(find.text(s.rentForMonth(s.monthYear(month))), findsOneWidget);
     expect(find.widgetWithText(TextField, '1800'), findsOneWidget);

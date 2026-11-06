@@ -142,7 +142,7 @@ class _RentScreenState extends State<RentScreen> {
           crossAxisSpacing: 8,
           childAspectRatio: 1.25,
           children: [
-            for (var m = 1; m <= 12; m++) _MonthCell(t: t, month: year * 100 + m, paid: paymentFor(pays, year * 100 + m), today: today),
+            for (var m = 1; m <= 12; m++) _MonthCell(key: rentMonthKey(year * 100 + m), t: t, month: year * 100 + m, paid: paymentFor(pays, year * 100 + m), today: today),
           ],
         );
       }),
@@ -275,8 +275,11 @@ class _RentScreenState extends State<RentScreen> {
   }
 }
 
+/// The key of month [month]'s cell in the grid.
+Key rentMonthKey(int month) => ValueKey('rent-month-$month');
+
 class _MonthCell extends StatelessWidget {
-  const _MonthCell({required this.t, required this.month, required this.paid, required this.today});
+  const _MonthCell({super.key, required this.t, required this.month, required this.paid, required this.today});
   final Tenancy t;
   final int month;
   final RentPayment? paid;
