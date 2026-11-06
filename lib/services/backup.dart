@@ -641,7 +641,7 @@ class Backup {
       await c.eachFile((name, bytes) => SecureFiles.saveNamed(db, name, bytes));
       // Older backups (and those from 0.2.1, which did not record a schema) may hold
       // reminders without their link to a date field. See linkExistingAutoReminders.
-      await db.replaceAll(c.tables, linkOldReminders: (c.schema ?? 0) < AppDb.latestSchema);
+      await db.replaceAll(c.tables, linkOldReminders: (c.schema ?? 0) < AppDb.latestSchema, copyTenancies: (c.schema ?? 0) < 6);
     } finally {
       await SecureFiles.removeUnused(await db.fileNamesInUse());
     }

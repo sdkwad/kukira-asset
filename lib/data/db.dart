@@ -188,6 +188,9 @@ class Tenancies extends Table {
 
   /// When the tenancy actually ended (moved out), which may differ from [endDate].
   DateTimeColumn get endedOn => dateTime().nullable()();
+
+  /// When the deposit was returned or settled.
+  DateTimeColumn get depositReturnedOn => dateTime().nullable()();
   TextColumn get notes => text().nullable()();
   DateTimeColumn get createdAt => dateTime().withDefault(currentDateAndTime)();
 }
@@ -360,6 +363,16 @@ class World {
 
   int? odoOf(int assetId) => odometer[assetId]?.km;
 
+  /// The reminders to list on Today and the asset pages. A rent reminder is dated a week
+  /// after the rent is due, when an unpaid month is notified (lib/services/rent.dart), and is
+  /// not listed before the rent is due. Notifications still use [reminders].
+  List<Reminder> get listed {
+    final t = dayOnly(DateTime.now());
+    return reminders
+        .where((r) => !(r.autoSource == 'rent' && r.dueDate != null && t.isBefore(dayOnly(r.dueDate!).subtract(const Duration(days: 7)))))
+        .toList();
+  }
+
   DateTime? get lastBackup {
     final v = settings['lastBackup'];
     return v == null ? null : DateTime.tryParse(v);
@@ -436,6 +449,7 @@ class AppDb extends _$AppDb {
             await m.createTable(inspectionChecks);
             await m.createTable(checklists);
             await m.createTable(checklistItems);
+            await copyOldTenancies();
           }
           // Linking reads the columns added above, so it runs after all of them.
           if (from < 4) await linkExistingAutoReminders();
@@ -486,6 +500,27 @@ class AppDb extends _$AppDb {
       if (match.isEmpty) continue;
       taken.add(match.first.id);
       await (update(records)..where((t) => t.id.equals(rec.id))).write(RecordsCompanion(warrantyReminderId: Value(match.first.id)));
+    }
+  }
+
+  /// Before 0.3 a house kept one tenancy in its profile (start, end, rent day). It becomes
+  /// the house's first row in Tenancies, once: a house that has tenancies already is left
+  /// alone. A house no longer rented out gets it as an ended tenancy. Its rent is tracked from
+  /// now on (Tenancies.createdAt), so no month before it shows as owed. Runs on the upgrade to
+  /// schema 6 and after restoring a backup from before it.
+  Future<void> copyOldTenancies() async {
+    for (final h in await select(houseProfiles).get()) {
+      if (h.tenancyStart == null && h.tenancyEnd == null && h.rentDueDay == null) continue;
+      final has = await (select(tenancies)..where((t) => t.assetId.equals(h.assetId))).get();
+      if (has.isNotEmpty) continue;
+      final rented = h.occupancy == 'rented';
+      await into(tenancies).insert(TenanciesCompanion(
+        assetId: Value(h.assetId),
+        startDate: Value(h.tenancyStart),
+        endDate: Value(h.tenancyEnd),
+        dueDay: Value(h.rentDueDay?.clamp(1, 28)),
+        endedOn: Value(rented ? null : (h.tenancyEnd ?? h.tenancyStart ?? dayOnly(DateTime.now()))),
+      ));
     }
   }
 
@@ -672,7 +707,7 @@ class AppDb extends _$AppDb {
   /// Replaces all records with the contents of a backup, in one transaction. Settings
   /// (language, file key) are kept. [linkOldReminders] links reminders from backups made
   /// before the latest schema, inside the same transaction.
-  Future<void> replaceAll(Map<String, dynamic> t, {bool linkOldReminders = false}) {
+  Future<void> replaceAll(Map<String, dynamic> t, {bool linkOldReminders = false, bool copyTenancies = false}) {
     List<Map<String, dynamic>> rows(String k) =>
         ((t[k] as List?) ?? const []).map((e) => Map<String, dynamic>.from(e as Map)).toList();
     return transaction(() async {
@@ -711,6 +746,7 @@ class AppDb extends _$AppDb {
         b.insertAll(checklistItems, rows('checklistItems').map(ChecklistItem.fromJson));
       });
       if (linkOldReminders) await linkExistingAutoReminders();
+      if (copyTenancies) await copyOldTenancies();
     });
   }
 }

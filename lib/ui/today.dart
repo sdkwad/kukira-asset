@@ -81,7 +81,7 @@ class _TodayScreenState extends State<TodayScreen> {
         );
       }
 
-      final live = w.reminders.where((r) => !r.done).toList();
+      final live = w.listed.where((r) => !r.done).toList();
       final over = live.where((r) => remStatus(r, w) == RStatus.overdue).toList()..sort(remOrder(w));
       final soon = live.where((r) => remStatus(r, w) == RStatus.dueSoon).toList()..sort(remOrder(w));
       final later = live.where((r) => remStatus(r, w) == RStatus.upcoming).toList()..sort(remOrder(w));

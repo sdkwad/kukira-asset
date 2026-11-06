@@ -153,7 +153,7 @@ class SearchResults extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final as = w.assets.where((a) => '${a.nickname} ${w.vehicles[a.id]?.plate ?? ''} ${assetSubtitle(context, a, w)}'.toLowerCase().contains(q)).toList();
-    final rs = w.reminders.where((r) => !r.done && r.title.toLowerCase().contains(q)).toList();
+    final rs = w.listed.where((r) => !r.done && r.title.toLowerCase().contains(q)).toList();
     final recs = w.records.where((r) => '${r.title} ${r.vendorName ?? ''} ${r.area ?? ''} ${r.notes ?? ''}'.toLowerCase().contains(q)).toList();
     final docs = w.files.where((d) => '${d.title} ${s.docTypeName(d.docType)}'.toLowerCase().contains(q)).toList();
     return Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -272,7 +272,7 @@ class _AssetCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = context.s;
     final k = context.tokens;
-    final live = w.reminders.where((r) => !r.done && r.assetId == a.id).toList()..sort(remOrder(w));
+    final live = w.listed.where((r) => !r.done && r.assetId == a.id).toList()..sort(remOrder(w));
     final next = live.firstOrNull;
     final moreOverdue = live.where((r) => remStatus(r, w) == RStatus.overdue).length - (next != null && remStatus(next, w) == RStatus.overdue ? 1 : 0);
     final v = w.vehicles[a.id];
@@ -622,7 +622,7 @@ class _Overview extends StatelessWidget {
     final v = w.vehicles[a.id];
     final h = w.houses[a.id];
     final t = today();
-    final live = w.reminders.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
+    final live = w.listed.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
     void tab(int i, [String? kind]) {
       recordKind.value = kind;
       DefaultTabController.of(context).animateTo(i);
@@ -1289,7 +1289,7 @@ class _Reminders extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final s = context.s;
-    final rs = w.reminders.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
+    final rs = w.listed.where((r) => r.assetId == a.id && !r.done).toList()..sort(remOrder(w));
     return _TabScroll('reminders', [
       CardList([for (final r in rs) ReminderTile(r, w, showAsset: false, onTap: () => showReminderSheet(context, r.id))], empty: s.noRemindersYet),
       const SizedBox(height: 12),

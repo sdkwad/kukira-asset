@@ -10,6 +10,7 @@ import '../services/error_log.dart';
 import '../services/files.dart';
 import '../services/notifications.dart';
 import '../services/privacy.dart';
+import '../services/rent.dart';
 import 'add_actions.dart';
 import 'assets.dart';
 import 'common.dart';
@@ -144,6 +145,7 @@ class _KukiraAppState extends State<KukiraApp> with WidgetsBindingObserver {
     ErrorLog.attach(_db!);
     _sub?.cancel();
     _world.value = null;
+    syncAllRent(_db!, strFor(_lang));
     _sub = _db!.watchWorld().listen((w) {
       _world.value = w;
       final l = w.settings['lang'];
