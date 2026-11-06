@@ -1508,4 +1508,24 @@ class StrMs extends Str {
   // ------------------------------------------------ Large backups
   @override
   String get backupDamaged => 'Fail sandaran ini rosak atau tidak lengkap, jadi tiada apa daripadanya yang dipulihkan. Rekod di telefon ini kekal seperti sebelumnya. Cuba salinan sandaran yang lain.';
+
+  // ------------------------------------------------ 0.3 Tribunal
+  @override
+  String get tribunalReminderTitle => 'Tarikh akhir tuntut kecacatan di Tribunal';
+  @override
+  String get tribunalAutoNote => 'Anggaran: 12 bulan selepas DLP tamat (Akta Pemaju Perumahan, s.16N).';
+  @override
+  String get tribunalConfirm => 'peguam anda atau Tribunal Tuntutan Pembeli Rumah';
+  @override
+  String get tribunalRowTitle => 'Tuntutan kecacatan di Tribunal';
+  @override
+  String tribunalRowMeta(String date) => 'Sehingga sekitar $date · sahkan dengan peguam';
+  @override
+  String autoSyncNoteTribunal(String date) => 'Selepas DLP tamat, kecacatan yang belum dibaiki masih boleh dituntut di Tribunal Tuntutan Pembeli Rumah selama 12 bulan, iaitu sehingga sekitar $date. Kukira mengingatkan anda 60 hari sebelumnya.';
+  @override
+  String dlpEndedTribunal(String date) => 'Kecacatan yang belum dibaiki masih boleh dituntut di Tribunal Tuntutan Pembeli Rumah sehingga sekitar $date. Sahkan dengan peguam.';
+  @override
+  String get cccDateLabel => 'Tarikh CCC (pilihan)';
+  @override
+  String get cccHelp => 'Sijil perakuan siap dan pematuhan. Tuntutan yang bukan kecacatan, contohnya lewat serah, dikira dari tarikh ini; sahkan dengan peguam.';
 }

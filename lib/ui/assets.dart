@@ -39,6 +39,12 @@ DateTime? dlpEnd(World w, int assetId) {
   return h.dlpEndOverride ?? dlpEndFrom(h.vpDate!);
 }
 
+/// The tribunal deadline for defects of house [assetId] while it is still to come.
+DateTime? _tribunal(World w, int assetId) {
+  final h = w.houses[assetId];
+  return h == null ? null : activeTribunalDeadline(vp: h.vpDate, override: h.dlpEndOverride, source: h.source, today: today());
+}
+
 class Plate extends StatelessWidget {
   const Plate(this.text, {super.key, this.big = false});
   final String text;
@@ -717,6 +723,19 @@ class _Overview extends StatelessWidget {
       } else if (h.source != 'subsale') {
         state.add(AppRow(leading: const IconAvatar(Icons.construction_outlined), title: s.dlpRowTitle, meta: s.addVpForDlp, trailing: const Icon(Icons.chevron_right), onTap: edit));
       }
+      // Once the DLP has ended, defects can still be claimed at the Tribunal for a year.
+      final deadline = activeTribunalDeadline(vp: h.vpDate, override: h.dlpEndOverride, source: h.source, today: t);
+      if (end != null && daysBetween(t, end) <= 0 && deadline != null) {
+        final left = daysBetween(t, deadline);
+        state.add(AppRow(
+          leading: const IconAvatar(Icons.gavel),
+          title: s.tribunalRowTitle,
+          titleTag: const EstTag(),
+          status: StatusLabel(s.inDays(left), left < 90 ? Tone.dueSoon : Tone.upcoming),
+          meta: s.tribunalRowMeta(s.dLong(deadline)),
+          onTap: () => tab(1, 'defect'),
+        ));
+      }
       for (final r in live.where((r) => _houseDues.contains(r.category))) {
         state.add(ReminderTile(r, w, showAsset: false, icon: Icons.receipt_long_outlined, onTap: () => open(r)));
       }
@@ -1333,7 +1352,10 @@ class _DefectList extends StatelessWidget {
       if (end != null && left! > 0)
         NoteBox('$left ${s.dlpDaysLeftEnds(s.dLong(end))}. ${s.defectReportNote}', warn: true)
       else if (end != null)
-        NoteBox(s.dlpEnded(s.dLong(end))),
+        NoteBox([
+          s.dlpEnded(s.dLong(end)),
+          if (_tribunal(w, a.id) case final d?) s.dlpEndedTribunal(s.dLong(d)),
+        ].join(' ')),
       group('open', s.defectOpen),
       group('in_progress', s.defectInProgress),
       group('done', s.defectFixed),
@@ -1583,6 +1605,7 @@ class _HouseEditState extends State<HouseEditScreen> {
   DateTime? _vp;
   DateTime? _spa;
   DateTime? _dlpOverride;
+  DateTime? _ccc;
   DateTime? _tenancyStart;
   DateTime? _tenancyEnd;
   int? _rentDay;
@@ -1624,6 +1647,7 @@ class _HouseEditState extends State<HouseEditScreen> {
         _vp = h.vpDate;
         _spa = h.spaDate;
         _dlpOverride = h.dlpEndOverride;
+        _ccc = h.cccDate;
         _inDlp = h.vpDate != null;
         _tenancyStart = h.tenancyStart;
         _tenancyEnd = h.tenancyEnd;
@@ -1709,7 +1733,15 @@ class _HouseEditState extends State<HouseEditScreen> {
                 child: Text(s.dlpEndOverrideHelp(s.dLong(dlpEndFrom(_vp!))), style: help),
               ),
               NoteBox(s.autoSyncNoteDlp, icon: Icons.sync),
+              if (_source != 'subsale') ...[
+                const SizedBox(height: 8),
+                NoteBox(s.autoSyncNoteTribunal(s.dLong(tribunalDeadlineFrom(_dlpOverride ?? dlpEndFrom(_vp!)))), icon: Icons.gavel),
+              ],
               const SizedBox(height: 12),
+            ],
+            if (_source != 'subsale') ...[
+              DateField(label: s.cccDateLabel, value: _ccc, onChanged: (d) => setState(() => _ccc = d)),
+              Padding(padding: const EdgeInsets.only(top: 4, bottom: 10), child: Text(s.cccHelp, style: help)),
             ],
           ],
           if (showSpa)
@@ -1791,6 +1823,10 @@ class _HouseEditState extends State<HouseEditScreen> {
                     oldDate: activeDlpEnd(vp: h.vpDate, override: h.dlpEndOverride, today: t),
                     newDate: activeDlpEnd(vp: vp, override: dlpOverride, today: t),
                     today: t),
+                planChange(w.reminders, a.id, autoTribunal,
+                    oldDate: activeTribunalDeadline(vp: h.vpDate, override: h.dlpEndOverride, source: h.source, today: t),
+                    newDate: activeTribunalDeadline(vp: vp, override: dlpOverride, source: _source, today: t),
+                    today: t),
               ];
               await saveWithAutoReminders(context, a.id, changes, () async {
                 await db.updateAsset(a.id, AssetsCompanion(nickname: Value(_name.text.trim()), notes: Value(nn(_notes.text))));
@@ -1799,6 +1835,7 @@ class _HouseEditState extends State<HouseEditScreen> {
                   source: Value(_source),
                   vpDate: Value(vp),
                   dlpEndOverride: Value(dlpOverride),
+                  cccDate: Value(_asksVp && _source != 'subsale' ? _ccc : h.cccDate),
                   spaDate: Value(_spa),
                   titleStatus: Value(_title),
                   occupancy: Value(_occupancy),

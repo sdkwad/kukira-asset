@@ -8,6 +8,9 @@ const autoRoadTax = 'roadTax';
 const autoInsurance = 'insurance';
 const autoDlp = 'dlp';
 
+/// Added in 0.3: the last day to bring a defect claim to the homebuyer tribunal.
+const autoTribunal = 'tribunal';
+
 enum AutoKind { none, create, update, delete }
 
 /// The state of the existing linked reminder, if there is one.
@@ -66,4 +69,18 @@ DateTime? activeDlpEnd({required DateTime? vp, required DateTime? override, requ
   if (vp == null) return null;
   final end = override ?? dlpEndFrom(vp);
   return dayOnly(end).isAfter(dayOnly(today)) ? end : null;
+}
+
+/// The last day to claim defects at the Tribunal Tuntutan Pembeli Rumah: 12 months after the
+/// DLP ends. Housing Development (Control and Licensing) Act 1966 s.16N(2)(b); the Court of
+/// Appeal held that a claim about defects runs from the DLP's end (Lakefront Residence v
+/// TTPR, [2023] MLJU 2352). An estimate, like the DLP it follows.
+DateTime tribunalDeadlineFrom(DateTime dlpEnd) => addMonths(dayOnly(dlpEnd), 12);
+
+/// The tribunal deadline the linked reminder follows. Null without a VP date, for a subsale
+/// (the claim is the developer's buyer's), or once the deadline has passed.
+DateTime? activeTribunalDeadline({required DateTime? vp, required DateTime? override, required String? source, required DateTime today}) {
+  if (vp == null || source == 'subsale') return null;
+  final d = tribunalDeadlineFrom(override ?? dlpEndFrom(vp));
+  return dayOnly(d).isAfter(dayOnly(today)) ? d : null;
 }

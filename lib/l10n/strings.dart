@@ -783,4 +783,15 @@ abstract class Str {
 
   // ------------------------------------------------ Large backups
   String get backupDamaged;
+
+  // ------------------------------------------------ 0.3 Tribunal
+  String get tribunalReminderTitle;
+  String get tribunalAutoNote;
+  String get tribunalConfirm;
+  String get tribunalRowTitle;
+  String tribunalRowMeta(String date);
+  String autoSyncNoteTribunal(String date);
+  String dlpEndedTribunal(String date);
+  String get cccDateLabel;
+  String get cccHelp;
 }

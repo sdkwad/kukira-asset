@@ -1511,4 +1511,24 @@ class StrEn extends Str {
   // ------------------------------------------------ Large backups
   @override
   String get backupDamaged => 'This backup file is damaged or incomplete, so nothing from it was restored. The records on this phone are as they were. Try another copy of the backup.';
+
+  // ------------------------------------------------ 0.3 Tribunal
+  @override
+  String get tribunalReminderTitle => 'Last day to claim defects at the Tribunal';
+  @override
+  String get tribunalAutoNote => 'Estimate: 12 months after the DLP ends (Housing Development Act, s.16N).';
+  @override
+  String get tribunalConfirm => 'your lawyer or the Homebuyer Claims Tribunal';
+  @override
+  String get tribunalRowTitle => 'Defect claim at the Tribunal';
+  @override
+  String tribunalRowMeta(String date) => 'Until about $date · confirm with a lawyer';
+  @override
+  String autoSyncNoteTribunal(String date) => 'After the DLP ends, defects not yet fixed can still be claimed at the Homebuyer Claims Tribunal for 12 months, until about $date. Kukira reminds you 60 days before.';
+  @override
+  String dlpEndedTribunal(String date) => 'Defects not yet fixed can still be claimed at the Homebuyer Claims Tribunal until about $date. Confirm with a lawyer.';
+  @override
+  String get cccDateLabel => 'CCC date (optional)';
+  @override
+  String get cccHelp => 'Certificate of completion and compliance. A claim that is not about defects, such as late delivery, counts from this date; confirm with a lawyer.';
 }
