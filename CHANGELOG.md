@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.2.8 (build 17)
+
+The third audit, before 0.3. No schema change; install over build 16.
+
+- **Fixed:** editing a reminder, even only its title, notes or lead time, cleared its snooze and reopened it if it was done, so a snoozed reminder came back as overdue just for being renamed. Renaming a document likewise reopened its expiry reminder. Now a reminder is only brought back when its schedule changes (rule, date, distance, repeat or count-from), counting only the fields its rule uses; a document's reminder only when its expiry changes.
+- **Docs:** SPEC records the platform decisions (no PWA, iPhone next, desktop after sync) and where the original brief is out of date. The 0.3 plan is in `docs/plan-0.3.md`.
+- **Tests:** the schedule-change rule, renaming a snoozed reminder, renaming a document whose reminder is done.
+
 ## 0.2.8 (build 16)
 
 The three items the audit left open. No schema change; install over any 0.2.8 build or over 0.2.7 phase d. The app still has no internet permission.
