@@ -124,6 +124,9 @@ void main() {
     await tester.pumpWidget(harness(InspectionScreen(inspectionId: id), w, db: db, lang: 'ms'));
     await tester.pumpAndSettle();
     expect(find.text(s.inspectionKindName('vp')), findsOneWidget);
+    expect(find.text(s.inspectionTitle), findsOneWidget, reason: 'a short title in the app bar; the full kind is in the page');
+    // Each room says how far it has gone: the living room and both bedrooms have 7 things.
+    expect(find.text(s.inspectionProgress(0, 7, 0)), findsNWidgets(3));
     expect(find.text(s.roomName('living')), findsOneWidget);
     expect(find.text(s.inspectionProgress(0, progressOf(inspectionRooms(bedrooms: 2, bathrooms: 1, propertyType: 'landed'), const {}).total, 0)), findsOneWidget);
 

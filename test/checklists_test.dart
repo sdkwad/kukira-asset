@@ -88,6 +88,8 @@ void main() {
     await tester.pumpAndSettle();
     final first = en.checklistTemplateItems('tripCar').first;
     expect(find.text(first), findsOneWidget);
+    expect(find.text(en.checklistsTitle), findsOneWidget);
+    expect(find.text(list.title), findsOneWidget, reason: 'the long title wraps in the page, not cut in the app bar');
     expect(find.text(en.checkedCount(0, en.checklistTemplateItems('tripCar').length)), findsOneWidget);
     await tester.tap(find.text(first));
     await tester.pumpAndSettle();

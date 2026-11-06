@@ -582,9 +582,12 @@ class EstTag extends StatelessWidget {
 }
 
 class SectionTitle extends StatelessWidget {
-  const SectionTitle(this.text, {super.key, this.count, this.link, this.onLink});
+  const SectionTitle(this.text, {super.key, this.count, this.note, this.link, this.onLink});
   final String text;
   final int? count;
+
+  /// A short text at the right instead of the count ("7/7 checked · 1 defect").
+  final String? note;
 
   /// A text button at the right instead of the count ("All (6)").
   final String? link;
@@ -599,6 +602,8 @@ class SectionTitle extends StatelessWidget {
         Expanded(child: Semantics(header: true, child: Text(text, style: st))),
         if (link != null)
           TextButton(onPressed: onLink, child: Text(link!))
+        else if (note != null)
+          Text(note!, style: st)
         else if (count != null)
           Text('$count', style: st),
       ]),

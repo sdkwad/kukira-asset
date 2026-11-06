@@ -107,7 +107,7 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
         final done = items.where((i) => i.checked).length;
         return SafeScaffold(
           appBar: AppBar(
-            title: Text(list.title),
+            title: Text(s.checklistsTitle),
             actions: [
               IconButton(
                 tooltip: s.delete,
@@ -121,6 +121,8 @@ class _ChecklistScreenState extends State<ChecklistScreen> {
             ],
           ),
           body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
+            Text(list.title, style: KText.title.copyWith(color: k.text)),
+            const SizedBox(height: 12),
             Text(s.checkedCount(done, items.length), style: KText.row.copyWith(color: k.text)),
             const SizedBox(height: 8),
             ProgressLine(items.isEmpty ? 0 : done / items.length),

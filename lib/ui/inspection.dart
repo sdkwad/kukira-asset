@@ -133,15 +133,22 @@ class InspectionScreen extends StatelessWidget {
         final checks = {for (final c in w.inspectionChecks[ins.id] ?? const <InspectionCheck>[]) '${c.room}|${c.item}': c};
         final p = progressOf(rooms, results);
         return SafeScaffold(
-          appBar: AppBar(title: Text(s.inspectionKindName(ins.kind))),
+          appBar: AppBar(title: Text(s.inspectionTitle)),
           body: ListView(padding: const EdgeInsets.fromLTRB(16, 8, 16, 32), children: [
+            Text(s.inspectionKindName(ins.kind), style: KText.title.copyWith(color: k.text)),
+            const SizedBox(height: 2),
+            Text(s.dLong(ins.date), style: KText.meta.copyWith(color: k.textMuted)),
+            const SizedBox(height: 12),
             Text(s.inspectionProgress(p.checked, p.total, p.defects), style: KText.row.copyWith(color: k.text)),
             const SizedBox(height: 8),
             ProgressLine(p.total == 0 ? 0 : p.checked / p.total),
             const SizedBox(height: 8),
             Text(s.inspectionHint, style: KText.meta.copyWith(color: k.textMuted)),
             for (final room in rooms) ...[
-              SectionTitle(s.roomName(room), count: roomItems(room).where((i) => results['$room|$i'] == 'defect').length),
+              Builder(builder: (_) {
+                final rp = progressOf([room], results);
+                return SectionTitle(s.roomName(room), note: s.inspectionProgress(rp.checked, rp.total, rp.defects));
+              }),
               Card(
                 margin: EdgeInsets.zero,
                 child: Column(children: [
