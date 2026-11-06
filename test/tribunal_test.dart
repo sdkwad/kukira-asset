@@ -61,7 +61,8 @@ void main() {
     final vp = addMonths(dayOnly(DateTime.now()), -25);
 
     testWidgets('after the DLP, the house shows how long defects can still be claimed', (tester) async {
-      setPhone(tester, height: 1600);
+      // Tall enough that the whole overview is built.
+      setPhone(tester, height: 3200);
       await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), fakeWorld(vp: vp, source: 'new_from_developer')));
       await tester.pumpAndSettle();
       expect(find.text(s.tribunalRowTitle), findsOneWidget);
@@ -69,7 +70,7 @@ void main() {
     });
 
     testWidgets('a subsale shows no tribunal deadline', (tester) async {
-      setPhone(tester, height: 1600);
+      setPhone(tester, height: 3200);
       await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), fakeWorld(vp: vp, source: 'subsale')));
       await tester.pumpAndSettle();
       expect(find.text(s.tribunalRowTitle), findsNothing);
