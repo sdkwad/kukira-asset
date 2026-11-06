@@ -45,7 +45,7 @@ void main() {
 
   testWidgets('a subsale with a VP date starts inside the DLP', (tester) async {
     await open(tester, HouseProfile(assetId: 1, propertyType: 'landed', source: 'subsale', vpDate: DateTime(2025, 6, 1)));
-    expect(tester.widget<SwitchListTile>(find.byType(SwitchListTile)).value, isTrue);
+    expect(tester.widget<SwitchListTile>(find.widgetWithText(SwitchListTile, s.stillInDlpQ)).value, isTrue);
     expect(find.text(s.vpDateSubsale), findsOneWidget);
     await tester.tap(find.text(s.stillInDlpQ));
     await tester.pumpAndSettle();
