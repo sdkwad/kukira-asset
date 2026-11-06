@@ -17,6 +17,14 @@ void main() {
   setUpAll(() => driftRuntimeOptions.dontWarnAboutMultipleDatabases = true);
   final s = strFor('en');
 
+  test('months can be taken away across years', () {
+    expect(addMonths(DateTime(2026, 11, 6), -25), DateTime(2024, 10, 6));
+    expect(addMonths(DateTime(2026, 1, 31), -1), DateTime(2025, 12, 31));
+    expect(addMonths(DateTime(2026, 3, 31), -1), DateTime(2026, 2, 28));
+    expect(addMonths(DateTime(2026, 11, 6), -12), DateTime(2025, 11, 6));
+    expect(addMonths(DateTime(2026, 11, 6), 14), DateTime(2028, 1, 6));
+  });
+
   group('the deadline', () {
     final today = DateTime(2026, 11, 6);
 
