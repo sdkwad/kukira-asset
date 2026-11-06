@@ -93,6 +93,20 @@ int? oldestOwed(Tenancy t, List<RentPayment> payments, {required DateTime today}
   return null;
 }
 
+/// Months whose due date has passed unpaid, over the whole tenancy so far.
+int owedMonths(Tenancy t, List<RentPayment> payments, {required DateTime today}) {
+  final from = trackedFrom(t);
+  if (from == null) return 0;
+  final now = monthKey(today);
+  final last = lastMonth(t);
+  final until = last == null || last > now ? now : last;
+  var n = 0;
+  for (var m = from; m <= until; m = nextMonth(m)) {
+    if (monthState(t, m, paymentFor(payments, m), today: today) == MonthState.unpaid) n++;
+  }
+  return n;
+}
+
 /// How long after the due date unpaid rent is notified (the owner's choice: 7 days).
 const rentGraceDays = 7;
 

@@ -6,6 +6,7 @@ import '../domain/auto_sync.dart';
 import '../domain/lists.dart';
 import '../domain/presets.dart';
 import '../domain/renewal.dart';
+import '../domain/rent.dart';
 import '../domain/rules.dart';
 import '../l10n/strings.dart';
 import '../services/auto_reminders.dart';
@@ -20,6 +21,7 @@ import 'common.dart';
 import 'documents.dart';
 import 'forms.dart';
 import 'renew.dart';
+import 'rent.dart';
 
 String assetSubtitle(BuildContext context, Asset a, World w) {
   final s = context.s;
@@ -740,6 +742,23 @@ class _Overview extends StatelessWidget {
         state.add(ReminderTile(r, w, showAsset: false, icon: Icons.receipt_long_outlined, onTap: () => open(r)));
       }
     }
+    if (house && h != null) {
+      final tens = w.tenancies.where((x) => x.assetId == a.id).toList();
+      if (h.occupancy == 'rented' || tens.isNotEmpty) {
+        final cur = currentTenancy(tens, a.id);
+        final pays = cur == null ? const <RentPayment>[] : (w.rentPayments[cur.id] ?? const <RentPayment>[]);
+        final now = monthKey(t);
+        final owed = cur == null ? 0 : owedMonths(cur, pays, today: t);
+        state.add(AppRow(
+          leading: const IconAvatar(Icons.key_outlined),
+          title: s.rentRowTitle,
+          status: owed > 0 ? StatusLabel(s.monthsCount(owed), Tone.overdue) : null,
+          meta: cur == null ? s.rentRowNone : s.rentRowMeta(cur.tenantName ?? s.tenantUnnamed, s.monthStateName(monthState(cur, now, paymentFor(pays, now), today: t).name)),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => openRent(context, a.id),
+        ));
+      }
+    }
     if (state.isNotEmpty) children.addAll([SectionTitle(s.stateTitle), CardList(state)]);
     if (house && h != null && h.source == 'subsale' && inDlp) children.addAll([const SizedBox(height: 8), NoteBox(s.dlpSubsaleNote)]);
     if (house && h?.propertyType == 'strata') children.addAll([const SizedBox(height: 8), NoteBox(s.strataInsuranceNote, icon: Icons.shield_outlined)]);
@@ -825,10 +844,12 @@ class _Details extends StatelessWidget {
         if (h.council != null) (s.council, h.council!),
         if (h.state != null) (s.state, h.state!),
         if (h.occupancy != null) (s.occupancy, s.occupancyName(h.occupancy!)),
-        // The tenancy is kept when the house stops being rented out, but shown only while it is.
-        if (h.occupancy == 'rented' && (h.tenancyStart != null || h.tenancyEnd != null))
-          (s.tenancy, s.tenancyPeriod(h.tenancyStart == null ? null : s.dLong(h.tenancyStart!), h.tenancyEnd == null ? null : s.dLong(h.tenancyEnd!))),
-        if (h.occupancy == 'rented' && h.rentDueDay != null) (s.rentDue, s.rentDueDay(h.rentDueDay!)),
+        // The tenancy running now; ended ones are on the rent page.
+        if (currentTenancy(w.tenancies, a.id) case final t?) ...[
+          if (t.startDate != null || t.endDate != null)
+            (s.tenancy, s.tenancyPeriod(t.startDate == null ? null : s.dLong(t.startDate!), t.endDate == null ? null : s.dLong(t.endDate!))),
+          if (t.dueDay != null) (s.rentDue, s.rentDueDay(t.dueDay!)),
+        ],
         if (h.address != null) (s.address, h.address!),
         if (h.contact != null) (s.contact, h.contact!),
         if (a.notes != null) (s.notes, a.notes!),
@@ -1606,9 +1627,6 @@ class _HouseEditState extends State<HouseEditScreen> {
   DateTime? _spa;
   DateTime? _dlpOverride;
   DateTime? _ccc;
-  DateTime? _tenancyStart;
-  DateTime? _tenancyEnd;
-  int? _rentDay;
   bool _septic = false;
   bool? _insidePbt;
 
@@ -1651,9 +1669,6 @@ class _HouseEditState extends State<HouseEditScreen> {
         _dlpOverride = h.dlpEndOverride;
         _ccc = h.cccDate;
         _inDlp = h.vpDate != null;
-        _tenancyStart = h.tenancyStart;
-        _tenancyEnd = h.tenancyEnd;
-        _rentDay = h.rentDueDay;
         _septic = h.septicTank == true;
         _insidePbt = h.insidePbt;
         _council.text = h.council ?? '';
@@ -1802,12 +1817,12 @@ class _HouseEditState extends State<HouseEditScreen> {
           ChoiceRow<String>(options: const ['owner', 'rented', 'vacant'], value: _occupancy, label: s.occupancyName, onChanged: (v) => setState(() => _occupancy = v)),
           if (rented) ...[
             const SizedBox(height: 14),
-            DateField(label: s.tenancyStart, value: _tenancyStart, onChanged: (d) => setState(() => _tenancyStart = d)),
-            const SizedBox(height: 12),
-            DateField(label: s.tenancyEnd, value: _tenancyEnd, onChanged: (d) => setState(() => _tenancyEnd = d)),
-            const SizedBox(height: 12),
-            DayOfMonthField(label: s.rentDue, value: _rentDay, onChanged: (v) => setState(() => _rentDay = v)),
-            Padding(padding: const EdgeInsets.only(top: 6), child: Text(s.tenancyNote, style: help)),
+            NoteBox(s.houseRentNote, icon: Icons.key_outlined),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: OutlinedButton.icon(icon: const Icon(Icons.key_outlined), label: Text(s.manageRent), onPressed: () => openRent(context, a.id)),
+            ),
           ],
 
           // ---- the rest, only when used
@@ -1835,10 +1850,6 @@ class _HouseEditState extends State<HouseEditScreen> {
           SaveButton(
             onPressed: () async {
               if (_name.text.trim().isEmpty) return;
-              if (_tenancyStart != null && _tenancyEnd != null && _tenancyEnd!.isBefore(_tenancyStart!)) {
-                snack(context, s.endBeforeStart);
-                return;
-              }
               final db = context.db;
               final t = today();
               final vp = _asksVp ? _vp : null;
@@ -1864,10 +1875,6 @@ class _HouseEditState extends State<HouseEditScreen> {
                   spaDate: Value(_spa),
                   titleStatus: Value(_title),
                   occupancy: Value(_occupancy),
-                  // Kept when the house is no longer rented out, so a wrong tap loses nothing.
-                  tenancyStart: Value(_tenancyStart),
-                  tenancyEnd: Value(_tenancyEnd),
-                  rentDueDay: Value(_rentDay),
                   septicTank: Value(_ptype == 'strata' ? h.septicTank : _septic),
                   insidePbt: Value(_septic ? (_insidePbt ?? true) : h.insidePbt),
                   council: Value(nn(_council.text)),

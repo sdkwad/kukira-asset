@@ -9,12 +9,14 @@ import '../domain/rules.dart';
 import '../services/auto_reminders.dart';
 import '../services/error_log.dart';
 import '../services/record_save.dart';
+import '../services/rent.dart';
 import 'add_actions.dart';
 import 'assets.dart';
 import 'combo.dart';
 import 'common.dart';
 import 'documents.dart';
 import 'renew.dart';
+import 'rent.dart';
 
 // ================================================================ reminder sheet
 
@@ -60,6 +62,9 @@ class ReminderDetail extends StatelessWidget {
       final odoReminder = r.category == 'odometer';
       // Road tax and insurance follow the vehicle's date: renewing sets the next one.
       final renewKind = switch (r.autoSource) { autoRoadTax => RenewKind.roadTax, autoInsurance => RenewKind.insurance, _ => null };
+      // The reminders a let house keeps are answered on its tenancy, not marked done here.
+      final rent = rentSources.contains(r.autoSource);
+      final rentAction = rent ? rentReminderAction(context, w, r) : null;
       Future<void> markDone() async {
         close();
         if (odoReminder) {
@@ -95,7 +100,27 @@ class ReminderDetail extends StatelessWidget {
               NoteBox(s.estimatedNote(r.note ?? '', r.confirmWith ?? s.theAuthority), warn: true),
             ],
             const SizedBox(height: 16),
-            if (renewKind != null) ...[
+            if (rent) ...[
+              if (rentAction != null)
+                FilledButton.icon(
+                  icon: const Icon(Icons.check),
+                  label: Text(rentAction.$1),
+                  onPressed: () async {
+                    close();
+                    await rentAction.$2();
+                  },
+                ),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: () {
+                    close();
+                    openRent(context, r.assetId);
+                  },
+                  child: Text(s.openRent),
+                ),
+              ),
+            ] else if (renewKind != null) ...[
               FilledButton.icon(
                 icon: const Icon(Icons.autorenew),
                 label: Text(s.renew),

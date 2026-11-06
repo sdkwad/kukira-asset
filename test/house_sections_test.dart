@@ -1,6 +1,6 @@
 // The house form asks only what applies (0.2.7c): the VP and DLP dates for a subsale only
-// while the developer's DLP still runs, optional fields behind "+", and the tenancy only
-// when the house is rented out.
+// while the developer's DLP still runs, optional fields behind "+", and, when the house is
+// rented out, the way to its rent page (0.3: tenancies are kept there, see rent_ui_test).
 
 import 'package:drift/drift.dart' show Value, driftRuntimeOptions;
 import 'package:drift/native.dart';
@@ -12,7 +12,8 @@ import 'package:kukira_asset/ui/assets.dart';
 
 import 'helpers.dart';
 
-World withHouse(World w, HouseProfile h) => World(
+World withHouse(World w, HouseProfile h, {List<Tenancy> tenancies = const []}) => World(
+      tenancies: tenancies,
       assets: w.assets,
       houses: {1: h},
       vehicles: w.vehicles,
@@ -69,38 +70,20 @@ void main() {
     expect(find.text(s.spaDate), findsOneWidget);
   });
 
-  testWidgets('the tenancy is asked only while the house is rented out, and says it is for reference', (tester) async {
+  testWidgets('a house rented out points to its rent page, where the tenancy is kept', (tester) async {
     await open(tester, const HouseProfile(assetId: 1, propertyType: 'landed', occupancy: 'owner'));
-    expect(find.text(s.tenancyStart), findsNothing);
+    expect(find.text(s.manageRent), findsNothing);
     await tester.tap(find.text(s.occupancyName('rented')));
     await tester.pumpAndSettle();
-    expect(find.text(s.tenancyStart), findsOneWidget);
-    expect(find.text(s.tenancyEnd), findsOneWidget);
-    expect(find.text(s.rentDue), findsOneWidget);
-    expect(find.text(s.tenancyNote), findsOneWidget);
+    expect(find.text(s.houseRentNote), findsOneWidget);
+    expect(find.text(s.manageRent), findsOneWidget);
+    expect(find.text(s.tenancyStart), findsNothing, reason: 'the dates are asked on the tenancy now');
     await tester.tap(find.text(s.occupancyName('vacant')));
     await tester.pumpAndSettle();
-    expect(find.text(s.tenancyStart), findsNothing);
+    expect(find.text(s.manageRent), findsNothing);
   });
 
-  testWidgets('the rent day is picked from a grid of days, and can be cleared', (tester) async {
-    await open(tester, const HouseProfile(assetId: 1, propertyType: 'landed', occupancy: 'rented'));
-    expect(find.text(s.notSet), findsOneWidget);
-    await tester.tap(find.byType(DayOfMonthField));
-    await tester.pumpAndSettle();
-    expect(find.text('31'), findsOneWidget);
-    await tester.tap(find.text('12'));
-    await tester.pumpAndSettle();
-    expect(find.text(s.rentDueDay(12)), findsOneWidget);
-
-    await tester.tap(find.byType(DayOfMonthField));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text(s.clear));
-    await tester.pumpAndSettle();
-    expect(find.text(s.notSet), findsOneWidget);
-  });
-
-  testWidgets('saving a subsale past the DLP clears its VP date, and keeps the tenancy when no longer rented', (tester) async {
+  testWidgets('saving a subsale past the DLP clears its VP date, and leaves the old tenancy fields as they were', (tester) async {
     setPhone(tester, height: 3200);
     final db = AppDb(NativeDatabase.memory());
     final start = DateTime(2026, 3, 1);
@@ -128,7 +111,6 @@ void main() {
     ));
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
-    expect(find.text(s.rentDueDay(5)), findsOneWidget);
 
     await tester.tap(find.text(s.stillInDlpQ));
     await tester.tap(find.text(s.occupancyName('owner')));
@@ -148,17 +130,11 @@ void main() {
     expect(h.rentDueDay, 5);
   });
 
-  testWidgets('the details show the tenancy while the house is rented out', (tester) async {
+  testWidgets('the details show the tenancy running now, not an ended one', (tester) async {
     setPhone(tester, height: 2400);
-    final h = HouseProfile(
-      assetId: 1,
-      propertyType: 'landed',
-      occupancy: 'rented',
-      tenancyStart: DateTime(2026, 3, 1),
-      tenancyEnd: DateTime(2027, 2, 28),
-      rentDueDay: 5,
-    );
-    await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), withHouse(fakeWorld(), h)));
+    const h = HouseProfile(assetId: 1, propertyType: 'landed', occupancy: 'rented');
+    final t = Tenancy(id: 1, assetId: 1, startDate: DateTime(2026, 3, 1), endDate: DateTime(2027, 2, 28), dueDay: 5, createdAt: DateTime(2026, 3, 1));
+    await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), withHouse(fakeWorld(), h, tenancies: [t])));
     await tester.pumpAndSettle();
     await tester.tap(find.text(s.houseDetails));
     await tester.pumpAndSettle();
@@ -166,7 +142,8 @@ void main() {
     expect(find.text(s.rentDueDay(5)), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox());
-    await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), withHouse(fakeWorld(), h.copyWith(occupancy: const Value('owner')))));
+    final ended = t.copyWith(endedOn: Value(DateTime(2026, 9, 1)));
+    await tester.pumpWidget(harness(const AssetDetailScreen(assetId: 1), withHouse(fakeWorld(), h, tenancies: [ended])));
     await tester.pumpAndSettle();
     await tester.tap(find.text(s.houseDetails));
     await tester.pumpAndSettle();
